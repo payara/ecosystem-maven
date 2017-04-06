@@ -45,7 +45,7 @@
     <packaging>maven-plugin</packaging>
     <name>Payara Micro Maven Plugin</name>
 
-    <description>Payara Micro Maven Plugin that incorporates payara-micro with the produced artefact</description>
+    <description>Payara Micro Maven Plugin that incorporates payara-micro with the produced artifact</description>
 
     <developers>
         <developer>

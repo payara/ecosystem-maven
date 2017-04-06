@@ -38,53 +38,34 @@
  */
 package fish.payara.maven.plugins.micro;
 
-import org.apache.maven.execution.MavenSession;
-import org.apache.maven.plugin.AbstractMojo;
-import org.apache.maven.plugin.BuildPluginManager;
+import fish.payara.maven.plugins.micro.processor.*;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
-import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.dependency.fromConfiguration.ArtifactItem;
-import org.apache.maven.project.MavenProject;
+import org.twdata.maven.mojoexecutor.MojoExecutor;
 
-import java.util.ArrayList;
 import java.util.List;
 
-import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
-
 /**
- * Bundle mojo incorporates payara-micro with the produced artefact by following steps given as follows:
+ * Bundle mojo incorporates payara-micro with the produced artifact by following steps given as follows:
  * <ul>
  *  <li>Fetch payara-micro from repository and open it to a folder. The default version is <i>4.1.1.171</i>. Specific version can be provided with @{code payaraVersion} parameter</li>
  *  <li>Fetch user specified jars from repository</li>
- *  <li>Copy produced artefact into /MICRO-INF/deploy folder if its extension is <b>war</b></li>
- *  <li>Copy any existing @{code domain.xml}, @{code keystore.jks}, @{code login.conf } and @{code login.properties} file from resources folder into /MICRO-INF/domain folder</li>
- *  <li>Bundle aggregated content as artefactName-microbundle.jar under target folder</li>
+ *  <li>Copy any existing @{code domain.xml}, @{code keystore.jks}, @{code login.conf } and @{code login.properties} files from resources folder into /MICRO-INF/domain folder</li>
+ *  <li>Copy any existing @{code pre-boot-commands.txt}, @{code post-boot-commands.txt} and @{code post-deploy-commands.txt} files from resources folder into /MICRO-INF folder</li>
+ *  <li>Copy produced artifact into /MICRO-INF/deploy folder if its extension is <b>war</b></li>
+ *  <li>Replace {@code Start-Class} entry in the manifest file with a custom bootstrap class if it's provided by user</li>
+ *  <li>Append system properties to @{code MICRO-INF/payara-boot.properties}</li>
+ *  <li>Bundle aggregated content as artifactName-microbundle.jar under target folder</li>
  * </ul>
  *
  * @author mertcaliskan
  */
 @Mojo(name = "bundle", defaultPhase = LifecyclePhase.INSTALL)
-public class BundleMojo extends AbstractMojo {
-
-    private static final String EXTRACTED_PAYARAMICRO_FOLDERNAME = "/extracted-payaramicro";
-    private static final String MICROINF_DEPLOY_FOLDERNAME = "/MICRO-INF/deploy";
-    private static final String MICROINF_LIB_FOLDERNAME = "/MICRO-INF/lib";
-    private static final String MICROINF_DOMAIN_FOLDERNAME = "/MICRO-INF/domain";
-
-    private static final String OUTPUT_FOLDER = "${project.build.directory}" + EXTRACTED_PAYARAMICRO_FOLDERNAME;
-
-    @Component
-    private MavenProject mavenProject;
-
-    @Component
-    private MavenSession mavenSession;
-
-    @Component
-    private BuildPluginManager pluginManager;
+public class BundleMojo extends BasePayaraMojo {
 
     /**
      * By default this mojo fetches payara-micro with version 4.1.1.171. It can be overridden with this parameter.
@@ -99,172 +80,49 @@ public class BundleMojo extends AbstractMojo {
     private List<ArtifactItem> customJars;
 
     /**
-     * If the extension of the produced artefact is <b>war</b>, it will be copied automatically to MICRO-INF/deploy folder.
+     * If the extension of the produced artifact is <b>war</b>, it will be copied automatically to MICRO-INF/deploy folder.
      * This behaviour can be disabled by setting @{code autoDeployArtifact} to false.
      */
     @Parameter(property = "autoDeployArtifact", defaultValue =  "true")
     private Boolean autoDeployArtifact;
 
     /**
-     * main method for <b>bundle</b> mojo
-     *
-     * @throws MojoExecutionException
-     * @throws MojoFailureException
+     * Replaces the @{code Start-Class} definition that resides in MANIFEST.MF file with the provided class.
      */
+    @Parameter(property = "startClass")
+    private String startClass;
+
+    /**
+     * Appends all system properties defined into the @{code payara-boot.properties} file
+     */
+    @Parameter(property = "appendSystemProperties", defaultValue = "true")
+    private Boolean appendSystemProperties;
+
+
     public void execute() throws MojoExecutionException, MojoFailureException {
-        fetchMicroArtefact();
-
-        if (customJars != null && !customJars.isEmpty()) {
-            copyCustomJars();
-        }
-
-        copyCustomFiles();
-
-        if (autoDeployArtifact && "war".equalsIgnoreCase(mavenProject.getPackaging())) {
-            copyProjectArtefactUnderExplodedMicroArtefact();
-        }
-
-        bundleAggregatedContentAsJar();
+        MojoExecutor.ExecutionEnvironment environment = getEnvironment();
+        BaseProcessor processor = constructProcessorChain();
+        processor.handle(environment);
     }
 
-    private void fetchMicroArtefact() throws MojoExecutionException {
-        executeMojo(
-                plugin(
-                        groupId("org.apache.maven.plugins"),
-                        artifactId("maven-dependency-plugin"),
-                        version("3.0.0")
-                ),
-                goal("unpack"),
-                configuration(
-                        element(name("artifactItems"),
-                                element(name("artifactItem"),
-                                        element("groupId", "fish.payara.extras"),
-                                        element("artifactId", "payara-micro"),
-                                        element("version", payaraVersion)
-                                )
-                        ),
-                        element(name("outputDirectory"), OUTPUT_FOLDER)
-                ),
-                executionEnvironment(
-                        mavenProject,
-                        mavenSession,
-                        pluginManager
-                )
-        );
-    }
+    private BaseProcessor constructProcessorChain() throws MojoExecutionException {
+        MicroFetchProcessor microFetchProcessor = new MicroFetchProcessor();
+        CustomJarCopyProcessor customJarCopyProcessor = new CustomJarCopyProcessor();
+        CustomFileCopyProcessor customFileCopyProcessor = new CustomFileCopyProcessor();
+        BootCommandFileCopyProcessor bootCommandFileCopyProcessor = new BootCommandFileCopyProcessor();
+        ArtifactDeployProcessor artifactDeployProcessor = new ArtifactDeployProcessor();
+        StartClassReplaceProcessor startClassReplaceProcessor = new StartClassReplaceProcessor();
+        SystemPropAppendProcessor systemPropAppendProcessor = new SystemPropAppendProcessor();
+        MicroJarBundleProcessor microJarBundleProcessor = new MicroJarBundleProcessor();
 
-    private void copyCustomJars() throws MojoExecutionException {
-        executeMojo(
-                plugin(
-                        groupId("org.apache.maven.plugins"),
-                        artifactId("maven-dependency-plugin"),
-                        version("3.0.0")
-                ),
-                goal("copy"),
-                configuration(
-                        element(name("artifactItems"),
-                                constructElementsForCustomJars()
-                        ),
-                        element(name("outputDirectory"), OUTPUT_FOLDER + MICROINF_LIB_FOLDERNAME)
-                ),
-                executionEnvironment(
-                        mavenProject,
-                        mavenSession,
-                        pluginManager
-                )
-        );
-    }
+        microFetchProcessor.set(payaraVersion).next(customJarCopyProcessor);
+        customJarCopyProcessor.set(customJars).next(customFileCopyProcessor);
+        customFileCopyProcessor.next(bootCommandFileCopyProcessor);
+        bootCommandFileCopyProcessor.next(artifactDeployProcessor);
+        artifactDeployProcessor.set(autoDeployArtifact, mavenProject.getPackaging()).next(startClassReplaceProcessor);
+        startClassReplaceProcessor.set(startClass).next(systemPropAppendProcessor);
+        systemPropAppendProcessor.set(appendSystemProperties).next(microJarBundleProcessor);
 
-    private void copyCustomFiles() throws MojoExecutionException {
-        executeMojo(
-                plugin(
-                        groupId("org.apache.maven.plugins"),
-                        artifactId("maven-resources-plugin"),
-                        version("3.0.2")
-                ),
-                goal("copy-resources"),
-                configuration(
-                        element(name("outputDirectory"), OUTPUT_FOLDER + MICROINF_DOMAIN_FOLDERNAME),
-                        element(name("resources"),
-                                element(name("resource"),
-                                        element(name("directory"),  "${project.build.resources[0].directory}"),
-                                        element(name("includes"),
-                                                element(name("include"), "domain.xml"),
-                                                element(name("include"), "keystore.jks"),
-                                                element(name("include"), "login.conf"),
-                                                element(name("include"), "logging.properties")
-                                        )
-                                )
-                        )
-                ),
-                executionEnvironment(
-                        mavenProject,
-                        mavenSession,
-                        pluginManager
-                )
-        );
-    }
-
-    private Element[] constructElementsForCustomJars() {
-        List<Element> elements = new ArrayList<Element>();
-        for (ArtifactItem artifactItem : customJars) {
-            Element element = element(name("artifactItem"),
-                    element("groupId", artifactItem.getGroupId()),
-                    element("artifactId", artifactItem.getArtifactId()),
-                    element("version", artifactItem.getVersion())
-            );
-            elements.add(element);
-        }
-        return elements.toArray(new Element[elements.size()]);
-    }
-
-    private void copyProjectArtefactUnderExplodedMicroArtefact() throws MojoExecutionException {
-        executeMojo(
-                plugin(
-                        groupId("org.apache.maven.plugins"),
-                        artifactId("maven-dependency-plugin"),
-                        version("3.0.0")
-                ),
-                goal("copy"),
-                configuration(
-                        element(name("artifactItems"),
-                                element(name("artifactItem"),
-                                        element("groupId", "${project.groupId}"),
-                                        element("artifactId", "${project.artifactId}"),
-                                        element("version", "${project.version}"),
-                                        element("type", "${project.packaging}")
-                                )
-                        ),
-                        element(name("outputDirectory"), OUTPUT_FOLDER + MICROINF_DEPLOY_FOLDERNAME)
-                ),
-                executionEnvironment(
-                        mavenProject,
-                        mavenSession,
-                        pluginManager
-                )
-        );
-    }
-
-    private void bundleAggregatedContentAsJar() throws MojoExecutionException {
-        executeMojo(
-                plugin(
-                        groupId("org.apache.maven.plugins"),
-                        artifactId("maven-jar-plugin"),
-                        version("3.0.2")
-                ),
-                goal("jar"),
-                configuration(
-                        element(name("classesDirectory"), OUTPUT_FOLDER),
-                        element(name("classifier"), "microbundle"),
-                        element(name("archive"),
-                                element(name("manifestFile"), OUTPUT_FOLDER + "/META-INF/MANIFEST.MF")
-                        )
-                ),
-                executionEnvironment(
-                        mavenProject,
-                        mavenSession,
-                        pluginManager
-                )
-        );
+        return microFetchProcessor;
     }
 }
