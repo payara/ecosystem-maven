@@ -41,7 +41,7 @@ The plugin is attached to the install phase by default.
 
 
 ### Goals
-``
+
 - bundle: 
 Bundle mojo incorporates payara-micro with the produced artifact by following steps given as follows:
  
