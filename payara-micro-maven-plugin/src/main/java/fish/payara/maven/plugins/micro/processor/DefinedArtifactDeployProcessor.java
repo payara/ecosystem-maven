@@ -45,17 +45,19 @@ import org.twdata.maven.mojoexecutor.MojoExecutor;
 import java.util.List;
 
 import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.element;
+import static org.twdata.maven.mojoexecutor.MojoExecutor.name;
 
 /**
  * @author mertcaliskan
  */
-public class CustomJarCopyProcessor extends BaseDeployerProcessor {
+public class DefinedArtifactDeployProcessor extends BaseDeployerProcessor {
 
-    private List<ArtifactItem> customJars;
+    private List<ArtifactItem> deployArtifacts;
 
     @Override
     public void handle(MojoExecutor.ExecutionEnvironment environment) throws MojoExecutionException {
-        if (customJars == null || customJars.isEmpty()) {
+        if (deployArtifacts == null || deployArtifacts.isEmpty()) {
             return;
         }
 
@@ -63,9 +65,9 @@ public class CustomJarCopyProcessor extends BaseDeployerProcessor {
                 goal("copy"),
                 configuration(
                         element(name("artifactItems"),
-                                constructElementsFromGivenArtifactItems(customJars)
+                                constructElementsFromGivenArtifactItems(deployArtifacts)
                         ),
-                        element(name("outputDirectory"), OUTPUT_FOLDER + MICROINF_LIB_FOLDER)
+                        element(name("outputDirectory"), OUTPUT_FOLDER + MICROINF_DEPLOY_FOLDER)
                 ),
                 environment
         );
@@ -73,8 +75,8 @@ public class CustomJarCopyProcessor extends BaseDeployerProcessor {
         gotoNext(environment);
     }
 
-    public BaseProcessor set(List<ArtifactItem> customJars) {
-        this.customJars = customJars;
+    public BaseProcessor set(List<ArtifactItem> artifactItems) {
+        this.deployArtifacts = artifactItems;
         return this;
     }
 }

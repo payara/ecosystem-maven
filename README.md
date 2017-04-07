@@ -21,6 +21,14 @@ The plugin is attached to the install phase by default.
         </executions>
         <configuration>
             <startClass>my.custom.start.class.Main</startClass>
+            <deployArtifacts>
+                <artifactItem>
+                    <groupId>org.mycompany</groupId>
+                    <artifactId>my-project</artifactId>
+                    <version>1.0</version>
+                    <packaging>ear</packaging>
+                </artifactItem>
+            </deployArtifacts>            
             <customJars>
                 <artifactItem>
                     <groupId>org.primefaces</groupId>
@@ -37,6 +45,7 @@ The plugin is attached to the install phase by default.
 - startClass (optional): Replaces ```Start-Class``` definition that resides in MANIFEST.MF file with the provided class.
 - appendSystemProperties (optional | default: true): Appends all system properties defined into the ```payara-boot.properties``` file.
 - payaraVersion (optional |  default: 4.1.1.171): By default ```bundle``` mojo fetches payara-micro with version 4.1.1.171.
+- deployArtifacts (optional): Can contain a list of artifactItems, which defines the dependencies with their GAVs to be copied under ```MICRO-INF/deploy``` folder.
 - customJars (optional): Can contain a list of artifactItems, which defines the dependencies with their GAVs to be copied under ```MICRO-INF/lib``` folder.
 
 
@@ -50,6 +59,7 @@ Bundle mojo incorporates payara-micro with the produced artifact by following st
     - Copy any existing ```domain.xml```, ```keystore.jks```, ```login.conf``` and ```login.properties``` files from resources folder into ```/MICRO-INF/domain``` folder
     - Copy any existing ```pre-boot-commands.txt```, ```post-boot-commands.txt``` and ```post-deploy-commands.txt``` files from resources folder into ```/MICRO-INF``` folder
     - Copy produced artifact into ```/MICRO-INF/deploy``` folder if its extension is <b>war</b>.
-    - Replace ```Start-Class``` entry in the manifest file with a custom bootstrap class if it's provided by user
-    - Append system properties to ```MICRO-INF/payara-boot.properties```    
+    - Copy user specified artifacts into ```/MICRO-INF/deploy``` folder.
+    - Replace ```Start-Class``` entry in the manifest file with a custom bootstrap class if it's provided by user.
+    - Append system properties to ```MICRO-INF/payara-boot.properties```.
     - Bundle aggregated content as artifactName-microbundle.jar under target folder.

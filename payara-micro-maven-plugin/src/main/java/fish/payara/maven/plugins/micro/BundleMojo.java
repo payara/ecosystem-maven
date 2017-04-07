@@ -57,6 +57,7 @@ import java.util.List;
  *  <li>Copy any existing @{code domain.xml}, @{code keystore.jks}, @{code login.conf } and @{code login.properties} files from resources folder into /MICRO-INF/domain folder</li>
  *  <li>Copy any existing @{code pre-boot-commands.txt}, @{code post-boot-commands.txt} and @{code post-deploy-commands.txt} files from resources folder into /MICRO-INF folder</li>
  *  <li>Copy produced artifact into /MICRO-INF/deploy folder if its extension is <b>war</b></li>
+ *  <li>Copy user specified artifacts into /MICRO-INF/deploy folder</li>
  *  <li>Replace {@code Start-Class} entry in the manifest file with a custom bootstrap class if it's provided by user</li>
  *  <li>Append system properties to @{code MICRO-INF/payara-boot.properties}</li>
  *  <li>Bundle aggregated content as artifactName-microbundle.jar under target folder</li>
@@ -74,10 +75,16 @@ public class BundleMojo extends BasePayaraMojo {
     private String payaraVersion;
 
     /**
-     * User specified jars that will de copied into the MICRO-INF/lib directory
+     * User specified jars that will be copied into the MICRO-INF/lib directory
      */
     @Parameter
     private List<ArtifactItem> customJars;
+
+    /**
+     * User specified artifacts that will be deployed by copying into the MICRO-INF/deploy directory
+     */
+    @Parameter
+    private List<ArtifactItem> deployArtifacts;
 
     /**
      * If the extension of the produced artifact is <b>war</b>, it will be copied automatically to MICRO-INF/deploy folder.
@@ -111,6 +118,7 @@ public class BundleMojo extends BasePayaraMojo {
         CustomFileCopyProcessor customFileCopyProcessor = new CustomFileCopyProcessor();
         BootCommandFileCopyProcessor bootCommandFileCopyProcessor = new BootCommandFileCopyProcessor();
         ArtifactDeployProcessor artifactDeployProcessor = new ArtifactDeployProcessor();
+        DefinedArtifactDeployProcessor definedArtifactDeployProcessor = new DefinedArtifactDeployProcessor();
         StartClassReplaceProcessor startClassReplaceProcessor = new StartClassReplaceProcessor();
         SystemPropAppendProcessor systemPropAppendProcessor = new SystemPropAppendProcessor();
         MicroJarBundleProcessor microJarBundleProcessor = new MicroJarBundleProcessor();
@@ -119,7 +127,8 @@ public class BundleMojo extends BasePayaraMojo {
         customJarCopyProcessor.set(customJars).next(customFileCopyProcessor);
         customFileCopyProcessor.next(bootCommandFileCopyProcessor);
         bootCommandFileCopyProcessor.next(artifactDeployProcessor);
-        artifactDeployProcessor.set(autoDeployArtifact, mavenProject.getPackaging()).next(startClassReplaceProcessor);
+        artifactDeployProcessor.set(autoDeployArtifact, mavenProject.getPackaging()).next(definedArtifactDeployProcessor);
+        definedArtifactDeployProcessor.set(deployArtifacts).next(startClassReplaceProcessor);
         startClassReplaceProcessor.set(startClass).next(systemPropAppendProcessor);
         systemPropAppendProcessor.set(appendSystemProperties).next(microJarBundleProcessor);
 
