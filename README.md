@@ -26,7 +26,7 @@ The plugin is attached to the install phase by default.
                     <groupId>org.mycompany</groupId>
                     <artifactId>my-project</artifactId>
                     <version>1.0</version>
-                    <packaging>ear</packaging>
+                    <type>ear</type>
                 </artifactItem>
             </deployArtifacts>            
             <customJars>
