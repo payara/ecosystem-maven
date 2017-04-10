@@ -53,25 +53,23 @@ public class ArtifactDeployProcessor extends BaseProcessor {
 
     @Override
     public void handle(MojoExecutor.ExecutionEnvironment environment) throws MojoExecutionException {
-        if (!autoDeployArtifact || !WAR_EXTENSION.equalsIgnoreCase(packaging)) {
-            return;
+        if (autoDeployArtifact && WAR_EXTENSION.equalsIgnoreCase(packaging)) {
+            executeMojo(dependencyPlugin,
+                    goal("copy"),
+                    configuration(
+                            element(name("artifactItems"),
+                                    element(name("artifactItem"),
+                                            element("groupId", "${project.groupId}"),
+                                            element("artifactId", "${project.artifactId}"),
+                                            element("version", "${project.version}"),
+                                            element("type", "${project.packaging}")
+                                    )
+                            ),
+                            element(name("outputDirectory"), OUTPUT_FOLDER + MICROINF_DEPLOY_FOLDER)
+                    ),
+                    environment
+            );
         }
-
-        executeMojo(dependencyPlugin,
-                goal("copy"),
-                configuration(
-                        element(name("artifactItems"),
-                                element(name("artifactItem"),
-                                        element("groupId", "${project.groupId}"),
-                                        element("artifactId", "${project.artifactId}"),
-                                        element("version", "${project.version}"),
-                                        element("type", "${project.packaging}")
-                                )
-                        ),
-                        element(name("outputDirectory"), OUTPUT_FOLDER + MICROINF_DEPLOY_FOLDER)
-                ),
-                environment
-        );
 
         gotoNext(environment);
     }

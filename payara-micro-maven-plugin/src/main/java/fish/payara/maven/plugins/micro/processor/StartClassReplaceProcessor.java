@@ -54,24 +54,23 @@ public class StartClassReplaceProcessor extends BaseProcessor {
 
     @Override
     public void handle(MojoExecutor.ExecutionEnvironment environment) throws MojoExecutionException {
-        if (startClass == null  || "".equals(startClass)) {
-            return;
-        }
+        if (startClass != null  && !"".equals(startClass)) {
 
-        executeMojo(replacerPlugin,
-                goal("replace"),
-                configuration(
-                        element(name("ignoreMissingFile"), "false"),
-                        element(name("file"), METAINF_FOLDER + File.separator + "MANIFEST.MF"),
-                        element(name("replacements"),
-                                element(name("replacement"),
-                                        element(name("token"), "Start-Class:.*"),
-                                        element(name("value"), "Start-Class: " + startClass)
-                                )
-                        )
-                ),
-                environment
-        );
+            executeMojo(replacerPlugin,
+                    goal("replace"),
+                    configuration(
+                            element(name("ignoreMissingFile"), "false"),
+                            element(name("file"), METAINF_FOLDER + File.separator + "MANIFEST.MF"),
+                            element(name("replacements"),
+                                    element(name("replacement"),
+                                            element(name("token"), "Start-Class:.*"),
+                                            element(name("value"), "Start-Class: " + startClass)
+                                    )
+                            )
+                    ),
+                    environment
+            );
+        }
 
         gotoNext(environment);
     }

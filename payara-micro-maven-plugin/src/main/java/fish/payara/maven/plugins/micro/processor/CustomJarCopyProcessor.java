@@ -55,20 +55,19 @@ public class CustomJarCopyProcessor extends BaseDeployerProcessor {
 
     @Override
     public void handle(MojoExecutor.ExecutionEnvironment environment) throws MojoExecutionException {
-        if (customJars == null || customJars.isEmpty()) {
-            return;
-        }
+        if (customJars != null && !customJars.isEmpty()) {
 
-        executeMojo(dependencyPlugin,
-                goal("copy"),
-                configuration(
-                        element(name("artifactItems"),
-                                constructElementsFromGivenArtifactItems(customJars)
-                        ),
-                        element(name("outputDirectory"), OUTPUT_FOLDER + MICROINF_LIB_FOLDER)
-                ),
-                environment
-        );
+            executeMojo(dependencyPlugin,
+                    goal("copy"),
+                    configuration(
+                            element(name("artifactItems"),
+                                    constructElementsFromGivenArtifactItems(customJars)
+                            ),
+                            element(name("outputDirectory"), OUTPUT_FOLDER + MICROINF_LIB_FOLDER)
+                    ),
+                    environment
+            );
+        }
 
         gotoNext(environment);
     }

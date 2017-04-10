@@ -49,7 +49,7 @@ import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
  */
 public abstract class BaseProcessor implements Configuration {
 
-    BaseProcessor nextProcessor;
+    private BaseProcessor nextProcessor;
 
     Plugin dependencyPlugin =
             plugin(groupId("org.apache.maven.plugins"), artifactId("maven-dependency-plugin"), version("3.0.0"));

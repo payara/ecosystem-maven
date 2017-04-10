@@ -57,20 +57,19 @@ public class DefinedArtifactDeployProcessor extends BaseDeployerProcessor {
 
     @Override
     public void handle(MojoExecutor.ExecutionEnvironment environment) throws MojoExecutionException {
-        if (deployArtifacts == null || deployArtifacts.isEmpty()) {
-            return;
-        }
+        if (deployArtifacts != null && !deployArtifacts.isEmpty()) {
 
-        executeMojo(dependencyPlugin,
-                goal("copy"),
-                configuration(
-                        element(name("artifactItems"),
-                                constructElementsFromGivenArtifactItems(deployArtifacts)
-                        ),
-                        element(name("outputDirectory"), OUTPUT_FOLDER + MICROINF_DEPLOY_FOLDER)
-                ),
-                environment
-        );
+            executeMojo(dependencyPlugin,
+                    goal("copy"),
+                    configuration(
+                            element(name("artifactItems"),
+                                    constructElementsFromGivenArtifactItems(deployArtifacts)
+                            ),
+                            element(name("outputDirectory"), OUTPUT_FOLDER + MICROINF_DEPLOY_FOLDER)
+                    ),
+                    environment
+            );
+        }
 
         gotoNext(environment);
     }

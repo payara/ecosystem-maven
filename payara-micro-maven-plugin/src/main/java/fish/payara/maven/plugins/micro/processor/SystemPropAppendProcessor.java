@@ -56,26 +56,25 @@ public class SystemPropAppendProcessor extends BaseProcessor {
 
     @Override
     public void handle(MojoExecutor.ExecutionEnvironment environment) throws MojoExecutionException {
-        if (!appendSystemProperties) {
-            return;
-        }
+        if (appendSystemProperties) {
 
-        executeMojo(plainTextPlugin,
-                goal("write"),
-                configuration(
-                        element(name("outputDirectory"), OUTPUT_FOLDER + MICROINF_FOLDER),
-                        element(name("files"),
-                                element(name("file"),
-                                        element(name("name"),"payara-boot.properties"),
-                                        element(name("append"),"true"),
-                                        element(name("lines"),
-                                                constructElementsForSystemProperties()
-                                        )
-                                )
-                        )
-                ),
-                environment
-        );
+            executeMojo(plainTextPlugin,
+                    goal("write"),
+                    configuration(
+                            element(name("outputDirectory"), OUTPUT_FOLDER + MICROINF_FOLDER),
+                            element(name("files"),
+                                    element(name("file"),
+                                            element(name("name"),"payara-boot.properties"),
+                                            element(name("append"),"true"),
+                                            element(name("lines"),
+                                                    constructElementsForSystemProperties()
+                                            )
+                                    )
+                            )
+                    ),
+                    environment
+            );
+        }
 
         gotoNext(environment);
     }
