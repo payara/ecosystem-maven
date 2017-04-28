@@ -51,7 +51,7 @@ This goal bundles the attached project's artifact into uber jar with specified c
 - __customJars__ (optional): Can contain a list of artifactItems, which defines the dependencies with their GAVs to be copied under ```MICRO-INF/lib``` folder.
 
 ### start
-This goal start payara-micro with specified configurations. ```start``` is attached to the ```payara-micro``` phase. It can be executed as ```mvn payara-micro:start```.
+This goal starts payara-micro with specified configurations. ```start``` is attached to the ```payara-micro``` phase. It can be executed as ```mvn payara-micro:start```.
 
     <plugin>
         <groupId>fish.payara.maven.plugins</groupId>
