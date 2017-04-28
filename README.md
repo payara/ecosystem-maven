@@ -8,7 +8,7 @@ Payara Micro Maven Plugin that incorporates payara-micro with the produced artif
 ### Latest version available: 1.0.0-SNAPSHOT
 
 ### bundle
-This goal bundles the attached project's artifact into uber jar with specified configurations. ```bundle``` is attached to the ```install``` phase by default. 
+This goal bundles the attached project's artifact into uber jar with specified configurations. ```bundle``` is attached to the ```install``` phase by default. A sample usage would as follows:
 
     <plugin>
         <groupId>fish.payara.maven.plugins</groupId>
@@ -51,7 +51,7 @@ This goal bundles the attached project's artifact into uber jar with specified c
 - __customJars__ (optional): Can contain a list of artifactItems, which defines the dependencies with their GAVs to be copied under ```MICRO-INF/lib``` folder.
 
 ### start
-This goal starts payara-micro with specified configurations. ```start``` is attached to the ```payara-micro``` phase. It can be executed as ```mvn payara-micro:start```.
+This goal start payara-micro with specified configurations. ```start``` is attached to the ```payara-micro``` phase. It can be executed as ```mvn payara-micro:start```. A sample usage would as follows:
 
     <plugin>
         <groupId>fish.payara.maven.plugins</groupId>
@@ -81,6 +81,10 @@ This goal starts payara-micro with specified configurations. ```start``` is atta
                     <key>--domainconfig</key>
                     <value>/path/to/domain.xml</value>
                 </option>
+                <option>
+                    <key>--autoBindHttp</key>
+                    <value>true</value>
+                </option>
             </commandLineOptions>
         </configuration>
     </plugin>
@@ -98,7 +102,9 @@ This goal starts payara-micro with specified configurations. ```start``` is atta
 
 
 ### stop
-This goal stops payara-micro with specified configurations. ```stop``` is attached to the ```payara-micro``` phase. It can be executed as ```mvn payara-micro:stop```.
+This goal stops payara-micro with specified configurations. By default this goal tries to find out currently executing payara-micro by checking the running uberjar. 
+If an ```artifactItem``` is defined, it will take precedence for identifying currently running payara-micro. If ```processId``` is defined, this takes the highest precedence and goal immediately kills the executing payara-micro process. 
+```stop``` is attached to the ```payara-micro``` phase. It can be executed as ```mvn payara-micro:stop```. A sample usage would as follows:
 
     <plugin>
         <groupId>fish.payara.maven.plugins</groupId>
@@ -111,8 +117,17 @@ This goal stops payara-micro with specified configurations. ```stop``` is attach
                 </goals>
             </execution>
         </executions>
+        <configuration>
+            <processId>32333</processId>
+            <artifactItem>
+                <groupId>fish.payara.extras</groupId>
+                <artifactId>payara-micro</artifactId>
+                <version>4.1.1.171</version>
+            </artifactItem>
+        </configuration>        
     </plugin>
 
 ### Configuration tags
 
-N/A
+- __processId__ (optional |): Process id of the running payara-micro.
+- __artifactItem__ (optional): Defines payara-micro artifact with its coordinates. This information is used to identify the process id of the running payara-micro.

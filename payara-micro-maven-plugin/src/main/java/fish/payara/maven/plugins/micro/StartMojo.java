@@ -207,7 +207,7 @@ public class StartMojo extends BasePayaraMojo {
                 microProcess.exitValue();
             } catch (IllegalThreadStateException e) {
                 microProcess.destroy();
-                System.out.println("Terminated payara-micro.");
+                getLog().info("Terminated payara-micro.");
             }
         }
     }
