@@ -47,6 +47,11 @@
 
     <description>Payara Micro Maven Plugin that incorporates payara-micro with the produced artifact</description>
 
+    <properties>
+        <java.compiler.source.version>1.7</java.compiler.source.version>
+        <java.compiler.target.version>1.7</java.compiler.target.version>
+    </properties>
+
     <developers>
         <developer>
             <id>mertcaliskan</id>
@@ -61,6 +66,16 @@
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.6.1</version>
+                <configuration>
+                    <source>${java.compiler.source.version}</source>
+                    <target>${java.compiler.target.version}</target>
+                </configuration>
+            </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-plugin-plugin</artifactId>

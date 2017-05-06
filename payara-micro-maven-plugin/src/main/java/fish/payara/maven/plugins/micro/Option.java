@@ -38,23 +38,28 @@
  */
 package fish.payara.maven.plugins.micro;
 
-import java.io.File;
-
 /**
  * @author mertcaliskan
  */
-public interface Configuration {
-    String EXTRACTED_PAYARAMICRO_FOLDER = File.separator + "extracted-payaramicro";
-    String MICROINF_FOLDER = File.separator + "MICRO-INF";
+public class Option {
 
-    String MICROINF_DEPLOY_FOLDER = MICROINF_FOLDER + File.separator + "deploy";
-    String MICROINF_LIB_FOLDER = MICROINF_FOLDER + File.separator + "lib";
-    String MICROINF_DOMAIN_FOLDER = MICROINF_FOLDER + File.separator + "domain";
-    String OUTPUT_FOLDER = "${project.build.directory}" + EXTRACTED_PAYARAMICRO_FOLDER;
-    String METAINF_FOLDER = OUTPUT_FOLDER + File.separator + "META-INF";
+    private String key;
+    private String value;
 
-    String WAR_EXTENSION = "war";
-    String MICROBUNDLE_EXTENSION = "microbundle";
 
-    String PAYARA_MICRO_THREAD_NAME = "PayaraMicroThread";
+    public String getKey() {
+        return key;
+    }
+
+    public void setKey(String key) {
+        this.key = key;
+    }
+
+    public String getValue() {
+        return value;
+    }
+
+    public void setValue(String value) {
+        this.value = value;
+    }
 }

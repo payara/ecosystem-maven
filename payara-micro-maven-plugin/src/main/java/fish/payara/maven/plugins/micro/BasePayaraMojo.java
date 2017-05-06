@@ -56,7 +56,7 @@ abstract class BasePayaraMojo extends AbstractMojo {
     MavenProject mavenProject;
 
     @Component
-    private MavenSession mavenSession;
+    MavenSession mavenSession;
 
     @Component
     private BuildPluginManager pluginManager;
