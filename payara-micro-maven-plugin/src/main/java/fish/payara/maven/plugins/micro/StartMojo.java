@@ -52,6 +52,8 @@ import org.apache.maven.plugins.dependency.fromConfiguration.ArtifactItem;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -157,9 +159,15 @@ public class StartMojo extends BasePayaraMojo {
         }
     }
 
-    private String decideOnWhichMicroToUse() {
+    private String decideOnWhichMicroToUse() throws MojoExecutionException {
         if (useUberJar) {
-            return evaluateProjectArtifactAbsolutePath(true);
+            String path = evaluateProjectArtifactAbsolutePath(true);
+
+            if (!Files.exists(Paths.get(path))) {
+                throw new MojoExecutionException("\"useUberJar\" option was set to \"true\" but detected path " + path + " does not exist. You need to execute the \"bundle\" goal before using this option.");
+            }
+
+            return path;
         }
 
         if (payaraMicroAbsolutePath != null) {
@@ -178,7 +186,7 @@ public class StartMojo extends BasePayaraMojo {
             return payaraMicroArtifact.getFile().getAbsolutePath();
         }
 
-        return null;
+        throw new MojoExecutionException("Could not determine Payara Micro path. Please set it by defining either \"useUberJar\", \"payaraMicroAbsolutePath\" or \"artifactItem\" configuration options.");
     }
 
     private String evaluateProjectArtifactAbsolutePath(Boolean withExtension) {
