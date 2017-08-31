@@ -5,7 +5,7 @@ Repository for Payara Maven plugins
 
 Payara Micro Maven Plugin that incorporates payara-micro with the produced artifact. It requires JDK 1.7+.
  
-### Latest version available: 1.0.0
+### Latest version available: 1.0.1-SNAPSHOT
 
 ### bundle
 This goal bundles the attached project's artifact into uber jar with specified configurations. ```bundle``` is attached to the ```install``` phase by default. A sample usage would as follows:
