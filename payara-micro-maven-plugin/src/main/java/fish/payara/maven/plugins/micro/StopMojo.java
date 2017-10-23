@@ -69,6 +69,11 @@ public class StopMojo extends BasePayaraMojo {
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
+        if (skip) {
+            getLog().info("Stop mojo execution is skipped");
+            return;
+        }
+
         if (processId != null) {
             killProcess(processId);
         }

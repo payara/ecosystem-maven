@@ -42,6 +42,7 @@ import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugins.annotations.Component;
+import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 
 import static org.twdata.maven.mojoexecutor.MojoExecutor.ExecutionEnvironment;
@@ -60,6 +61,9 @@ abstract class BasePayaraMojo extends AbstractMojo {
 
     @Component
     private BuildPluginManager pluginManager;
+
+    @Parameter(property = "skip", defaultValue = "false")
+    protected Boolean skip;
 
     private ExecutionEnvironment environment;
 
