@@ -97,6 +97,11 @@ public class StartMojo extends BasePayaraMojo {
     private Process microProcess;
 
     public void execute() throws MojoExecutionException, MojoFailureException {
+        if (skip) {
+            getLog().info("Start mojo execution is skipped");
+            return;
+        }
+
         final String path = decideOnWhichMicroToUse();
 
         ThreadGroup threadGroup = new ThreadGroup(PAYARA_MICRO_THREAD_NAME);

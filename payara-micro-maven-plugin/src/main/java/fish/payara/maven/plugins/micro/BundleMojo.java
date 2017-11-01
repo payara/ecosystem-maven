@@ -107,6 +107,11 @@ public class BundleMojo extends BasePayaraMojo {
 
 
     public void execute() throws MojoExecutionException, MojoFailureException {
+        if (skip) {
+            getLog().info("Bundle mojo execution is skipped");
+            return;
+        }
+
         MojoExecutor.ExecutionEnvironment environment = getEnvironment();
         BaseProcessor processor = constructProcessorChain();
         processor.handle(environment);
