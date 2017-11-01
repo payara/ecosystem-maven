@@ -98,7 +98,7 @@ This goal start payara-micro with specified configurations. ```start``` is attac
 - __artifactItem__ (optional): Defines payara-micro artifact with its coordinates. Specified artifact should be available in local maven repository.
 - __deployWar__ (optional | default: false): If the attached project is of type WAR, it will automatically be deployed to payara-micro if ```deployWar``` is set to ```true```. 
 - __copySystemProperties__ (optional | default: false): Allows passing all system properties available within the maven build to the payara-micro execution.
-- __commandLineOptions__ (optional): Defines a lists of command line options that will be passed onto payara-micro
+- __commandLineOptions__ (optional): Defines a lists of command line options that will be passed onto payara-micro. Command line options can either be defined as key,value pairs or just as list of keys or values separately.
 
 
 ### stop

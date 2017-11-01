@@ -124,9 +124,15 @@ public class StartMojo extends BasePayaraMojo {
                     actualArgs.add(indice++, "--deploy");
                     actualArgs.add(indice++, evaluateProjectArtifactAbsolutePath(false));
                 }
-                for (Option option : commandLineOptions) {
-                    actualArgs.add(indice++, option.getKey());
-                    actualArgs.add(indice++, option.getValue());
+                if (commandLineOptions != null) {
+                    for (Option option : commandLineOptions) {
+                        if (option.getKey() != null) {
+                            actualArgs.add(indice++, option.getKey());
+                        }
+                        if (option.getValue() != null) {
+                            actualArgs.add(indice++, option.getValue());
+                        }
+                    }
                 }
 
                 try {
