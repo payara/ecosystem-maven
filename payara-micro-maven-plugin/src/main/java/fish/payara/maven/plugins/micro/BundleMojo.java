@@ -132,7 +132,7 @@ public class BundleMojo extends BasePayaraMojo {
         customJarCopyProcessor.set(customJars).next(customFileCopyProcessor);
         customFileCopyProcessor.next(bootCommandFileCopyProcessor);
         bootCommandFileCopyProcessor.next(artifactDeployProcessor);
-        artifactDeployProcessor.set(autoDeployArtifact, mavenProject.getPackaging()).next(definedArtifactDeployProcessor);
+        artifactDeployProcessor.set(autoDeployArtifact, mavenProject.getPackaging(), mavenProject.getBuild().getFinalName()).next(definedArtifactDeployProcessor);
         definedArtifactDeployProcessor.set(deployArtifacts).next(startClassReplaceProcessor);
         startClassReplaceProcessor.set(startClass).next(systemPropAppendProcessor);
         systemPropAppendProcessor.set(appendSystemProperties).next(microJarBundleProcessor);

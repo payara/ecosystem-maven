@@ -50,33 +50,54 @@ public class ArtifactDeployProcessor extends BaseProcessor {
 
     private Boolean autoDeployArtifact;
     private String packaging;
+    private String finalName;
 
     @Override
     public void handle(MojoExecutor.ExecutionEnvironment environment) throws MojoExecutionException {
         if (autoDeployArtifact && WAR_EXTENSION.equalsIgnoreCase(packaging)) {
-            executeMojo(dependencyPlugin,
-                    goal("copy"),
-                    configuration(
-                            element(name("artifactItems"),
-                                    element(name("artifactItem"),
-                                            element("groupId", "${project.groupId}"),
-                                            element("artifactId", "${project.artifactId}"),
-                                            element("version", "${project.version}"),
-                                            element("type", "${project.packaging}")
-                                    )
-                            ),
-                            element(name("outputDirectory"), OUTPUT_FOLDER + MICROINF_DEPLOY_FOLDER)
-                    ),
-                    environment
-            );
+            if (finalName != null && !finalName.isEmpty()) {
+                executeMojo(resourcesPlugin,
+                        goal("copy-resources"),
+                        configuration(
+                                element(name("resources"),
+                                        element(name("resource"),
+                                                element("directory", "${project.build.directory}"),
+                                                element(name("includes"),
+                                                        element("include", finalName + "." + packaging)
+                                                )
+                                        )
+                                ),
+                                element(name("outputDirectory"), OUTPUT_FOLDER + MICROINF_DEPLOY_FOLDER)
+                        ),
+                        environment
+                );
+            }
+            else {
+                executeMojo(dependencyPlugin,
+                        goal("copy"),
+                        configuration(
+                                element(name("artifactItems"),
+                                        element(name("artifactItem"),
+                                                element("groupId", "${project.groupId}"),
+                                                element("artifactId", "${project.artifactId}"),
+                                                element("version", "${project.version}"),
+                                                element("type", "${project.packaging}")
+                                        )
+                                ),
+                                element(name("outputDirectory"), OUTPUT_FOLDER + MICROINF_DEPLOY_FOLDER)
+                        ),
+                        environment
+                );
+            }
         }
 
         gotoNext(environment);
     }
 
-    public BaseProcessor set(Boolean autoDeployArtifact, String packaging) {
+    public BaseProcessor set(Boolean autoDeployArtifact, String packaging, String finalName) {
         this.autoDeployArtifact = autoDeployArtifact;
         this.packaging = packaging;
+        this.finalName = finalName;
         return this;
     }
 }
