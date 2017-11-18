@@ -113,7 +113,7 @@ public class StopMojo extends BasePayaraMojo {
     private void killProcess(String processId) {
         try {
             final Runtime re = Runtime.getRuntime();
-            Process killProcess = re.exec("kill -2 " + processId);
+            Process killProcess = re.exec("kill " + processId);
             int result = killProcess.waitFor();
             if (result != 0) {
                 getLog().error(ERROR_MESSAGE);
