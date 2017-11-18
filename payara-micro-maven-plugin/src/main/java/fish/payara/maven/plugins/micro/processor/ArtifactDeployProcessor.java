@@ -38,6 +38,7 @@
  */
 package fish.payara.maven.plugins.micro.processor;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.twdata.maven.mojoexecutor.MojoExecutor;
 
@@ -55,7 +56,7 @@ public class ArtifactDeployProcessor extends BaseProcessor {
     @Override
     public void handle(MojoExecutor.ExecutionEnvironment environment) throws MojoExecutionException {
         if (autoDeployArtifact && WAR_EXTENSION.equalsIgnoreCase(packaging)) {
-            if (finalName != null && !finalName.isEmpty()) {
+            if (StringUtils.isNotEmpty(finalName)) {
                 executeMojo(resourcesPlugin,
                         goal("copy-resources"),
                         configuration(
