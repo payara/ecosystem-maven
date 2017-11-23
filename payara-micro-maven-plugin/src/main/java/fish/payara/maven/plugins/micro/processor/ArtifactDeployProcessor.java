@@ -38,6 +38,7 @@
  */
 package fish.payara.maven.plugins.micro.processor;
 
+import java.io.File;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.twdata.maven.mojoexecutor.MojoExecutor;
 
@@ -54,6 +55,7 @@ public class ArtifactDeployProcessor extends BaseProcessor {
     @Override
     public void handle(MojoExecutor.ExecutionEnvironment environment) throws MojoExecutionException {
         if (autoDeployArtifact && WAR_EXTENSION.equalsIgnoreCase(packaging)) {
+
             executeMojo(dependencyPlugin,
                     goal("copy"),
                     configuration(
@@ -69,6 +71,11 @@ public class ArtifactDeployProcessor extends BaseProcessor {
                     ),
                     environment
             );
+            // Payara Micro deploys based on last modified date, so make sure that the artifact file is deployed last
+            File copiedFile = new File(OUTPUT_FOLDER + MICROINF_DEPLOY_FOLDER + environment.getMavenProject().getArtifact().getFile().getName());
+            if (copiedFile.exists()) {
+                copiedFile.setLastModified(System.currentTimeMillis());
+            }
         }
 
         gotoNext(environment);
