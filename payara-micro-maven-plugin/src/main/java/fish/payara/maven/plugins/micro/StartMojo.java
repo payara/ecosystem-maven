@@ -59,6 +59,7 @@ import java.util.List;
 
 import static fish.payara.maven.plugins.micro.Configuration.PAYARA_MICRO_THREAD_NAME;
 import static fish.payara.maven.plugins.micro.Configuration.WAR_EXTENSION;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Run mojo that executes payara-micro
@@ -161,11 +162,27 @@ public class StartMojo extends BasePayaraMojo {
                 }
             }
         });
+        final Thread shutdownHook = new Thread() {
+            @Override
+            public void run() {
+                if (microProcess != null && microProcess.isAlive()) {
+                    try {
+                        microProcess.destroy();
+                        microProcess.waitFor(1, TimeUnit.MINUTES);
+                    } catch (InterruptedException ex) {
+                    } finally {
+                        microProcess.destroyForcibly();
+                    }
+                }
+            }
+            
+        };
         if (daemon) {
             microProcessorThread.setDaemon(true);
             microProcessorThread.start();
         }
         else {
+            Runtime.getRuntime().addShutdownHook(shutdownHook);
             microProcessorThread.run();
         }
     }
