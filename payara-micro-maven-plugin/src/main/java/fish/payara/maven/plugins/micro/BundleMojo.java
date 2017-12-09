@@ -94,6 +94,13 @@ public class BundleMojo extends BasePayaraMojo {
     private Boolean autoDeployArtifact;
 
     /**
+     * Strip the version off the copied produced artifact <b>war</b> file. This is useful as Payara Micro forces the deployment context to the <b>war</b> file name.
+     * E.g. @{code MICRO-INF/deploy/example-1.0.0-SNAPSHOT.war} becomes @{code MICRO-INF/deploy/example.war}.
+     */
+    @Parameter(property = "stripVersionDefaultArtifact", defaultValue = "false")
+    private Boolean stripVersionDefaultArtifact;
+
+    /**
      * Replaces the @{code Start-Class} definition that resides in MANIFEST.MF file with the provided class.
      */
     @Parameter(property = "startClass")
@@ -132,7 +139,7 @@ public class BundleMojo extends BasePayaraMojo {
         customJarCopyProcessor.set(customJars).next(customFileCopyProcessor);
         customFileCopyProcessor.next(bootCommandFileCopyProcessor);
         bootCommandFileCopyProcessor.next(artifactDeployProcessor);
-        artifactDeployProcessor.set(autoDeployArtifact, mavenProject.getPackaging()).next(definedArtifactDeployProcessor);
+        artifactDeployProcessor.set(autoDeployArtifact, mavenProject.getPackaging(), stripVersionDefaultArtifact).next(definedArtifactDeployProcessor);
         definedArtifactDeployProcessor.set(deployArtifacts).next(startClassReplaceProcessor);
         startClassReplaceProcessor.set(startClass).next(systemPropAppendProcessor);
         systemPropAppendProcessor.set(appendSystemProperties).next(microJarBundleProcessor);

@@ -54,6 +54,7 @@ public class ArtifactDeployProcessor extends BaseProcessor {
 
     private Boolean autoDeployArtifact;
     private String packaging;
+    private Boolean stripVersion;
 
     @Override
     public void handle(MojoExecutor.ExecutionEnvironment environment) throws MojoExecutionException {
@@ -84,6 +85,7 @@ public class ArtifactDeployProcessor extends BaseProcessor {
                                             elements.toArray(new Element[0])
                                     )
                             ),
+                            element(name("stripVersion"), stripVersion.toString()),
                             element(name("outputDirectory"), OUTPUT_FOLDER + MICROINF_DEPLOY_FOLDER)
                     ),
                     environment
@@ -93,9 +95,10 @@ public class ArtifactDeployProcessor extends BaseProcessor {
         gotoNext(environment);
     }
 
-    public BaseProcessor set(Boolean autoDeployArtifact, String packaging) {
+    public BaseProcessor set(Boolean autoDeployArtifact, String packaging, Boolean stripVersion) {
         this.autoDeployArtifact = autoDeployArtifact;
         this.packaging = packaging;
+        this.stripVersion = stripVersion;
         return this;
     }
 }
