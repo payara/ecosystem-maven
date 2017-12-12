@@ -39,8 +39,12 @@
 package fish.payara.maven.plugins.micro.processor;
 
 import java.io.File;
+import org.apache.maven.model.Build;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.twdata.maven.mojoexecutor.MojoExecutor;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
 
@@ -54,17 +58,31 @@ public class ArtifactDeployProcessor extends BaseProcessor {
 
     @Override
     public void handle(MojoExecutor.ExecutionEnvironment environment) throws MojoExecutionException {
+
+        Build build = environment.getMavenProject().getBuild();
+        String finalName = build != null ?
+                build.getFinalName() != null ?
+                        !build.getFinalName().isEmpty() ?
+                                build.getFinalName() : null : null : null;
+
         if (autoDeployArtifact && WAR_EXTENSION.equalsIgnoreCase(packaging)) {
+            List<Element> elements = new ArrayList<>();
+
+            elements.add(element("groupId", "${project.groupId}"));
+            elements.add(element("artifactId", "${project.artifactId}"));
+            elements.add(element("version", "${project.version}"));
+            elements.add(element("type", "${project.packaging}"));
+
+            if (finalName != null) {
+                elements.add(element("destFileName", finalName + "." + WAR_EXTENSION));
+            }
 
             executeMojo(dependencyPlugin,
                     goal("copy"),
                     configuration(
                             element(name("artifactItems"),
                                     element(name("artifactItem"),
-                                            element("groupId", "${project.groupId}"),
-                                            element("artifactId", "${project.artifactId}"),
-                                            element("version", "${project.version}"),
-                                            element("type", "${project.packaging}")
+                                            elements.toArray(new Element[0])
                                     )
                             ),
                             element(name("outputDirectory"), OUTPUT_FOLDER + MICROINF_DEPLOY_FOLDER)
