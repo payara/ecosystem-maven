@@ -46,7 +46,7 @@ This goal bundles the attached project's artifact into uber jar with specified c
 - __autoDeployArtifact__ (optional | default: true): If the extension of the produced artifact is <b>war</b>, it will be copied automatically to ```MICRO-INF/deploy``` folder when this property is set to true.
 - __startClass__ (optional): Replaces ```Start-Class``` definition that resides in MANIFEST.MF file with the provided class.
 - __appendSystemProperties__ (optional | default: true): Appends all system properties defined into the ```payara-boot.properties``` file.
-- __payaraVersion__ (optional |  default: 4.1.1.171): By default ```bundle``` mojo fetches payara-micro with version 4.1.1.171.
+- __payaraVersion__ (optional |  default: 4.1.2.174): By default ```bundle``` mojo fetches payara-micro with version 4.1.2.174.
 - __deployArtifacts__ (optional): Can contain a list of artifactItems, which defines the dependencies with their GAVs to be copied under ```MICRO-INF/deploy``` folder.
 - __customJars__ (optional): Can contain a list of artifactItems, which defines the dependencies with their GAVs to be copied under ```MICRO-INF/lib``` folder.
 
@@ -72,7 +72,7 @@ This goal start payara-micro with specified configurations. ```start``` is attac
             <artifactItem>
                 <groupId>fish.payara.extras</groupId>
                 <artifactId>payara-micro</artifactId>
-                <version>4.1.1.171</version>
+                <version>4.1.2.174</version>
             </artifactItem>
             <deployWar>true</deployWar>
             <copySystemProperties>true</copySystemProperties>
@@ -122,7 +122,7 @@ If an ```artifactItem``` is defined, it will take precedence for identifying cur
             <artifactItem>
                 <groupId>fish.payara.extras</groupId>
                 <artifactId>payara-micro</artifactId>
-                <version>4.1.1.171</version>
+                <version>4.1.2.174</version>
             </artifactItem>
         </configuration>        
     </plugin>
