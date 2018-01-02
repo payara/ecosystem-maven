@@ -52,7 +52,8 @@ import java.util.List;
 /**
  * Bundle mojo incorporates payara-micro with the produced artifact by following steps given as follows:
  * <ul>
- *  <li>Fetch payara-micro from repository and open it to a folder. The default version is <i>4.1.1.171</i>. Specific version can be provided with @{code payaraVersion} parameter</li>
+ *  <li>Fetch payara-micro from repository and open it to a folder. The default version is <i>4.1.2.174</i>. Specific
+ *  version can be provided with @{code payaraVersion} parameter</li>
  *  <li>Fetch user specified jars from repository</li>
  *  <li>Copy any existing @{code domain.xml}, @{code keystore.jks}, @{code login.conf } and @{code login.properties} files from resources folder into /MICRO-INF/domain folder</li>
  *  <li>Copy any existing @{code pre-boot-commands.txt}, @{code post-boot-commands.txt} and @{code post-deploy-commands.txt} files from resources folder into /MICRO-INF folder</li>
@@ -69,9 +70,9 @@ import java.util.List;
 public class BundleMojo extends BasePayaraMojo {
 
     /**
-     * By default this mojo fetches payara-micro with version 4.1.1.171. It can be overridden with this parameter.
+     * By default this mojo fetches payara-micro with version 4.1.2.174. It can be overridden with this parameter.
      */
-    @Parameter(property = "payaraVersion", defaultValue = "4.1.1.171")
+    @Parameter(property = "payaraVersion", defaultValue = "4.1.2.174")
     private String payaraVersion;
 
     /**
