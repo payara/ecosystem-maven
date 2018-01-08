@@ -123,8 +123,8 @@ public class BundleMojo extends BasePayaraMojo {
         CustomJarCopyProcessor customJarCopyProcessor = new CustomJarCopyProcessor();
         CustomFileCopyProcessor customFileCopyProcessor = new CustomFileCopyProcessor();
         BootCommandFileCopyProcessor bootCommandFileCopyProcessor = new BootCommandFileCopyProcessor();
-        ArtifactDeployProcessor artifactDeployProcessor = new ArtifactDeployProcessor();
         DefinedArtifactDeployProcessor definedArtifactDeployProcessor = new DefinedArtifactDeployProcessor();
+        ArtifactDeployProcessor artifactDeployProcessor = new ArtifactDeployProcessor();
         StartClassReplaceProcessor startClassReplaceProcessor = new StartClassReplaceProcessor();
         SystemPropAppendProcessor systemPropAppendProcessor = new SystemPropAppendProcessor();
         MicroJarBundleProcessor microJarBundleProcessor = new MicroJarBundleProcessor();
@@ -132,9 +132,9 @@ public class BundleMojo extends BasePayaraMojo {
         microFetchProcessor.set(payaraVersion).next(customJarCopyProcessor);
         customJarCopyProcessor.set(customJars).next(customFileCopyProcessor);
         customFileCopyProcessor.next(bootCommandFileCopyProcessor);
-        bootCommandFileCopyProcessor.next(artifactDeployProcessor);
-        artifactDeployProcessor.set(autoDeployArtifact, mavenProject.getPackaging()).next(definedArtifactDeployProcessor);
-        definedArtifactDeployProcessor.set(deployArtifacts).next(startClassReplaceProcessor);
+        bootCommandFileCopyProcessor.next(definedArtifactDeployProcessor);
+        definedArtifactDeployProcessor.set(deployArtifacts).next(artifactDeployProcessor);
+        artifactDeployProcessor.set(autoDeployArtifact, mavenProject.getPackaging()).next(startClassReplaceProcessor);
         startClassReplaceProcessor.set(startClass).next(systemPropAppendProcessor);
         systemPropAppendProcessor.set(appendSystemProperties).next(microJarBundleProcessor);
 
