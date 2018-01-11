@@ -67,6 +67,7 @@ This goal start payara-micro with specified configurations. ```start``` is attac
         <configuration>
             <useUberJar>true</useUberJar>
             <daemon>true</daemon>
+            <immediateExit>false</immediateExit>
             <javaPath>/path/to/Java/Home</javaPath>
             <payaraMicroAbsolutePath>/path/to/payara-micro.jar</payaraMicroAbsolutePath>
             <artifactItem>
@@ -92,7 +93,8 @@ This goal start payara-micro with specified configurations. ```start``` is attac
 ### Configuration tags
 
 - __useUberJar__ (optional | default: false): Use created uber-jar that resides in ```target``` folder. The name of the jar artifact will be resolved automatically by evaluating its final name, artifact id and version. This configuration has the higher precedence compared to ```payaraMicroAbsolutePath``` and ```artifactItem```.   
-- __deamon__ (optional | default: false): Starts payara-micro in separate JVM process and continues with the maven build. 
+- __daemon__ (optional | default: false): Starts payara-micro in separate JVM process and continues with the maven build.
+- __immediateExit__ (optional | default: false): If payara-micro is executed in ```daemon``` mode, the executor thread will wait for the ready message before shutting down its process. By setting ```immediateExit``` to ```true``` you can skip this and instantly interrupt the executor thread. 
 - __javaPath__ (optional | default: "java"): Absolute path to the ```java``` executable.
 - __payaraMicroAbsolutePath__ (optional): Absolute path to payara-micro executable.
 - __artifactItem__ (optional): Defines payara-micro artifact with its coordinates. Specified artifact should be available in local maven repository.
