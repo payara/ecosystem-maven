@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2017 Payara Foundation and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017-2018 Payara Foundation and/or its affiliates. All rights reserved.
  *
  * The contents of this file are subject to the terms of either the GNU
  * General Public License Version 2 only ("GPL") or the Common Development
@@ -38,7 +38,7 @@
  */
 package fish.payara.maven.plugins.micro;
 
-import org.apache.commons.compress.utils.IOUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.DefaultArtifact;
@@ -49,17 +49,15 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.dependency.fromConfiguration.ArtifactItem;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static fish.payara.maven.plugins.micro.Configuration.PAYARA_MICRO_THREAD_NAME;
 import static fish.payara.maven.plugins.micro.Configuration.WAR_EXTENSION;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Run mojo that executes payara-micro
@@ -69,6 +67,7 @@ import java.util.concurrent.TimeUnit;
 @Mojo(name = "start")
 public class StartMojo extends BasePayaraMojo {
 
+    private static final CharSequence MSG_PAYARA_MICRO_READY = "Payara Micro  4.1.2.174 #badassmicrofish (build 192) ready in";
     String ERROR_MESSAGE = "Errors occurred while executing payara-micro.";
 
     @Parameter(property = "javaPath", defaultValue = "java")
@@ -77,8 +76,11 @@ public class StartMojo extends BasePayaraMojo {
     @Parameter(property = "payaraMicroAbsolutePath")
     private String payaraMicroAbsolutePath;
 
-    @Parameter(property = "deamon", defaultValue = "false")
+    @Parameter(property = "daemon", defaultValue = "false")
     private Boolean daemon;
+
+    @Parameter(property = "immediateExit", defaultValue = "false")
+    private Boolean immediateExit;
 
     @Parameter(property = "artifactItem")
     private ArtifactItem artifactItem;
@@ -96,6 +98,12 @@ public class StartMojo extends BasePayaraMojo {
     private List<Option> commandLineOptions;
 
     private Process microProcess;
+    private Thread microProcessorThread;
+    private ThreadGroup threadGroup;
+
+    StartMojo() {
+        threadGroup = new ThreadGroup(PAYARA_MICRO_THREAD_NAME);
+    }
 
     public void execute() throws MojoExecutionException, MojoFailureException {
         if (skip) {
@@ -105,8 +113,7 @@ public class StartMojo extends BasePayaraMojo {
 
         final String path = decideOnWhichMicroToUse();
 
-        ThreadGroup threadGroup = new ThreadGroup(PAYARA_MICRO_THREAD_NAME);
-        Thread microProcessorThread = new Thread(threadGroup, new Runnable() {
+        microProcessorThread = new Thread(threadGroup, new Runnable() {
             @Override
             public void run() {
                 List<String> systemProps = new ArrayList<>();
@@ -145,41 +152,59 @@ public class StartMojo extends BasePayaraMojo {
                     final Runtime re = Runtime.getRuntime();
                     microProcess = re.exec(actualArgs.toArray(new String[actualArgs.size()]), systemProps.isEmpty()
                             ? null : systemProps.toArray(new String[systemProps.size()]));
-                    redirectStream(microProcess.getInputStream(), System.out);
-                    redirectStream(microProcess.getErrorStream(), System.err);
+
+                    if (daemon) {
+                        redirectStream(microProcess.getInputStream(), System.out);
+                        redirectStream(microProcess.getErrorStream(), System.err);
+                    } else {
+                        redirectStreamToGivenOutputStream(microProcess.getInputStream(), System.out);
+                        redirectStreamToGivenOutputStream(microProcess.getErrorStream(), System.err);
+                    }
 
                     int exitCode = microProcess.waitFor();
-
                     if (exitCode != 0) {
                         throw new MojoFailureException(ERROR_MESSAGE);
                     }
+                }
+                catch (InterruptedException ignored) {
                 }
                 catch (Exception e) {
                     throw new RuntimeException(ERROR_MESSAGE, e);
                 }
                 finally {
-                    closeMicroProcess();
+                    if (!daemon) {
+                        closeMicroProcess();
+                    }
                 }
             }
         });
-        final Thread shutdownHook = new Thread() {
+
+        final Thread shutdownHook = new Thread(threadGroup,new Runnable() {
             @Override
             public void run() {
                 if (microProcess != null && microProcess.isAlive()) {
                     try {
                         microProcess.destroy();
                         microProcess.waitFor(1, TimeUnit.MINUTES);
-                    } catch (InterruptedException ex) {
+                    } catch (InterruptedException ignored) {
                     } finally {
                         microProcess.destroyForcibly();
                     }
                 }
             }
-            
-        };
+        });
+
         if (daemon) {
             microProcessorThread.setDaemon(true);
             microProcessorThread.start();
+
+            if (!immediateExit) {
+                try {
+                    microProcessorThread.join();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
         }
         else {
             Runtime.getRuntime().addShutdownHook(shutdownHook);
@@ -248,8 +273,34 @@ public class StartMojo extends BasePayaraMojo {
         }
     }
 
-    private void redirectStream(final InputStream inputStream, final OutputStream outputStream) {
-        Thread thread = new Thread(new Runnable() {
+    private void redirectStream(final InputStream inputStream, final PrintStream printStream) {
+        final Thread thread = new Thread(threadGroup, new Runnable() {
+            public void run() {
+                BufferedReader br;
+                StringBuilder sb = new StringBuilder();
+
+                String line;
+                try {
+                    br = new BufferedReader(new InputStreamReader(inputStream));
+                    while ((line = br.readLine()) != null) {
+                        sb.append(line);
+                        printStream.println(line);
+                        if (!immediateExit && sb.toString().contains(MSG_PAYARA_MICRO_READY)) {
+                            microProcessorThread.interrupt();
+                            break;
+                        }
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+        thread.setDaemon(false);
+        thread.start();
+    }
+
+    private void redirectStreamToGivenOutputStream(final InputStream inputStream, final OutputStream outputStream) {
+        Thread thread = new Thread(threadGroup, new Runnable() {
             public void run() {
                 try {
                     IOUtils.copy(inputStream, outputStream);
