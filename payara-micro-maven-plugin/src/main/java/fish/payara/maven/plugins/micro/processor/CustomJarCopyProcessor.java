@@ -63,7 +63,7 @@ public class CustomJarCopyProcessor extends BaseDeployerProcessor {
                             element(name("artifactItems"),
                                     constructElementsFromGivenArtifactItems(customJars)
                             ),
-                            element(name("outputDirectory"), OUTPUT_FOLDER + MICROINF_LIB_FOLDER)
+                            element(name("outputDirectory"), EXTRACTED_OUTPUT_FOLDER + MICROINF_LIB_FOLDER)
                     ),
                     environment
             );

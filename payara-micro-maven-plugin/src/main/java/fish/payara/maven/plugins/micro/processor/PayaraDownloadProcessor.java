@@ -43,25 +43,20 @@ import org.apache.maven.plugin.MojoExecutionException;
 import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
 
 /**
- * @author mertcaliskan
+ * @author pablobastidas
  */
-public class MicroFetchProcessor extends BaseProcessor {
+public class PayaraDownloadProcessor extends BaseProcessor {
 
-    private String payaraVersion;
+    private String url;
 
     @Override
     public void handle(ExecutionEnvironment environment) throws MojoExecutionException {
-        executeMojo(dependencyPlugin,
-                goal("unpack"),
+        executeMojo(downloadPlugin,
+                goal("wget"),
                 configuration(
-                        element(name("artifactItems"),
-                                element(name("artifactItem"),
-                                        element("groupId", "fish.payara.extras"),
-                                        element("artifactId", "payara-micro"),
-                                        element("version", payaraVersion)
-                                )
-                        ),
-                        element(name("outputDirectory"), EXTRACTED_OUTPUT_FOLDER)
+                        element(name("url"), url),
+                        element(name("outputFileName"), PAYARAMICRO_JAR_FILE),
+                        element(name("outputDirectory"), JAR_OUTPUT_FOLDER)
                 ),
                 environment
         );
@@ -69,8 +64,8 @@ public class MicroFetchProcessor extends BaseProcessor {
         gotoNext(environment);
     }
 
-    public MicroFetchProcessor set(String parameter) {
-        this.payaraVersion = parameter;
+    public PayaraDownloadProcessor set(String parameter) {
+        this.url = parameter;
         return this;
     }
 }

@@ -66,6 +66,9 @@ public abstract class BaseProcessor implements Configuration {
     Plugin plainTextPlugin =
             plugin(groupId("io.github.olivierlemasle.maven"), artifactId("plaintext-maven-plugin"), version("1.0.0"));
 
+    Plugin downloadPlugin =
+            plugin(groupId("com.googlecode.maven-download-plugin"), artifactId("download-maven-plugin"), version("1.3.0"));
+
     public abstract void handle(ExecutionEnvironment environment) throws MojoExecutionException;
 
     public void next(BaseProcessor processor) {
