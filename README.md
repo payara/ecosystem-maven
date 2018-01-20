@@ -5,7 +5,24 @@ Repository for Payara Maven plugins
 
 Payara Micro Maven Plugin that incorporates payara-micro with the produced artifact. It requires JDK 1.7+.
  
-### Latest version available: 1.0.1-SNAPSHOT
+### Latest version available: 1.0.2-SNAPSHOT
+
+### How to (Default config)
+
+Just add the plugin in your project.
+
+    <plugin>
+        <groupId>fish.payara.maven.plugins</groupId>
+        <artifactId>payara-micro-maven-plugin</artifactId>
+        <version>${payaramicro.maven.plugin.version}</version>
+    </plugin>
+
+Then make:
+
+    1. mvn clean install
+    2. mvn payara-micro:start
+
+*Note: The project should be war packaging to work in default configuration*
 
 ### bundle
 This goal bundles the attached project's artifact into uber jar with specified configurations. ```bundle``` is attached to the ```install``` phase by default. A sample usage would as follows:

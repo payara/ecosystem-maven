@@ -55,7 +55,7 @@ public class MicroJarBundleProcessor extends BaseProcessor {
         executeMojo(jarPlugin,
                 goal("jar"),
                 configuration(
-                        element(name("classesDirectory"), OUTPUT_FOLDER),
+                        element(name("classesDirectory"), EXTRACTED_OUTPUT_FOLDER),
                         element(name("classifier"), MICROBUNDLE_EXTENSION),
                         element(name("archive"),
                                 element(name("manifestFile"), METAINF_FOLDER + File.separator + "MANIFEST.MF")

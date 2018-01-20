@@ -38,6 +38,8 @@
  */
 package fish.payara.maven.plugins.micro;
 
+import fish.payara.maven.plugins.micro.processor.BaseProcessor;
+import fish.payara.maven.plugins.micro.processor.PayaraDownloadProcessor;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.artifact.Artifact;
@@ -45,19 +47,20 @@ import org.apache.maven.artifact.DefaultArtifact;
 import org.apache.maven.artifact.handler.DefaultArtifactHandler;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
-import org.apache.maven.plugins.annotations.Mojo;
-import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.plugins.annotations.*;
 import org.apache.maven.plugins.dependency.fromConfiguration.ArtifactItem;
+import org.twdata.maven.mojoexecutor.MojoExecutor;
 
 import java.io.*;
+import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
-import static fish.payara.maven.plugins.micro.Configuration.PAYARA_MICRO_THREAD_NAME;
-import static fish.payara.maven.plugins.micro.Configuration.WAR_EXTENSION;
+import static fish.payara.maven.plugins.micro.Configuration.*;
 
 /**
  * Run mojo that executes payara-micro
@@ -72,6 +75,9 @@ public class StartMojo extends BasePayaraMojo {
 
     @Parameter(property = "javaPath", defaultValue = "java")
     private String javaPath;
+
+    @Parameter(property = "payaraVersion", defaultValue = "4.1.2.174")
+    private String payaraVersion;
 
     @Parameter(property = "payaraMicroAbsolutePath")
     private String payaraMicroAbsolutePath;
@@ -88,7 +94,7 @@ public class StartMojo extends BasePayaraMojo {
     @Parameter(property = "useUberJar", defaultValue = "false")
     private Boolean useUberJar;
 
-    @Parameter(property = "deployWar", defaultValue = "false")
+    @Parameter(property = "deployWar", defaultValue = "true")
     private Boolean deployWar;
 
     @Parameter(property = "copySystemProperties", defaultValue = "false")
@@ -223,11 +229,7 @@ public class StartMojo extends BasePayaraMojo {
             return path;
         }
 
-        if (payaraMicroAbsolutePath != null) {
-            return payaraMicroAbsolutePath;
-        }
-
-        if (artifactItem.getGroupId() != null) {
+        if (!deployWar && artifactItem.getGroupId() != null) {
             DefaultArtifact artifact = new DefaultArtifact(artifactItem.getGroupId(),
                     artifactItem.getArtifactId(),
                     artifactItem.getVersion(),
@@ -239,7 +241,28 @@ public class StartMojo extends BasePayaraMojo {
             return payaraMicroArtifact.getFile().getAbsolutePath();
         }
 
-        throw new MojoExecutionException("Could not determine Payara Micro path. Please set it by defining either \"useUberJar\", \"payaraMicroAbsolutePath\" or \"artifactItem\" configuration options.");
+        if (payaraMicroAbsolutePath == null) {
+            payaraMicroAbsolutePath = mavenProject.getBuild().getDirectory() +
+                    File.separator + PAYARAMICRO_JAR_FOLDER  +
+                    File.separator + PAYARAMICRO_JAR_FILE;
+
+            if(Files.notExists(Paths.get(payaraMicroAbsolutePath))) {
+                MojoExecutor.ExecutionEnvironment environment = getEnvironment();
+                BaseProcessor processor = constructDownloadPayaraProcessorChain();
+                processor.handle(environment);
+            }
+
+            return payaraMicroAbsolutePath;
+        } else {
+            return payaraMicroAbsolutePath;
+        }
+    }
+
+    private BaseProcessor constructDownloadPayaraProcessorChain() {
+        String url = "https://s3-eu-west-1.amazonaws.com/payara.fish/Payara+Downloads/Payara+" + payaraVersion
+                + "/payara-micro-" + payaraVersion +".jar";
+
+        return new PayaraDownloadProcessor().set(url);
     }
 
     private String evaluateProjectArtifactAbsolutePath(Boolean withExtension) {

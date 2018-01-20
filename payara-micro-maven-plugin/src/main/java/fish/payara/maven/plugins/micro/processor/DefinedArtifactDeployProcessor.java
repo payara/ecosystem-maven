@@ -65,7 +65,7 @@ public class DefinedArtifactDeployProcessor extends BaseDeployerProcessor {
                             element(name("artifactItems"),
                                     constructElementsFromGivenArtifactItems(deployArtifacts)
                             ),
-                            element(name("outputDirectory"), OUTPUT_FOLDER + MICROINF_DEPLOY_FOLDER)
+                            element(name("outputDirectory"), EXTRACTED_OUTPUT_FOLDER + MICROINF_DEPLOY_FOLDER)
                     ),
                     environment
             );
