@@ -67,8 +67,7 @@ import static fish.payara.maven.plugins.micro.Configuration.*;
  *
  * @author mertcaliskan
  */
-@Mojo(name = "start", defaultPhase = LifecyclePhase.INSTALL, requiresDependencyResolution = ResolutionScope.TEST)
-@Execute(phase = LifecyclePhase.TEST_COMPILE)
+@Mojo(name = "start")
 public class StartMojo extends BasePayaraMojo {
 
     private static final CharSequence MSG_PAYARA_MICRO_READY = "Payara Micro  4.1.2.174 #badassmicrofish (build 192) ready in";
@@ -77,9 +76,6 @@ public class StartMojo extends BasePayaraMojo {
     @Parameter(property = "javaPath", defaultValue = "java")
     private String javaPath;
 
-    /**
-     * By default this mojo fetches payara-micro with version 4.1.2.174. It can be overridden with this parameter.
-     */
     @Parameter(property = "payaraVersion", defaultValue = "4.1.2.174")
     private String payaraVersion;
 
