@@ -41,7 +41,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>fish.payara.maven.plugins</groupId>
     <artifactId>payara-micro-maven-plugin</artifactId>
-    <version>1.0.1-SNAPSHOT</version>
+    <version>1.0.2-SNAPSHOT</version>
     <packaging>maven-plugin</packaging>
     <name>Payara Micro Maven Plugin</name>
 
@@ -97,7 +97,7 @@
                 <artifactId>maven-plugin-plugin</artifactId>
                 <version>3.5</version>
                 <configuration>
-                    <goalPrefix></goalPrefix>
+                    <goalPrefix />
                     <skipErrorNoDescriptorsFound>true</skipErrorNoDescriptorsFound>
                 </configuration>
                 <executions>

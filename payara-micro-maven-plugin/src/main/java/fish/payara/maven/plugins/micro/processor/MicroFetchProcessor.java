@@ -61,7 +61,7 @@ public class MicroFetchProcessor extends BaseProcessor {
                                         element("version", payaraVersion)
                                 )
                         ),
-                        element(name("outputDirectory"), OUTPUT_FOLDER)
+                        element(name("outputDirectory"), EXTRACTED_OUTPUT_FOLDER)
                 ),
                 environment
         );

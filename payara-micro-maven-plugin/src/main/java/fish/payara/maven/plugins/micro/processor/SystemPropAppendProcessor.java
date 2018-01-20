@@ -61,7 +61,7 @@ public class SystemPropAppendProcessor extends BaseProcessor {
             executeMojo(plainTextPlugin,
                     goal("write"),
                     configuration(
-                            element(name("outputDirectory"), OUTPUT_FOLDER + MICROINF_FOLDER),
+                            element(name("outputDirectory"), EXTRACTED_OUTPUT_FOLDER + MICROINF_FOLDER),
                             element(name("files"),
                                     element(name("file"),
                                             element(name("name"),"payara-boot.properties"),
