@@ -85,12 +85,12 @@ public class ArtifactDeployProcessor extends BaseProcessor {
                                             elements.toArray(new Element[0])
                                     )
                             ),
-                            element(name("outputDirectory"), OUTPUT_FOLDER + MICROINF_DEPLOY_FOLDER)
+                            element(name("outputDirectory"), EXTRACTED_OUTPUT_FOLDER + MICROINF_DEPLOY_FOLDER)
                     ),
                     environment
             );
             // Payara Micro deploys based on last modified date, so make sure that the artifact file is deployed last
-            File copiedFile = new File(OUTPUT_FOLDER + MICROINF_DEPLOY_FOLDER + environment.getMavenProject().getArtifact().getFile().getName());
+            File copiedFile = new File(EXTRACTED_OUTPUT_FOLDER + MICROINF_DEPLOY_FOLDER + environment.getMavenProject().getArtifact().getFile().getName());
             if (copiedFile.exists()) {
                 copiedFile.setLastModified(System.currentTimeMillis());
             }

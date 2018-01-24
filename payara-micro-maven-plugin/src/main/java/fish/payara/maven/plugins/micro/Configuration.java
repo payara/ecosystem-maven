@@ -46,12 +46,15 @@ import java.io.File;
 public interface Configuration {
     String EXTRACTED_PAYARAMICRO_FOLDER = File.separator + "extracted-payaramicro";
     String MICROINF_FOLDER = File.separator + "MICRO-INF";
+    String PAYARAMICRO_JAR_FOLDER = File.separator + "payaramicro";
+    String PAYARAMICRO_JAR_FILE = File.separator + "payara-micro.jar";
 
     String MICROINF_DEPLOY_FOLDER = MICROINF_FOLDER + File.separator + "deploy";
     String MICROINF_LIB_FOLDER = MICROINF_FOLDER + File.separator + "lib";
     String MICROINF_DOMAIN_FOLDER = MICROINF_FOLDER + File.separator + "domain";
-    String OUTPUT_FOLDER = "${project.build.directory}" + EXTRACTED_PAYARAMICRO_FOLDER;
-    String METAINF_FOLDER = OUTPUT_FOLDER + File.separator + "META-INF";
+    String EXTRACTED_OUTPUT_FOLDER = "${project.build.directory}" + EXTRACTED_PAYARAMICRO_FOLDER;
+    String JAR_OUTPUT_FOLDER = "${project.build.directory}" + PAYARAMICRO_JAR_FOLDER;
+    String METAINF_FOLDER = EXTRACTED_OUTPUT_FOLDER + File.separator + "META-INF";
 
     String WAR_EXTENSION = "war";
     String MICROBUNDLE_EXTENSION = "microbundle";

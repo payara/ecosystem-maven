@@ -53,7 +53,7 @@ public class BootCommandFileCopyProcessor extends BaseProcessor {
         executeMojo(resourcesPlugin,
                 goal("copy-resources"),
                 configuration(
-                        element(name("outputDirectory"), OUTPUT_FOLDER + MICROINF_FOLDER),
+                        element(name("outputDirectory"), EXTRACTED_OUTPUT_FOLDER + MICROINF_FOLDER),
                         element(name("resources"),
                                 element(name("resource"),
                                         element(name("directory"),  "${project.build.resources[0].directory}"),
