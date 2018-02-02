@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2017 Payara Foundation and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017-2018 Payara Foundation and/or its affiliates. All rights reserved.
  *
  * The contents of this file are subject to the terms of either the GNU
  * General Public License Version 2 only ("GPL") or the Common Development
@@ -119,7 +119,7 @@ public class BundleMojo extends BasePayaraMojo {
     }
 
     private BaseProcessor constructProcessorChain() throws MojoExecutionException {
-        MicroFetchProcessor microFetchProcessor = new MicroFetchProcessor();
+        MicroUnpackProcessor microUnpackProcessor = new MicroUnpackProcessor();
         CustomJarCopyProcessor customJarCopyProcessor = new CustomJarCopyProcessor();
         CustomFileCopyProcessor customFileCopyProcessor = new CustomFileCopyProcessor();
         BootCommandFileCopyProcessor bootCommandFileCopyProcessor = new BootCommandFileCopyProcessor();
@@ -129,7 +129,7 @@ public class BundleMojo extends BasePayaraMojo {
         SystemPropAppendProcessor systemPropAppendProcessor = new SystemPropAppendProcessor();
         MicroJarBundleProcessor microJarBundleProcessor = new MicroJarBundleProcessor();
 
-        microFetchProcessor.set(payaraVersion).next(customJarCopyProcessor);
+        microUnpackProcessor.set(payaraVersion).next(customJarCopyProcessor);
         customJarCopyProcessor.set(customJars).next(customFileCopyProcessor);
         customFileCopyProcessor.next(bootCommandFileCopyProcessor);
         bootCommandFileCopyProcessor.next(definedArtifactDeployProcessor);
@@ -138,6 +138,6 @@ public class BundleMojo extends BasePayaraMojo {
         startClassReplaceProcessor.set(startClass).next(systemPropAppendProcessor);
         systemPropAppendProcessor.set(appendSystemProperties).next(microJarBundleProcessor);
 
-        return microFetchProcessor;
+        return microUnpackProcessor;
     }
 }
