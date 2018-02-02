@@ -3,7 +3,7 @@ Repository for Payara Maven plugins
 
 ## payara-micro-maven-plugin
 
-Payara Micro Maven Plugin that incorporates payara-micro with the produced artifact. It requires JDK 1.7+.
+Payara Micro Maven Plugin that incorporates payara-micro with the produced artifact. It requires JDK 1.8+.
  
 ### Latest version available: 1.0.1-SNAPSHOT
 
