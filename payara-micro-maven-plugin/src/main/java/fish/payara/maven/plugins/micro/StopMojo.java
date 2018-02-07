@@ -117,7 +117,7 @@ public class StopMojo extends BasePayaraMojo {
             if (isLinux()) {
                 command = "kill " + processId;
             } else if (isWindows()) {
-                command = "taskkill " + processId;
+                command = "taskkill /PID " + processId + " /F";
             }
             if (command == null) {
                 throw new MojoExecutionException("Operation system not supported!");
