@@ -154,7 +154,8 @@ public class StopMojo extends BasePayaraMojo {
                 osName.startsWith("OpenBSD") ||
                 osName.startsWith("gnu") ||
                 osName.startsWith("gnu/kfreebsd") ||
-                osName.startsWith("netbsd");
+                osName.startsWith("netbsd") ||
+                osName.startsWith("Mac OS");
     }
 
     private boolean isWindows() {
