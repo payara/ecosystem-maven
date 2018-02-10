@@ -114,7 +114,7 @@ public class StopMojo extends BasePayaraMojo {
         String command = null;
         try {
             final Runtime re = Runtime.getRuntime();
-            if (isLinux()) {
+            if (isUnix()) {
                 command = "kill " + processId;
             } else if (isWindows()) {
                 command = "taskkill /PID " + processId + " /F";
@@ -147,7 +147,7 @@ public class StopMojo extends BasePayaraMojo {
         return mavenProject.getArtifact().getArtifactId() + mavenProject.getVersion() + extension;
     }
 
-    private boolean isLinux() {
+    private boolean isUnix() {
         String osName = System.getProperty("os.name");
         return osName.startsWith("Linux") ||
                 osName.startsWith("FreeBSD") ||
