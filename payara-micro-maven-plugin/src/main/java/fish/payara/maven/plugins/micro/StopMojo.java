@@ -110,10 +110,19 @@ public class StopMojo extends BasePayaraMojo {
         }
     }
 
-    private void killProcess(String processId) {
+    private void killProcess(String processId) throws MojoExecutionException {
+        String command = null;
         try {
             final Runtime re = Runtime.getRuntime();
-            Process killProcess = re.exec("kill " + processId);
+            if (isUnix()) {
+                command = "kill " + processId;
+            } else if (isWindows()) {
+                command = "taskkill /PID " + processId + " /F";
+            }
+            if (command == null) {
+                throw new MojoExecutionException("Operation system not supported!");
+            }
+            Process killProcess = re.exec(command);
             int result = killProcess.waitFor();
             if (result != 0) {
                 getLog().error(ERROR_MESSAGE);
@@ -136,5 +145,22 @@ public class StopMojo extends BasePayaraMojo {
             return mavenProject.getBuild().getFinalName() + extension;
         }
         return mavenProject.getArtifact().getArtifactId() + mavenProject.getVersion() + extension;
+    }
+
+    private boolean isUnix() {
+        String osName = System.getProperty("os.name");
+        return osName.startsWith("Linux") ||
+                osName.startsWith("FreeBSD") ||
+                osName.startsWith("OpenBSD") ||
+                osName.startsWith("gnu") ||
+                osName.startsWith("gnu/kfreebsd") ||
+                osName.startsWith("netbsd") ||
+                osName.startsWith("Mac OS");
+    }
+
+    private boolean isWindows() {
+        String osName = System.getProperty("os.name");
+        return osName.startsWith("Windows CE") ||
+                osName.startsWith("Windows");
     }
 }
