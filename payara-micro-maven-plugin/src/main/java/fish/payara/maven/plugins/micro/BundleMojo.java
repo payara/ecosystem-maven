@@ -99,6 +99,12 @@ public class BundleMojo extends BasePayaraMojo {
      */
     @Parameter(property = "startClass")
     private String startClass;
+    
+    /**
+     * Sets context root of the deployed artifact if autoDeployArtifact is true
+     */
+    @Parameter(property = "autoDeployContextRoot", defaultValue = "")
+    private String autoDeployContextRoot;
 
     /**
      * Appends all system properties defined into the @{code payara-boot.properties} file
@@ -134,7 +140,7 @@ public class BundleMojo extends BasePayaraMojo {
         customFileCopyProcessor.next(bootCommandFileCopyProcessor);
         bootCommandFileCopyProcessor.next(definedArtifactDeployProcessor);
         definedArtifactDeployProcessor.set(deployArtifacts).next(artifactDeployProcessor);
-        artifactDeployProcessor.set(autoDeployArtifact, mavenProject.getPackaging()).next(startClassReplaceProcessor);
+        artifactDeployProcessor.set(autoDeployArtifact, autoDeployContextRoot, mavenProject.getPackaging()).next(startClassReplaceProcessor);
         startClassReplaceProcessor.set(startClass).next(systemPropAppendProcessor);
         systemPropAppendProcessor.set(appendSystemProperties).next(microJarBundleProcessor);
 
