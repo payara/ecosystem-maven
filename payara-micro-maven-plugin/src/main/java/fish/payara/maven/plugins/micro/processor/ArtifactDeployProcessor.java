@@ -55,6 +55,7 @@ public class ArtifactDeployProcessor extends BaseProcessor {
 
     private Boolean autoDeployArtifact;
     private String autoDeployContextRoot;
+    private Boolean autoDeployEmptyContextRoot;
     private String packaging;
 
     @Override
@@ -67,7 +68,11 @@ public class ArtifactDeployProcessor extends BaseProcessor {
                                 build.getFinalName() : null : null : null;
         String contextRoot = autoDeployContextRoot;
         if (contextRoot == null || contextRoot.isEmpty()) {
-            contextRoot = finalName;
+            if (autoDeployEmptyContextRoot) {
+                contextRoot = "ROOT";
+            } else {
+                contextRoot = finalName;
+            }
         }
 
         if (autoDeployArtifact && WAR_EXTENSION.equalsIgnoreCase(packaging)) {
@@ -104,9 +109,11 @@ public class ArtifactDeployProcessor extends BaseProcessor {
         gotoNext(environment);
     }
 
-    public BaseProcessor set(Boolean autoDeployArtifact, String autoDeployContextRoot, String packaging) {
+    public BaseProcessor set(Boolean autoDeployArtifact, String autoDeployContextRoot, 
+            Boolean autoDeployEmptyContextRoot, String packaging) {
         this.autoDeployArtifact = autoDeployArtifact;
         this.autoDeployContextRoot = autoDeployContextRoot;
+        this.autoDeployEmptyContextRoot = autoDeployEmptyContextRoot;
         this.packaging = packaging;
         return this;
     }

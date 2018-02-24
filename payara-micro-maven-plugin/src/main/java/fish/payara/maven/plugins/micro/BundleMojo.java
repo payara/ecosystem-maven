@@ -53,17 +53,28 @@ import java.util.List;
  * Bundle mojo incorporates payara-micro with the produced artifact by following steps given as follows:
  * <ul>
  *  <li>Fetch payara-micro from repository and open it to a folder. The default version is <i>4.1.2.174</i>. Specific
- *  version can be provided with @{code payaraVersion} parameter</li>
+ *  version can be provided with {@code payaraVersion} parameter</li>
  *  <li>Fetch user specified jars from repository</li>
- *  <li>Copy any existing @{code domain.xml}, @{code keystore.jks}, @{code login.conf } and @{code login.properties} files from resources folder into /MICRO-INF/domain folder</li>
- *  <li>Copy any existing @{code pre-boot-commands.txt}, @{code post-boot-commands.txt} and @{code post-deploy-commands.txt} files from resources folder into /MICRO-INF folder</li>
+ *  <li>Copy any existing {@code domain.xml}, {@code keystore.jks}, {@code login.conf } and {@code login.properties} files from resources folder into /MICRO-INF/domain folder</li>
+ *  <li>Copy any existing {@code pre-boot-commands.txt}, {@code post-boot-commands.txt} and {@code post-deploy-commands.txt} files from resources folder into /MICRO-INF folder</li>
  *  <li>Copy produced artifact into /MICRO-INF/deploy folder if its extension is <b>war</b></li>
  *  <li>Copy user specified artifacts into /MICRO-INF/deploy folder</li>
  *  <li>Replace {@code Start-Class} entry in the manifest file with a custom bootstrap class if it's provided by user</li>
  *  <li>Append system properties to @{code MICRO-INF/payara-boot.properties}</li>
  *  <li>Bundle aggregated content as artifactName-microbundle.jar under target folder</li>
  * </ul>
+ * 
+ * If {@code autoDeployArtifact} is {@code true}, then the context root of the application is constructed as:
+ * <ol>
+ *  <li>If {@code autoDeployContextRoot} is specified then it's the context root
+ *  <li>If {@code autoDeployEmptyContextRoot} is {@code true} (default value) then the context root 
+ *     is empty. In other words, the application path is just '/'</li>
+ *  <li>If project's {@code finalName} is specified then the context root is equal to its value</li>
+ *  <li>If nothing is specified then the context root is derived from the artifact metadata</li>
+ * </ol>
  *
+ * If context root is 'ROOT' then the application path is just '/' (same as if {@code autoDeployEmptyContextRoot} is set to {@code true}).
+ * 
  * @author mertcaliskan
  */
 @Mojo(name = "bundle", defaultPhase = LifecyclePhase.INSTALL)
@@ -100,6 +111,13 @@ public class BundleMojo extends BasePayaraMojo {
     @Parameter(property = "startClass")
     private String startClass;
     
+    /**
+     * Sets context root of the deployed artifact to / which means there's no context root. Default true. 
+     * If set to false, context root is derived from artifact name or finalName. Value of autoDeployContextRoot overrides this.
+     */
+    @Parameter(property = "autoDeployEmptyContextRoot", defaultValue = "true")
+    private Boolean autoDeployEmptyContextRoot;
+
     /**
      * Sets context root of the deployed artifact if autoDeployArtifact is true
      */
@@ -140,7 +158,8 @@ public class BundleMojo extends BasePayaraMojo {
         customFileCopyProcessor.next(bootCommandFileCopyProcessor);
         bootCommandFileCopyProcessor.next(definedArtifactDeployProcessor);
         definedArtifactDeployProcessor.set(deployArtifacts).next(artifactDeployProcessor);
-        artifactDeployProcessor.set(autoDeployArtifact, autoDeployContextRoot, mavenProject.getPackaging()).next(startClassReplaceProcessor);
+        artifactDeployProcessor.set(autoDeployArtifact, autoDeployContextRoot, 
+                autoDeployEmptyContextRoot, mavenProject.getPackaging()).next(startClassReplaceProcessor);
         startClassReplaceProcessor.set(startClass).next(systemPropAppendProcessor);
         systemPropAppendProcessor.set(appendSystemProperties).next(microJarBundleProcessor);
 
