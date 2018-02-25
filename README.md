@@ -78,6 +78,15 @@ This goal start payara-micro with specified configurations. ```start``` is attac
             </artifactItem>
             <deployWar>true</deployWar>
             <copySystemProperties>true</copySystemProperties>
+            <systemProperties>
+                <property>
+                    <value>-Xdebug</value>
+                </property>
+                <property>
+                    <key>-Xrunjdwp:transport</key>
+                    <value>dt_socket,server=y,suspend=y,address=5005</value>
+                 </property>
+            </systemProperties>            
             <commandLineOptions>
                 <option>
                     <key>--domainconfig</key>
@@ -102,7 +111,8 @@ This goal start payara-micro with specified configurations. ```start``` is attac
 - __artifactItem__ (optional): Defines payara-micro artifact with its coordinates. Specified artifact should be available in local maven repository.
 - __deployWar__ (optional | default: false): If the attached project is of type WAR, it will automatically be deployed to payara-micro if ```deployWar``` is set to ```true```. 
 - __copySystemProperties__ (optional | default: false): Allows passing all system properties available within the maven build to the payara-micro execution.
-- __commandLineOptions__ (optional): Defines a lists of command line options that will be passed onto payara-micro. Command line options can either be defined as key,value pairs or just as list of keys or values separately.
+- __systemProperties__ (optional): Defines a list of system properties that will be applied before ```java``` executable. System properties can either be defined as key-value pairs or just as list of values separately. key-value pairs will be formatted as key=value.
+- __commandLineOptions__ (optional): Defines a list of command line options that will be passed onto payara-micro. Command line options can either be defined as key,value pairs or just as list of keys or values separately.
 
 
 ### stop

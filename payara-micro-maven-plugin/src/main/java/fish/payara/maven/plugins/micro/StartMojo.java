@@ -100,6 +100,9 @@ public class StartMojo extends BasePayaraMojo {
     @Parameter(property = "commandLineOptions")
     private List<Option> commandLineOptions;
 
+    @Parameter(property = "systemProperties")
+    private List<Property> systemProperties;
+
     private Process microProcess;
     private Thread microProcessorThread;
     private ThreadGroup threadGroup;
@@ -134,6 +137,18 @@ public class StartMojo extends BasePayaraMojo {
                 getLog().info("Starting payara-micro from path: " + path);
                 int indice = 0;
                 actualArgs.add(indice++, javaPath);
+                if (systemProperties != null) {
+                    for (Property property : systemProperties) {
+                        if (property.getKey() != null && property.getValue() != null) {
+                            String systemProperty = String.format("%s=%s", property.getKey(), property.getValue());
+                            actualArgs.add(indice++, systemProperty);
+                        }
+                        else if (property.getValue() != null) {
+                            actualArgs.add(indice++, property.getValue());
+                        }
+                    }
+                }
+
                 actualArgs.add(indice++, "-jar");
                 actualArgs.add(indice++, path);
                 if (deployWar && WAR_EXTENSION.equalsIgnoreCase(mavenProject.getPackaging())) {
