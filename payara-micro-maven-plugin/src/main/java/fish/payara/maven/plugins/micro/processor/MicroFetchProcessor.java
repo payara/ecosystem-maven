@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2017 Payara Foundation and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017-2018 Payara Foundation and/or its affiliates. All rights reserved.
  *
  * The contents of this file are subject to the terms of either the GNU
  * General Public License Version 2 only ("GPL") or the Common Development
@@ -52,16 +52,11 @@ public class MicroFetchProcessor extends BaseProcessor {
     @Override
     public void handle(ExecutionEnvironment environment) throws MojoExecutionException {
         executeMojo(dependencyPlugin,
-                goal("unpack"),
+                goal("get"),
                 configuration(
-                        element(name("artifactItems"),
-                                element(name("artifactItem"),
-                                        element("groupId", "fish.payara.extras"),
-                                        element("artifactId", "payara-micro"),
-                                        element("version", payaraVersion)
-                                )
-                        ),
-                        element(name("outputDirectory"), OUTPUT_FOLDER)
+                    element("groupId", MICRO_GROUPID),
+                    element("artifactId", MICRO_ARTIFACTID),
+                    element("version", payaraVersion)
                 ),
                 environment
         );

@@ -38,6 +38,7 @@
  */
 package fish.payara.maven.plugins.micro;
 
+import fish.payara.maven.plugins.micro.processor.MicroFetchProcessor;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.artifact.Artifact;
@@ -48,6 +49,7 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.dependency.fromConfiguration.ArtifactItem;
+import org.twdata.maven.mojoexecutor.MojoExecutor;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -56,8 +58,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import static fish.payara.maven.plugins.micro.Configuration.PAYARA_MICRO_THREAD_NAME;
-import static fish.payara.maven.plugins.micro.Configuration.WAR_EXTENSION;
+import static fish.payara.maven.plugins.micro.Configuration.*;
 
 /**
  * Run mojo that executes payara-micro
@@ -67,11 +68,13 @@ import static fish.payara.maven.plugins.micro.Configuration.WAR_EXTENSION;
 @Mojo(name = "start")
 public class StartMojo extends BasePayaraMojo {
 
-    private static final CharSequence MSG_PAYARA_MICRO_READY = "Payara Micro  4.1.2.174 #badassmicrofish (build 192) ready in";
     String ERROR_MESSAGE = "Errors occurred while executing payara-micro.";
 
     @Parameter(property = "javaPath", defaultValue = "java")
     private String javaPath;
+
+    @Parameter(property = "payaraVersion", defaultValue = "4.1.2.181")
+    private String payaraVersion;
 
     @Parameter(property = "payaraMicroAbsolutePath")
     private String payaraMicroAbsolutePath;
@@ -102,7 +105,7 @@ public class StartMojo extends BasePayaraMojo {
     private ThreadGroup threadGroup;
 
     StartMojo() {
-        threadGroup = new ThreadGroup(PAYARA_MICRO_THREAD_NAME);
+        threadGroup = new ThreadGroup(MICRO_THREAD_NAME);
     }
 
     public void execute() throws MojoExecutionException, MojoFailureException {
@@ -227,6 +230,20 @@ public class StartMojo extends BasePayaraMojo {
             return payaraMicroAbsolutePath;
         }
 
+        if (payaraVersion != null) {
+            MojoExecutor.ExecutionEnvironment environment = getEnvironment();
+            MicroFetchProcessor microFetchProcessor = new MicroFetchProcessor();
+            microFetchProcessor.set(payaraVersion).handle(environment);
+
+            DefaultArtifact artifact = new DefaultArtifact(MICRO_GROUPID, MICRO_ARTIFACTID,
+                    payaraVersion,
+                    null,
+                    "jar",
+                    null,
+                    new DefaultArtifactHandler("jar"));
+            return findLocalPathOfArtifact(artifact);
+        }
+
         if (artifactItem.getGroupId() != null) {
             DefaultArtifact artifact = new DefaultArtifact(artifactItem.getGroupId(),
                     artifactItem.getArtifactId(),
@@ -235,11 +252,15 @@ public class StartMojo extends BasePayaraMojo {
                     artifactItem.getType(),
                     artifactItem.getClassifier(),
                     new DefaultArtifactHandler("jar"));
-            Artifact payaraMicroArtifact = mavenSession.getLocalRepository().find(artifact);
-            return payaraMicroArtifact.getFile().getAbsolutePath();
+            return findLocalPathOfArtifact(artifact);
         }
 
         throw new MojoExecutionException("Could not determine Payara Micro path. Please set it by defining either \"useUberJar\", \"payaraMicroAbsolutePath\" or \"artifactItem\" configuration options.");
+    }
+
+    private String findLocalPathOfArtifact(DefaultArtifact artifact) {
+        Artifact payaraMicroArtifact = mavenSession.getLocalRepository().find(artifact);
+        return payaraMicroArtifact.getFile().getAbsolutePath();
     }
 
     private String evaluateProjectArtifactAbsolutePath(Boolean withExtension) {
@@ -275,6 +296,7 @@ public class StartMojo extends BasePayaraMojo {
 
     private void redirectStream(final InputStream inputStream, final PrintStream printStream) {
         final Thread thread = new Thread(threadGroup, new Runnable() {
+            @Override
             public void run() {
                 BufferedReader br;
                 StringBuilder sb = new StringBuilder();
@@ -285,7 +307,7 @@ public class StartMojo extends BasePayaraMojo {
                     while ((line = br.readLine()) != null) {
                         sb.append(line);
                         printStream.println(line);
-                        if (!immediateExit && sb.toString().contains(MSG_PAYARA_MICRO_READY)) {
+                        if (!immediateExit && sb.toString().contains(MICRO_READY_MESSAGE)) {
                             microProcessorThread.interrupt();
                             break;
                         }
@@ -301,6 +323,7 @@ public class StartMojo extends BasePayaraMojo {
 
     private void redirectStreamToGivenOutputStream(final InputStream inputStream, final OutputStream outputStream) {
         Thread thread = new Thread(threadGroup, new Runnable() {
+            @Override
             public void run() {
                 try {
                     IOUtils.copy(inputStream, outputStream);

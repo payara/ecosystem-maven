@@ -49,8 +49,8 @@
     <url>https://github.com/payara/maven-plugins</url>
 
     <properties>
-        <java.compiler.source.version>1.7</java.compiler.source.version>
-        <java.compiler.target.version>1.7</java.compiler.target.version>
+        <java.compiler.source.version>1.8</java.compiler.source.version>
+        <java.compiler.target.version>1.8</java.compiler.target.version>
     </properties>
 
 	<scm>

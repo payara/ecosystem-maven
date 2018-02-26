@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2017-2018 Payara Foundation and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018 Payara Foundation and/or its affiliates. All rights reserved.
  *
  * The contents of this file are subject to the terms of either the GNU
  * General Public License Version 2 only ("GPL") or the Common Development
@@ -36,29 +36,41 @@
  * only if the new code is made subject to such option by the copyright
  * holder.
  */
-package fish.payara.maven.plugins.micro;
+package fish.payara.maven.plugins.micro.processor;
 
-import java.io.File;
+import org.apache.maven.plugin.MojoExecutionException;
+
+import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
 
 /**
  * @author mertcaliskan
  */
-public interface Configuration {
-    String MICRO_GROUPID = "fish.payara.extras";
-    String MICRO_ARTIFACTID = "payara-micro";
+public class MicroUnpackProcessor extends BaseProcessor {
 
-    String EXTRACTED_PAYARAMICRO_FOLDER = File.separator + "extracted-payaramicro";
-    String MICROINF_FOLDER = File.separator + "MICRO-INF";
+    private String payaraVersion;
 
-    String MICROINF_DEPLOY_FOLDER = MICROINF_FOLDER + File.separator + "deploy";
-    String MICROINF_LIB_FOLDER = MICROINF_FOLDER + File.separator + "lib";
-    String MICROINF_DOMAIN_FOLDER = MICROINF_FOLDER + File.separator + "domain";
-    String OUTPUT_FOLDER = "${project.build.directory}" + EXTRACTED_PAYARAMICRO_FOLDER;
-    String METAINF_FOLDER = OUTPUT_FOLDER + File.separator + "META-INF";
+    @Override
+    public void handle(ExecutionEnvironment environment) throws MojoExecutionException {
+        executeMojo(dependencyPlugin,
+                goal("unpack"),
+                configuration(
+                        element(name("artifactItems"),
+                                element(name("artifactItem"),
+                                        element("groupId", "fish.payara.extras"),
+                                        element("artifactId", "payara-micro"),
+                                        element("version", payaraVersion)
+                                )
+                        ),
+                        element(name("outputDirectory"), OUTPUT_FOLDER)
+                ),
+                environment
+        );
 
-    String WAR_EXTENSION = "war";
-    String MICROBUNDLE_EXTENSION = "microbundle";
+        gotoNext(environment);
+    }
 
-    String MICRO_THREAD_NAME = "PayaraMicroThread";
-    String MICRO_READY_MESSAGE = "ready in";
+    public MicroUnpackProcessor set(String parameter) {
+        this.payaraVersion = parameter;
+        return this;
+    }
 }

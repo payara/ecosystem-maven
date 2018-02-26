@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2017 Payara Foundation and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017-2018 Payara Foundation and/or its affiliates. All rights reserved.
  *
  * The contents of this file are subject to the terms of either the GNU
  * General Public License Version 2 only ("GPL") or the Common Development
@@ -52,8 +52,8 @@ import java.util.List;
 /**
  * Bundle mojo incorporates payara-micro with the produced artifact by following steps given as follows:
  * <ul>
- *  <li>Fetch payara-micro from repository and open it to a folder. The default version is <i>4.1.2.174</i>. Specific
- *  version can be provided with {@code payaraVersion} parameter</li>
+ *  <li>Fetch payara-micro from repository and open it to a folder. The default version is <i>4.1.2.181</i>. Specific
+ *  version can be provided with @{code payaraVersion} parameter</li>
  *  <li>Fetch user specified jars from repository</li>
  *  <li>Copy any existing {@code domain.xml}, {@code keystore.jks}, {@code login.conf } and {@code login.properties} files from resources folder into /MICRO-INF/domain folder</li>
  *  <li>Copy any existing {@code pre-boot-commands.txt}, {@code post-boot-commands.txt} and {@code post-deploy-commands.txt} files from resources folder into /MICRO-INF folder</li>
@@ -81,9 +81,9 @@ import java.util.List;
 public class BundleMojo extends BasePayaraMojo {
 
     /**
-     * By default this mojo fetches payara-micro with version 4.1.2.174. It can be overridden with this parameter.
+     * By default this mojo fetches payara-micro with version 4.1.2.181. It can be overridden with this parameter.
      */
-    @Parameter(property = "payaraVersion", defaultValue = "4.1.2.174")
+    @Parameter(property = "payaraVersion", defaultValue = "4.1.2.181")
     private String payaraVersion;
 
     /**
@@ -143,7 +143,7 @@ public class BundleMojo extends BasePayaraMojo {
     }
 
     private BaseProcessor constructProcessorChain() throws MojoExecutionException {
-        MicroFetchProcessor microFetchProcessor = new MicroFetchProcessor();
+        MicroUnpackProcessor microUnpackProcessor = new MicroUnpackProcessor();
         CustomJarCopyProcessor customJarCopyProcessor = new CustomJarCopyProcessor();
         CustomFileCopyProcessor customFileCopyProcessor = new CustomFileCopyProcessor();
         BootCommandFileCopyProcessor bootCommandFileCopyProcessor = new BootCommandFileCopyProcessor();
@@ -153,7 +153,7 @@ public class BundleMojo extends BasePayaraMojo {
         SystemPropAppendProcessor systemPropAppendProcessor = new SystemPropAppendProcessor();
         MicroJarBundleProcessor microJarBundleProcessor = new MicroJarBundleProcessor();
 
-        microFetchProcessor.set(payaraVersion).next(customJarCopyProcessor);
+        microUnpackProcessor.set(payaraVersion).next(customJarCopyProcessor);
         customJarCopyProcessor.set(customJars).next(customFileCopyProcessor);
         customFileCopyProcessor.next(bootCommandFileCopyProcessor);
         bootCommandFileCopyProcessor.next(definedArtifactDeployProcessor);
@@ -163,6 +163,6 @@ public class BundleMojo extends BasePayaraMojo {
         startClassReplaceProcessor.set(startClass).next(systemPropAppendProcessor);
         systemPropAppendProcessor.set(appendSystemProperties).next(microJarBundleProcessor);
 
-        return microFetchProcessor;
+        return microUnpackProcessor;
     }
 }
