@@ -54,6 +54,8 @@ import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
 public class ArtifactDeployProcessor extends BaseProcessor {
 
     private Boolean autoDeployArtifact;
+    private String autoDeployContextRoot;
+    private Boolean autoDeployEmptyContextRoot;
     private String packaging;
 
     @Override
@@ -64,6 +66,14 @@ public class ArtifactDeployProcessor extends BaseProcessor {
                 build.getFinalName() != null ?
                         !build.getFinalName().isEmpty() ?
                                 build.getFinalName() : null : null : null;
+        String contextRoot = autoDeployContextRoot;
+        if (contextRoot == null || contextRoot.isEmpty()) {
+            if (autoDeployEmptyContextRoot) {
+                contextRoot = "ROOT";
+            } else {
+                contextRoot = finalName;
+            }
+        }
 
         if (autoDeployArtifact && WAR_EXTENSION.equalsIgnoreCase(packaging)) {
             List<Element> elements = new ArrayList<>();
@@ -73,8 +83,8 @@ public class ArtifactDeployProcessor extends BaseProcessor {
             elements.add(element("version", "${project.version}"));
             elements.add(element("type", "${project.packaging}"));
 
-            if (finalName != null) {
-                elements.add(element("destFileName", finalName + "." + WAR_EXTENSION));
+            if (contextRoot != null) {
+                elements.add(element("destFileName", contextRoot + "." + WAR_EXTENSION));
             }
 
             executeMojo(dependencyPlugin,
@@ -99,8 +109,11 @@ public class ArtifactDeployProcessor extends BaseProcessor {
         gotoNext(environment);
     }
 
-    public BaseProcessor set(Boolean autoDeployArtifact, String packaging) {
+    public BaseProcessor set(Boolean autoDeployArtifact, String autoDeployContextRoot, 
+            Boolean autoDeployEmptyContextRoot, String packaging) {
         this.autoDeployArtifact = autoDeployArtifact;
+        this.autoDeployContextRoot = autoDeployContextRoot;
+        this.autoDeployEmptyContextRoot = autoDeployEmptyContextRoot;
         this.packaging = packaging;
         return this;
     }
