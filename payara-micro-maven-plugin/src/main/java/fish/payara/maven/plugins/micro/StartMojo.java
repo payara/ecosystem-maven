@@ -131,7 +131,7 @@ public class StartMojo extends BasePayaraMojo {
                             systemProps.add(prop);
                         }
                     }
-                } 
+                }
 
                 final List<String> actualArgs = new ArrayList<>();
                 getLog().info("Starting payara-micro from path: " + path);
@@ -148,7 +148,7 @@ public class StartMojo extends BasePayaraMojo {
                         }
                     }
                 }
-                
+
                 String execArgs = mavenSession.getRequest().getUserProperties().getProperty("exec.args");
                 if (execArgs != null && !execArgs.trim().isEmpty()) {
                     for (String execArg : execArgs.split("\\s+")) {
