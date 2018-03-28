@@ -79,7 +79,7 @@ public class StopMojo extends BasePayaraMojo {
         }
         String executorName;
         if (artifactItem.getGroupId() != null) {
-            executorName = artifactItem.getArtifactId() + "-" + artifactItem.getVersion() + ".jar";
+            executorName = artifactItem.getArtifactId();
         }
         else {
             executorName = evaluateExecutorName(true);
