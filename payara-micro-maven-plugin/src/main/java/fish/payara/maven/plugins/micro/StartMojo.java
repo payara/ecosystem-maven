@@ -149,6 +149,13 @@ public class StartMojo extends BasePayaraMojo {
                     }
                 }
 
+                String execArgs = mavenSession.getRequest().getUserProperties().getProperty("exec.args");
+                if (execArgs != null && !execArgs.trim().isEmpty()) {
+                    for (String execArg : execArgs.split("\\s+")) {
+                        actualArgs.add(indice++, execArg);
+                    }
+                }
+
                 actualArgs.add(indice++, "-jar");
                 actualArgs.add(indice++, path);
                 if (deployWar && WAR_EXTENSION.equalsIgnoreCase(mavenProject.getPackaging())) {
