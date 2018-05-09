@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2017 Payara Foundation and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017-2018 Payara Foundation and/or its affiliates. All rights reserved.
  *
  * The contents of this file are subject to the terms of either the GNU
  * General Public License Version 2 only ("GPL") or the Common Development
@@ -49,8 +49,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.concurrent.Callable;
-import org.apache.maven.project.MavenProject;
 
 /**
  * Stop mojo that terminates running payara-micro invoked by @{code run} mojo
@@ -81,16 +79,14 @@ public class StopMojo extends BasePayaraMojo {
         if (processId != null) {
             killProcess(processId);
         }
-        
-        
+
         String executorName;
         if (artifactItem.getGroupId() != null) {
             executorName = artifactItem.getArtifactId();
         } else if (useUberJar) {
             executorName = evaluateExecutorName(true);
         } else {
-            String gav = mavenProject.getGroupId() + ":" + mavenProject.getArtifactId() + ":" + mavenProject.getVersion();
-            executorName = "-Dgav=" + gav;
+            executorName = "-Dgav=" + getProjectGAV();
         }
 
         final Runtime re = Runtime.getRuntime();
@@ -119,29 +115,6 @@ public class StopMojo extends BasePayaraMojo {
     }
 
     private void killProcess(String processId) throws MojoExecutionException {
-        String command = null;
-        try {
-            final Runtime re = Runtime.getRuntime();
-            if (isUnix()) {
-                command = "kill " + processId;
-            } else if (isWindows()) {
-                command = "taskkill /PID " + processId + " /F";
-            }
-            if (command == null) {
-                throw new MojoExecutionException("Operation system not supported!");
-            }
-            Process killProcess = re.exec(command);
-            int result = killProcess.waitFor();
-            if (result != 0) {
-                getLog().error(ERROR_MESSAGE);
-            }
-        }
-        catch (IOException |InterruptedException e) {
-            getLog().error(ERROR_MESSAGE, e);
-        }
-    }
-    
-    private void killProcessByGAV(String gav) throws MojoExecutionException {
         String command = null;
         try {
             final Runtime re = Runtime.getRuntime();

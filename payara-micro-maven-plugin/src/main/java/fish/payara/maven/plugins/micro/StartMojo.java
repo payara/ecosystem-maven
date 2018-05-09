@@ -132,7 +132,7 @@ public class StartMojo extends BasePayaraMojo {
                         }
                     }
                 }
-  
+
                 final List<String> actualArgs = new ArrayList<>();
                 getLog().info("Starting payara-micro from path: " + path);
                 int indice = 0;
@@ -156,9 +156,7 @@ public class StartMojo extends BasePayaraMojo {
                     }
                 }
 
-                String gav = mavenProject.getGroupId() + ":" + mavenProject.getArtifactId() + ":" + mavenProject.getVersion();
-                actualArgs.add(indice++, "-Dgav=" + gav);
-                
+                actualArgs.add(indice++, "-Dgav=" + getProjectGAV());
                 actualArgs.add(indice++, "-jar");
                 actualArgs.add(indice++, path);
                 if (deployWar && WAR_EXTENSION.equalsIgnoreCase(mavenProject.getPackaging())) {
@@ -180,7 +178,7 @@ public class StartMojo extends BasePayaraMojo {
                     final Runtime re = Runtime.getRuntime();
                     microProcess = re.exec(actualArgs.toArray(new String[actualArgs.size()]), systemProps.isEmpty()
                             ? null : systemProps.toArray(new String[systemProps.size()]));
-                            
+
                     if (daemon) {
                         redirectStream(microProcess.getInputStream(), System.out);
                         redirectStream(microProcess.getErrorStream(), System.err);
