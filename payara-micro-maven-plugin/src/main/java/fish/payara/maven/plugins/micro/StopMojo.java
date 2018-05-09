@@ -50,6 +50,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.concurrent.Callable;
+import org.apache.maven.project.MavenProject;
 
 /**
  * Stop mojo that terminates running payara-micro invoked by @{code run} mojo
@@ -66,6 +67,9 @@ public class StopMojo extends BasePayaraMojo {
 
     @Parameter(property = "processId")
     private String processId;
+    
+    @Parameter(property = "useUberJar", defaultValue = "false")
+    private Boolean useUberJar;
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
@@ -77,17 +81,21 @@ public class StopMojo extends BasePayaraMojo {
         if (processId != null) {
             killProcess(processId);
         }
+        
+        
         String executorName;
         if (artifactItem.getGroupId() != null) {
             executorName = artifactItem.getArtifactId();
-        }
-        else {
+        } else if (useUberJar) {
             executorName = evaluateExecutorName(true);
+        } else {
+            String gav = mavenProject.getGroupId() + ":" + mavenProject.getArtifactId() + ":" + mavenProject.getVersion();
+            executorName = "-Dgav=" + gav;
         }
 
         final Runtime re = Runtime.getRuntime();
         try {
-            Process jpsProcess = re.exec("jps");
+            Process jpsProcess = re.exec("jps -v");
             InputStream inputStream = jpsProcess.getInputStream();
             BufferedReader in = new BufferedReader(new InputStreamReader(inputStream));
             String line;
@@ -111,6 +119,29 @@ public class StopMojo extends BasePayaraMojo {
     }
 
     private void killProcess(String processId) throws MojoExecutionException {
+        String command = null;
+        try {
+            final Runtime re = Runtime.getRuntime();
+            if (isUnix()) {
+                command = "kill " + processId;
+            } else if (isWindows()) {
+                command = "taskkill /PID " + processId + " /F";
+            }
+            if (command == null) {
+                throw new MojoExecutionException("Operation system not supported!");
+            }
+            Process killProcess = re.exec(command);
+            int result = killProcess.waitFor();
+            if (result != 0) {
+                getLog().error(ERROR_MESSAGE);
+            }
+        }
+        catch (IOException |InterruptedException e) {
+            getLog().error(ERROR_MESSAGE, e);
+        }
+    }
+    
+    private void killProcessByGAV(String gav) throws MojoExecutionException {
         String command = null;
         try {
             final Runtime re = Runtime.getRuntime();
