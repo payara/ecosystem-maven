@@ -156,6 +156,7 @@ public class StartMojo extends BasePayaraMojo {
                     }
                 }
 
+                actualArgs.add(indice++, "-Dgav=" + getProjectGAV());
                 actualArgs.add(indice++, "-jar");
                 actualArgs.add(indice++, path);
                 if (deployWar && WAR_EXTENSION.equalsIgnoreCase(mavenProject.getPackaging())) {

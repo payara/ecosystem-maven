@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2017 Payara Foundation and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017-2018 Payara Foundation and/or its affiliates. All rights reserved.
  *
  * The contents of this file are subject to the terms of either the GNU
  * General Public License Version 2 only ("GPL") or the Common Development
@@ -49,7 +49,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.concurrent.Callable;
 
 /**
  * Stop mojo that terminates running payara-micro invoked by @{code run} mojo
@@ -66,6 +65,9 @@ public class StopMojo extends BasePayaraMojo {
 
     @Parameter(property = "processId")
     private String processId;
+    
+    @Parameter(property = "useUberJar", defaultValue = "false")
+    private Boolean useUberJar;
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
@@ -77,17 +79,19 @@ public class StopMojo extends BasePayaraMojo {
         if (processId != null) {
             killProcess(processId);
         }
+
         String executorName;
         if (artifactItem.getGroupId() != null) {
             executorName = artifactItem.getArtifactId();
-        }
-        else {
+        } else if (useUberJar) {
             executorName = evaluateExecutorName(true);
+        } else {
+            executorName = "-Dgav=" + getProjectGAV();
         }
 
         final Runtime re = Runtime.getRuntime();
         try {
-            Process jpsProcess = re.exec("jps");
+            Process jpsProcess = re.exec("jps -v");
             InputStream inputStream = jpsProcess.getInputStream();
             BufferedReader in = new BufferedReader(new InputStreamReader(inputStream));
             String line;
