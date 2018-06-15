@@ -38,10 +38,10 @@
   
     <requiredProperties>
         <requiredProperty key="javaeeVersion">
-            <defaultValue>7.0</defaultValue>
+            <defaultValue>8.0</defaultValue>
         </requiredProperty>
         <requiredProperty key="payaraMicroVersion">
-            <defaultValue>4.1.2.181</defaultValue>
+            <defaultValue>5.182</defaultValue>
         </requiredProperty>
         <requiredProperty key="autoBindHttp">
             <defaultValue>true</defaultValue>
