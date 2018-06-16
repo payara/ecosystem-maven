@@ -50,7 +50,7 @@
             <plugin>
                 <groupId>fish.payara.maven.plugins</groupId>
                 <artifactId>payara-micro-maven-plugin</artifactId>
-                <version>1.0.1-SNAPSHOT</version>
+                <version>1.0.1</version>
                 <configuration>
                     <payaraVersion>${version.payara.micro}</payaraVersion>
                     <artifactItem>
