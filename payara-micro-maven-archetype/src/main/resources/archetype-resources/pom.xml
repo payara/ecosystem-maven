@@ -53,21 +53,14 @@
                 <version>1.0.1</version>
                 <configuration>
                     <payaraVersion>${version.payara.micro}</payaraVersion>
-                    <artifactItem>
-                        <groupId>fish.payara.extras</groupId>
-                        <artifactId>payara-micro</artifactId>
-                        <version>${version.payara.micro}</version>
-                    </artifactItem>
+                    <deployWar>true</deployWar>
+#if (${autoBindHttp} == "true")
                     <commandLineOptions>
                         <option>
                             <key>--autoBindHttp</key>
-                            <value>${autoBindHttp}</value>
-                        </option>
-                        <option>
-                            <key>--deploy</key>
-                            <value>${project.build.directory}/${project.build.finalName}</value>
                         </option>
                     </commandLineOptions>
+#end
                 </configuration>
             </plugin>
         </plugins>
