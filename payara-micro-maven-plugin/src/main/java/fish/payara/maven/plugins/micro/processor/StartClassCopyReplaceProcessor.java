@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2017 Payara Foundation and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017-2018 Payara Foundation and/or its affiliates. All rights reserved.
  *
  * The contents of this file are subject to the terms of either the GNU
  * General Public License Version 2 only ("GPL") or the Common Development
@@ -48,13 +48,34 @@ import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
 /**
  * @author mertcaliskan
  */
-public class StartClassReplaceProcessor extends BaseProcessor {
+public class StartClassCopyReplaceProcessor extends BaseProcessor {
 
     private String startClass;
 
     @Override
     public void handle(MojoExecutor.ExecutionEnvironment environment) throws MojoExecutionException {
         if (startClass != null  && !"".equals(startClass)) {
+
+            String startClassPackage = startClass.substring(0, startClass.lastIndexOf("."));
+            String startClassName = startClass.substring(startClass.lastIndexOf(".") + 1);
+
+            executeMojo(jarPlugin,
+                    goal("jar"),
+                    configuration(
+                            element(name("classesDirectory"), "${project.build.outputDirectory}"),
+                            element(name("outputDirectory"), OUTPUT_FOLDER + MICROINF_LIB_FOLDER),
+                            element(name("classifier"), "startClass"),
+                            element(name("archive"),
+                                    element(name("compress"), "false")
+                            ),
+                            element(name("includes"),
+                                    element(name("include"), startClassPackage.replace(".", File.separator)
+                                            + File.separator
+                                            + startClassName + ".class")
+                            )
+                    ),
+                    environment
+            );
 
             executeMojo(replacerPlugin,
                     goal("replace"),
