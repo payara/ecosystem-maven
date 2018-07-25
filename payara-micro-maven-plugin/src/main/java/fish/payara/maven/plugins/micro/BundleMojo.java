@@ -149,7 +149,7 @@ public class BundleMojo extends BasePayaraMojo {
         BootCommandFileCopyProcessor bootCommandFileCopyProcessor = new BootCommandFileCopyProcessor();
         DefinedArtifactDeployProcessor definedArtifactDeployProcessor = new DefinedArtifactDeployProcessor();
         ArtifactDeployProcessor artifactDeployProcessor = new ArtifactDeployProcessor();
-        StartClassReplaceProcessor startClassReplaceProcessor = new StartClassReplaceProcessor();
+        StartClassCopyReplaceProcessor startClassCopyReplaceProcessor = new StartClassCopyReplaceProcessor();
         SystemPropAppendProcessor systemPropAppendProcessor = new SystemPropAppendProcessor();
         MicroJarBundleProcessor microJarBundleProcessor = new MicroJarBundleProcessor();
 
@@ -159,8 +159,8 @@ public class BundleMojo extends BasePayaraMojo {
         bootCommandFileCopyProcessor.next(definedArtifactDeployProcessor);
         definedArtifactDeployProcessor.set(deployArtifacts).next(artifactDeployProcessor);
         artifactDeployProcessor.set(autoDeployArtifact, autoDeployContextRoot, 
-                autoDeployEmptyContextRoot, mavenProject.getPackaging()).next(startClassReplaceProcessor);
-        startClassReplaceProcessor.set(startClass).next(systemPropAppendProcessor);
+        autoDeployEmptyContextRoot, mavenProject.getPackaging()).next(startClassCopyReplaceProcessor);
+        startClassCopyReplaceProcessor.set(startClass).next(systemPropAppendProcessor);
         systemPropAppendProcessor.set(appendSystemProperties).next(microJarBundleProcessor);
 
         return microUnpackProcessor;
