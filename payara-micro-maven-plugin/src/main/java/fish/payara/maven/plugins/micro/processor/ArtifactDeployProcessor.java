@@ -45,6 +45,7 @@ import org.twdata.maven.mojoexecutor.MojoExecutor;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.maven.plugin.MojoExecution;
 
 import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
 
@@ -62,10 +63,10 @@ public class ArtifactDeployProcessor extends BaseProcessor {
     public void handle(MojoExecutor.ExecutionEnvironment environment) throws MojoExecutionException {
 
         Build build = environment.getMavenProject().getBuild();
-        String finalName = build != null ?
-                build.getFinalName() != null ?
-                        !build.getFinalName().isEmpty() ?
-                                build.getFinalName() : null : null : null;
+        String finalName = build != null
+                ? build.getFinalName() != null
+                ? !build.getFinalName().isEmpty()
+                ? build.getFinalName() : null : null : null;
         String contextRoot = autoDeployContextRoot;
         if (contextRoot == null || contextRoot.isEmpty()) {
             if (autoDeployEmptyContextRoot) {
@@ -73,6 +74,13 @@ public class ArtifactDeployProcessor extends BaseProcessor {
             } else {
                 contextRoot = finalName;
             }
+        }
+
+        String projectArtifactName = null;
+        try {
+            projectArtifactName = environment.getMavenProject().getArtifact().getFile().getName();
+        } catch (NullPointerException e) {
+            projectArtifactName = null;
         }
 
         if (autoDeployArtifact && WAR_EXTENSION.equalsIgnoreCase(packaging)) {
@@ -84,7 +92,8 @@ public class ArtifactDeployProcessor extends BaseProcessor {
             elements.add(element("type", "${project.packaging}"));
 
             if (contextRoot != null) {
-                elements.add(element("destFileName", contextRoot + "." + WAR_EXTENSION));
+                projectArtifactName = contextRoot + "." + WAR_EXTENSION;
+                elements.add(element("destFileName", projectArtifactName));
             }
 
             executeMojo(dependencyPlugin,
@@ -100,16 +109,20 @@ public class ArtifactDeployProcessor extends BaseProcessor {
                     environment
             );
             // Payara Micro deploys based on last modified date, so make sure that the artifact file is deployed last
-            File copiedFile = new File(OUTPUT_FOLDER + MICROINF_DEPLOY_FOLDER + environment.getMavenProject().getArtifact().getFile().getName());
-            if (copiedFile.exists()) {
-                copiedFile.setLastModified(System.currentTimeMillis());
+            if (projectArtifactName != null) {
+                String copiedFileName = OUTPUT_FOLDER + MICROINF_DEPLOY_FOLDER + File.separator + projectArtifactName;
+                copiedFileName = copiedFileName.replace("${project.build.directory}", environment.getMavenProject().getBuild().getDirectory());
+                File copiedFile = new File(copiedFileName);
+                if (copiedFile.exists()) {
+                    copiedFile.setLastModified(System.currentTimeMillis());
+                }
             }
         }
 
         gotoNext(environment);
     }
 
-    public BaseProcessor set(Boolean autoDeployArtifact, String autoDeployContextRoot, 
+    public BaseProcessor set(Boolean autoDeployArtifact, String autoDeployContextRoot,
             Boolean autoDeployEmptyContextRoot, String packaging) {
         this.autoDeployArtifact = autoDeployArtifact;
         this.autoDeployContextRoot = autoDeployContextRoot;
