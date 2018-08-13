@@ -63,38 +63,29 @@ public class ArtifactDeployProcessor extends BaseProcessor {
     public void handle(MojoExecutor.ExecutionEnvironment environment) throws MojoExecutionException {
 
         Build build = environment.getMavenProject().getBuild();
-        String finalName = build != null
-                ? build.getFinalName() != null
-                ? !build.getFinalName().isEmpty()
-                ? build.getFinalName() : null : null : null;
-        String contextRoot = autoDeployContextRoot;
-        if (contextRoot == null || contextRoot.isEmpty()) {
-            if (autoDeployEmptyContextRoot) {
-                contextRoot = "ROOT";
-            } else {
-                contextRoot = finalName;
-            }
-        }
-
-        String projectArtifactName = null;
-        try {
-            projectArtifactName = environment.getMavenProject().getArtifact().getFile().getName();
-        } catch (NullPointerException e) {
-            projectArtifactName = null;
-        }
+        String finalName = build.getFinalName(); // this is never null, maven provides a default 
+                                                 // if finalName not specified in pom.xml
 
         if (autoDeployArtifact && WAR_EXTENSION.equalsIgnoreCase(packaging)) {
+
+            String contextRoot = autoDeployContextRoot;
+            if (contextRoot == null || contextRoot.isEmpty()) {
+                if (autoDeployEmptyContextRoot || contextRoot.isEmpty() || finalName.isEmpty()) {
+                    contextRoot = "ROOT";
+                } else {
+                    contextRoot = finalName;
+                }
+            }
+
+            String projectArtifactName = contextRoot + "." + WAR_EXTENSION;
+
             List<Element> elements = new ArrayList<>();
 
             elements.add(element("groupId", "${project.groupId}"));
             elements.add(element("artifactId", "${project.artifactId}"));
             elements.add(element("version", "${project.version}"));
             elements.add(element("type", "${project.packaging}"));
-
-            if (contextRoot != null) {
-                projectArtifactName = contextRoot + "." + WAR_EXTENSION;
-                elements.add(element("destFileName", projectArtifactName));
-            }
+            elements.add(element("destFileName", projectArtifactName));
 
             executeMojo(dependencyPlugin,
                     goal("copy"),
