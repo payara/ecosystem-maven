@@ -45,7 +45,7 @@ import org.twdata.maven.mojoexecutor.MojoExecutor;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.maven.plugin.MojoExecution;
+import org.apache.maven.plugin.logging.Log;
 
 import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
 
@@ -58,6 +58,12 @@ public class ArtifactDeployProcessor extends BaseProcessor {
     private String autoDeployContextRoot;
     private Boolean autoDeployEmptyContextRoot;
     private String packaging;
+    
+    private Log log;
+
+    public ArtifactDeployProcessor(Log log) {
+        this.log = log;
+    }
 
     @Override
     public void handle(MojoExecutor.ExecutionEnvironment environment) throws MojoExecutionException {
@@ -69,8 +75,12 @@ public class ArtifactDeployProcessor extends BaseProcessor {
         if (autoDeployArtifact && WAR_EXTENSION.equalsIgnoreCase(packaging)) {
 
             String contextRoot = autoDeployContextRoot;
-            if (contextRoot == null || contextRoot.isEmpty()) {
-                if (autoDeployEmptyContextRoot || contextRoot.isEmpty() || finalName.isEmpty()) {
+            boolean contextRootSet = (contextRoot != null);
+            boolean contextRootSetButEmpty = contextRootSet && contextRoot.isEmpty();
+            if (!contextRootSet || contextRootSetButEmpty) {
+                if (autoDeployEmptyContextRoot 
+                        || contextRootSetButEmpty
+                        || finalName.isEmpty()) {
                     contextRoot = "ROOT";
                 } else {
                     contextRoot = finalName;
@@ -106,6 +116,9 @@ public class ArtifactDeployProcessor extends BaseProcessor {
                 File copiedFile = new File(copiedFileName);
                 if (copiedFile.exists()) {
                     copiedFile.setLastModified(System.currentTimeMillis());
+                    log.info("Updated timestamp of deployment file [" + copiedFile.getAbsolutePath() + "]");
+                } else {
+                    log.warn("Deployment file [" + copiedFile.getAbsolutePath() + "] doesn't exist, won't update its timestamp");
                 }
             }
         }

@@ -41,6 +41,7 @@ package fish.payara.maven.plugins.micro.processor;
 import fish.payara.maven.plugins.micro.Configuration;
 import org.apache.maven.model.Plugin;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.logging.Log;
 
 import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
 
@@ -50,7 +51,7 @@ import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
 public abstract class BaseProcessor implements Configuration {
 
     private BaseProcessor nextProcessor;
-
+    
     Plugin dependencyPlugin =
             plugin(groupId("org.apache.maven.plugins"), artifactId("maven-dependency-plugin"), version("3.0.0"));
 

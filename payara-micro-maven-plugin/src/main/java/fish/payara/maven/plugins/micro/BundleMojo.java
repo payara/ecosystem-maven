@@ -148,7 +148,7 @@ public class BundleMojo extends BasePayaraMojo {
         CustomFileCopyProcessor customFileCopyProcessor = new CustomFileCopyProcessor();
         BootCommandFileCopyProcessor bootCommandFileCopyProcessor = new BootCommandFileCopyProcessor();
         DefinedArtifactDeployProcessor definedArtifactDeployProcessor = new DefinedArtifactDeployProcessor();
-        ArtifactDeployProcessor artifactDeployProcessor = new ArtifactDeployProcessor();
+        ArtifactDeployProcessor artifactDeployProcessor = new ArtifactDeployProcessor(getLog());
         StartClassCopyReplaceProcessor startClassCopyReplaceProcessor = new StartClassCopyReplaceProcessor();
         SystemPropAppendProcessor systemPropAppendProcessor = new SystemPropAppendProcessor();
         MicroJarBundleProcessor microJarBundleProcessor = new MicroJarBundleProcessor();
