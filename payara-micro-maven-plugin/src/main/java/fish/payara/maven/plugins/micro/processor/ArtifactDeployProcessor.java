@@ -45,6 +45,7 @@ import org.twdata.maven.mojoexecutor.MojoExecutor;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.maven.plugin.logging.Log;
 
 import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
 
@@ -57,35 +58,44 @@ public class ArtifactDeployProcessor extends BaseProcessor {
     private String autoDeployContextRoot;
     private Boolean autoDeployEmptyContextRoot;
     private String packaging;
+    
+    private Log log;
+
+    public ArtifactDeployProcessor(Log log) {
+        this.log = log;
+    }
 
     @Override
     public void handle(MojoExecutor.ExecutionEnvironment environment) throws MojoExecutionException {
 
         Build build = environment.getMavenProject().getBuild();
-        String finalName = build != null ?
-                build.getFinalName() != null ?
-                        !build.getFinalName().isEmpty() ?
-                                build.getFinalName() : null : null : null;
-        String contextRoot = autoDeployContextRoot;
-        if (contextRoot == null || contextRoot.isEmpty()) {
-            if (autoDeployEmptyContextRoot) {
-                contextRoot = "ROOT";
-            } else {
-                contextRoot = finalName;
-            }
-        }
+        String finalName = build.getFinalName(); // this is never null, maven provides a default 
+                                                 // if finalName not specified in pom.xml
 
         if (autoDeployArtifact && WAR_EXTENSION.equalsIgnoreCase(packaging)) {
+
+            String contextRoot = autoDeployContextRoot;
+            boolean contextRootSet = (contextRoot != null);
+            boolean contextRootSetButEmpty = contextRootSet && contextRoot.isEmpty();
+            if (!contextRootSet || contextRootSetButEmpty) {
+                if (autoDeployEmptyContextRoot 
+                        || contextRootSetButEmpty
+                        || finalName.isEmpty()) {
+                    contextRoot = "ROOT";
+                } else {
+                    contextRoot = finalName;
+                }
+            }
+
+            String projectArtifactName = contextRoot + "." + WAR_EXTENSION;
+
             List<Element> elements = new ArrayList<>();
 
             elements.add(element("groupId", "${project.groupId}"));
             elements.add(element("artifactId", "${project.artifactId}"));
             elements.add(element("version", "${project.version}"));
             elements.add(element("type", "${project.packaging}"));
-
-            if (contextRoot != null) {
-                elements.add(element("destFileName", contextRoot + "." + WAR_EXTENSION));
-            }
+            elements.add(element("destFileName", projectArtifactName));
 
             executeMojo(dependencyPlugin,
                     goal("copy"),
@@ -100,16 +110,23 @@ public class ArtifactDeployProcessor extends BaseProcessor {
                     environment
             );
             // Payara Micro deploys based on last modified date, so make sure that the artifact file is deployed last
-            File copiedFile = new File(OUTPUT_FOLDER + MICROINF_DEPLOY_FOLDER + environment.getMavenProject().getArtifact().getFile().getName());
-            if (copiedFile.exists()) {
-                copiedFile.setLastModified(System.currentTimeMillis());
+            if (projectArtifactName != null) {
+                String copiedFileName = OUTPUT_FOLDER + MICROINF_DEPLOY_FOLDER + File.separator + projectArtifactName;
+                copiedFileName = copiedFileName.replace("${project.build.directory}", environment.getMavenProject().getBuild().getDirectory());
+                File copiedFile = new File(copiedFileName);
+                if (copiedFile.exists()) {
+                    copiedFile.setLastModified(System.currentTimeMillis());
+                    log.info("Updated timestamp of deployment file [" + copiedFile.getAbsolutePath() + "]");
+                } else {
+                    log.warn("Deployment file [" + copiedFile.getAbsolutePath() + "] doesn't exist, won't update its timestamp");
+                }
             }
         }
 
         gotoNext(environment);
     }
 
-    public BaseProcessor set(Boolean autoDeployArtifact, String autoDeployContextRoot, 
+    public BaseProcessor set(Boolean autoDeployArtifact, String autoDeployContextRoot,
             Boolean autoDeployEmptyContextRoot, String packaging) {
         this.autoDeployArtifact = autoDeployArtifact;
         this.autoDeployContextRoot = autoDeployContextRoot;
