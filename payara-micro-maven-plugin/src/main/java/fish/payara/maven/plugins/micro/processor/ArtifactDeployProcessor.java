@@ -38,13 +38,17 @@
  */
 package fish.payara.maven.plugins.micro.processor;
 
+import com.google.common.io.Files;
 import java.io.File;
+import java.io.IOException;
 import org.apache.maven.model.Build;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.twdata.maven.mojoexecutor.MojoExecutor;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.apache.maven.plugin.logging.Log;
 
 import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
@@ -58,7 +62,7 @@ public class ArtifactDeployProcessor extends BaseProcessor {
     private String autoDeployContextRoot;
     private Boolean autoDeployEmptyContextRoot;
     private String packaging;
-    
+
     private Log log;
 
     public ArtifactDeployProcessor(Log log) {
@@ -68,9 +72,9 @@ public class ArtifactDeployProcessor extends BaseProcessor {
     @Override
     public void handle(MojoExecutor.ExecutionEnvironment environment) throws MojoExecutionException {
 
-        Build build = environment.getMavenProject().getBuild();
-        String finalName = build.getFinalName(); // this is never null, maven provides a default 
-                                                 // if finalName not specified in pom.xml
+        String finalName = environment.getMavenProject().getBuild().getFinalName();
+        // finalName is never null, maven provides a default 
+        // if finalName not specified in pom.xml
 
         if (autoDeployArtifact && WAR_EXTENSION.equalsIgnoreCase(packaging)) {
 
@@ -78,7 +82,7 @@ public class ArtifactDeployProcessor extends BaseProcessor {
             boolean contextRootSet = (contextRoot != null);
             boolean contextRootSetButEmpty = contextRootSet && contextRoot.isEmpty();
             if (!contextRootSet || contextRootSetButEmpty) {
-                if (autoDeployEmptyContextRoot 
+                if (autoDeployEmptyContextRoot
                         || contextRootSetButEmpty
                         || finalName.isEmpty()) {
                     contextRoot = "ROOT";
@@ -89,30 +93,20 @@ public class ArtifactDeployProcessor extends BaseProcessor {
 
             String projectArtifactName = contextRoot + "." + WAR_EXTENSION;
 
-            List<Element> elements = new ArrayList<>();
+            File artifactFile = environment.getMavenProject().getArtifact().getFile();
+            if (artifactFile == null) {
+                artifactFile = getArtifactFromConfig(environment);
+            }
+            if (artifactFile.exists()) {
+                deployFile(artifactFile, projectArtifactName, environment);
+            } else {
+                deployMainArtifactFromLocalRepo(projectArtifactName, environment);
+            }
 
-            elements.add(element("groupId", "${project.groupId}"));
-            elements.add(element("artifactId", "${project.artifactId}"));
-            elements.add(element("version", "${project.version}"));
-            elements.add(element("type", "${project.packaging}"));
-            elements.add(element("destFileName", projectArtifactName));
-
-            executeMojo(dependencyPlugin,
-                    goal("copy"),
-                    configuration(
-                            element(name("artifactItems"),
-                                    element(name("artifactItem"),
-                                            elements.toArray(new Element[0])
-                                    )
-                            ),
-                            element(name("outputDirectory"), OUTPUT_FOLDER + MICROINF_DEPLOY_FOLDER)
-                    ),
-                    environment
-            );
             // Payara Micro deploys based on last modified date, so make sure that the artifact file is deployed last
             if (projectArtifactName != null) {
                 String copiedFileName = OUTPUT_FOLDER + MICROINF_DEPLOY_FOLDER + File.separator + projectArtifactName;
-                copiedFileName = copiedFileName.replace("${project.build.directory}", environment.getMavenProject().getBuild().getDirectory());
+                copiedFileName = replaceBuildDirectory(copiedFileName, environment);
                 File copiedFile = new File(copiedFileName);
                 if (copiedFile.exists()) {
                     copiedFile.setLastModified(System.currentTimeMillis());
@@ -126,6 +120,33 @@ public class ArtifactDeployProcessor extends BaseProcessor {
         gotoNext(environment);
     }
 
+    private static String replaceBuildDirectory(String copiedFileName, ExecutionEnvironment environment) {
+        return copiedFileName.replace("${project.build.directory}", environment.getMavenProject().getBuild().getDirectory());
+    }
+
+    private void deployMainArtifactFromLocalRepo(String projectArtifactName, ExecutionEnvironment environment) throws MojoExecutionException {
+        List<Element> elements = new ArrayList<>();
+
+        elements.add(element("groupId", "${project.groupId}"));
+        elements.add(element("artifactId", "${project.artifactId}"));
+        elements.add(element("version", "${project.version}"));
+        elements.add(element("type", "${project.packaging}"));
+        elements.add(element("destFileName", projectArtifactName));
+
+        executeMojo(dependencyPlugin,
+                goal("copy"),
+                configuration(
+                        element(name("artifactItems"),
+                                element(name("artifactItem"),
+                                        elements.toArray(new Element[0])
+                                )
+                        ),
+                        element(name("outputDirectory"), OUTPUT_FOLDER + MICROINF_DEPLOY_FOLDER)
+                ),
+                environment
+        );
+    }
+
     public BaseProcessor set(Boolean autoDeployArtifact, String autoDeployContextRoot,
             Boolean autoDeployEmptyContextRoot, String packaging) {
         this.autoDeployArtifact = autoDeployArtifact;
@@ -133,5 +154,22 @@ public class ArtifactDeployProcessor extends BaseProcessor {
         this.autoDeployEmptyContextRoot = autoDeployEmptyContextRoot;
         this.packaging = packaging;
         return this;
+    }
+
+    private File getArtifactFromConfig(ExecutionEnvironment environment) {
+        final Build build = environment.getMavenProject().getModel().getBuild();
+        final String artifactType = environment.getMavenProject().getArtifact().getType();
+        return new File(build.getDirectory(), build.getFinalName() + "." + artifactType);
+    }
+
+    private void deployFile(File artifactFile, String projectArtifactName, ExecutionEnvironment environment) {
+        try {
+            File targetFile = new File(replaceBuildDirectory(OUTPUT_FOLDER + MICROINF_DEPLOY_FOLDER, environment), projectArtifactName);
+            log.info("Copying application file [" + artifactFile.getAbsolutePath() + "] to [" + targetFile + "]");
+            Files.copy(artifactFile, targetFile);
+        } catch (IOException ex) {
+            log.debug("Cannot copy artifact file [" + artifactFile.getAbsolutePath() + "] into the bundle: " + ex.getMessage(), ex);
+            throw new RuntimeException(ex);
+        }
     }
 }
