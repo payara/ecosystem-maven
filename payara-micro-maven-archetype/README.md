@@ -12,5 +12,5 @@ $ mvn archetype:generate -DarchetypeGroupId=fish.payara.maven.archetypes -Darche
 ## Run the project
 
 ```sh
-$ mvn payara-micro:start
+$ mvn package payara-micro:start
 ```
