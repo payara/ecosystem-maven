@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2017 Payara Foundation and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017-2018 Payara Foundation and/or its affiliates. All rights reserved.
  *
  * The contents of this file are subject to the terms of either the GNU
  * General Public License Version 2 only ("GPL") or the Common Development
@@ -41,7 +41,6 @@ package fish.payara.maven.plugins.micro.processor;
 import fish.payara.maven.plugins.micro.Configuration;
 import org.apache.maven.model.Plugin;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.logging.Log;
 
 import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
 
@@ -53,13 +52,13 @@ public abstract class BaseProcessor implements Configuration {
     private BaseProcessor nextProcessor;
     
     Plugin dependencyPlugin =
-            plugin(groupId("org.apache.maven.plugins"), artifactId("maven-dependency-plugin"), version("3.0.0"));
+            plugin(groupId("org.apache.maven.plugins"), artifactId("maven-dependency-plugin"), version("3.1.1"));
 
     Plugin resourcesPlugin =
-            plugin(groupId("org.apache.maven.plugins"), artifactId("maven-resources-plugin"), version("3.0.2"));
+            plugin(groupId("org.apache.maven.plugins"), artifactId("maven-resources-plugin"), version("3.1.0"));
 
     Plugin jarPlugin =
-            plugin(groupId("org.apache.maven.plugins"), artifactId("maven-jar-plugin"), version("3.0.2"));
+            plugin(groupId("org.apache.maven.plugins"), artifactId("maven-jar-plugin"), version("3.1.0"));
 
     Plugin replacerPlugin =
             plugin(groupId("com.google.code.maven-replacer-plugin"), artifactId("replacer"), version("1.5.3"));
