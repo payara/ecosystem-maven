@@ -44,6 +44,7 @@ import org.twdata.maven.mojoexecutor.MojoExecutor;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import static org.apache.commons.lang.StringEscapeUtils.escapeJava;
 
 import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
 
@@ -85,10 +86,13 @@ public class SystemPropAppendProcessor extends BaseProcessor {
     }
 
     private Element[] constructElementsForSystemProperties() {
-        List<Element> elements = new ArrayList<Element>();
+        List<Element> elements = new ArrayList<>();
         Properties properties = System.getProperties();
         for (Object key : properties.keySet()) {
-            Element element = element(name("line"), key + "=" + properties.get(key));
+            Element element = element(
+                    name("line"),
+                    escapeJava(key + "=" + properties.get(key))
+            );
             elements.add(element);
         }
         return elements.toArray(new Element[elements.size()]);
