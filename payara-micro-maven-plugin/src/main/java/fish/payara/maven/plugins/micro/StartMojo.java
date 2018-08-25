@@ -94,6 +94,7 @@ public class StartMojo extends BasePayaraMojo {
     @Parameter(property = "deployWar", defaultValue = "false")
     private Boolean deployWar;
 
+    @Deprecated
     @Parameter(property = "copySystemProperties", defaultValue = "false")
     private Boolean copySystemProperties;
 
@@ -111,7 +112,13 @@ public class StartMojo extends BasePayaraMojo {
         threadGroup = new ThreadGroup(MICRO_THREAD_NAME);
     }
 
-    public void execute() throws MojoExecutionException, MojoFailureException {
+    public void execute() throws MojoExecutionException {
+        if (copySystemProperties) {
+            getLog().warn("copySystemProperties is deprecated. " +
+                    "System properties of the regarding maven execution " +
+                    "will be passed to the payara-micro automatically.");
+        }
+
         if (skip) {
             getLog().info("Start mojo execution is skipped");
             return;
@@ -119,103 +126,86 @@ public class StartMojo extends BasePayaraMojo {
 
         final String path = decideOnWhichMicroToUse();
 
-        microProcessorThread = new Thread(threadGroup, new Runnable() {
-            @Override
-            public void run() {
-                List<String> systemProps = new ArrayList<>();
-                if (copySystemProperties) {
-                    for (String property : mavenSession.getSystemProperties().stringPropertyNames()) {
-                        String value = System.getProperty(property);
-                        if (value != null) {
-                            String prop = String.format("%s=%s", property, value);
-                            systemProps.add(prop);
-                        }
+        microProcessorThread = new Thread(threadGroup, () -> {
+
+            final List<String> actualArgs = new ArrayList<>();
+            getLog().info("Starting payara-micro from path: " + path);
+            int indice = 0;
+            actualArgs.add(indice++, javaPath);
+            if (javaCommandLineOptions != null) {
+                for (Option option : javaCommandLineOptions) {
+                    if (option.getKey() != null && option.getValue() != null) {
+                        String systemProperty = String.format("%s=%s", option.getKey(), option.getValue());
+                        actualArgs.add(indice++, systemProperty);
                     }
+                    else if (option.getValue() != null) {
+                        actualArgs.add(indice++, option.getValue());
+                    }
+                }
+            }
+
+            String execArgs = mavenSession.getRequest().getUserProperties().getProperty("exec.args");
+            if (execArgs != null && !execArgs.trim().isEmpty()) {
+                for (String execArg : execArgs.split("\\s+")) {
+                    actualArgs.add(indice++, execArg);
+                }
+            }
+
+            actualArgs.add(indice++, "-Dgav=" + getProjectGAV());
+            actualArgs.add(indice++, "-jar");
+            actualArgs.add(indice++, path);
+            if (deployWar && WAR_EXTENSION.equalsIgnoreCase(mavenProject.getPackaging())) {
+                actualArgs.add(indice++, "--deploy");
+                actualArgs.add(indice++, evaluateProjectArtifactAbsolutePath(false));
+            }
+            if (commandLineOptions != null) {
+                for (Option option : commandLineOptions) {
+                    if (option.getKey() != null) {
+                        actualArgs.add(indice++, option.getKey());
+                    }
+                    if (option.getValue() != null) {
+                        actualArgs.add(indice++, option.getValue());
+                    }
+                }
+            }
+
+            try {
+                final Runtime re = Runtime.getRuntime();
+                microProcess = re.exec(actualArgs.toArray(new String[actualArgs.size()]));
+
+                if (daemon) {
+                    redirectStream(microProcess.getInputStream(), System.out);
+                    redirectStream(microProcess.getErrorStream(), System.err);
+                } else {
+                    redirectStreamToGivenOutputStream(microProcess.getInputStream(), System.out);
+                    redirectStreamToGivenOutputStream(microProcess.getErrorStream(), System.err);
                 }
 
-                final List<String> actualArgs = new ArrayList<>();
-                getLog().info("Starting payara-micro from path: " + path);
-                int indice = 0;
-                actualArgs.add(indice++, javaPath);
-                if (javaCommandLineOptions != null) {
-                    for (Option option : javaCommandLineOptions) {
-                        if (option.getKey() != null && option.getValue() != null) {
-                            String systemProperty = String.format("%s=%s", option.getKey(), option.getValue());
-                            actualArgs.add(indice++, systemProperty);
-                        }
-                        else if (option.getValue() != null) {
-                            actualArgs.add(indice++, option.getValue());
-                        }
-                    }
+                int exitCode = microProcess.waitFor();
+                if (exitCode != 0) {
+                    throw new MojoFailureException(ERROR_MESSAGE);
                 }
-
-                String execArgs = mavenSession.getRequest().getUserProperties().getProperty("exec.args");
-                if (execArgs != null && !execArgs.trim().isEmpty()) {
-                    for (String execArg : execArgs.split("\\s+")) {
-                        actualArgs.add(indice++, execArg);
-                    }
-                }
-
-                actualArgs.add(indice++, "-Dgav=" + getProjectGAV());
-                actualArgs.add(indice++, "-jar");
-                actualArgs.add(indice++, path);
-                if (deployWar && WAR_EXTENSION.equalsIgnoreCase(mavenProject.getPackaging())) {
-                    actualArgs.add(indice++, "--deploy");
-                    actualArgs.add(indice++, evaluateProjectArtifactAbsolutePath(false));
-                }
-                if (commandLineOptions != null) {
-                    for (Option option : commandLineOptions) {
-                        if (option.getKey() != null) {
-                            actualArgs.add(indice++, option.getKey());
-                        }
-                        if (option.getValue() != null) {
-                            actualArgs.add(indice++, option.getValue());
-                        }
-                    }
-                }
-
-                try {
-                    final Runtime re = Runtime.getRuntime();
-                    microProcess = re.exec(actualArgs.toArray(new String[actualArgs.size()]), systemProps.isEmpty()
-                            ? null : systemProps.toArray(new String[systemProps.size()]));
-
-                    if (daemon) {
-                        redirectStream(microProcess.getInputStream(), System.out);
-                        redirectStream(microProcess.getErrorStream(), System.err);
-                    } else {
-                        redirectStreamToGivenOutputStream(microProcess.getInputStream(), System.out);
-                        redirectStreamToGivenOutputStream(microProcess.getErrorStream(), System.err);
-                    }
-
-                    int exitCode = microProcess.waitFor();
-                    if (exitCode != 0) {
-                        throw new MojoFailureException(ERROR_MESSAGE);
-                    }
-                }
-                catch (InterruptedException ignored) {
-                }
-                catch (Exception e) {
-                    throw new RuntimeException(ERROR_MESSAGE, e);
-                }
-                finally {
-                    if (!daemon) {
-                        closeMicroProcess();
-                    }
+            }
+            catch (InterruptedException ignored) {
+            }
+            catch (Exception e) {
+                throw new RuntimeException(ERROR_MESSAGE, e);
+            }
+            finally {
+                if (!daemon) {
+                    closeMicroProcess();
                 }
             }
         });
 
-        final Thread shutdownHook = new Thread(threadGroup,new Runnable() {
-            @Override
-            public void run() {
-                if (microProcess != null && microProcess.isAlive()) {
-                    try {
-                        microProcess.destroy();
-                        microProcess.waitFor(1, TimeUnit.MINUTES);
-                    } catch (InterruptedException ignored) {
-                    } finally {
-                        microProcess.destroyForcibly();
-                    }
+        final Thread shutdownHook = new Thread(threadGroup, () -> {
+            if (microProcess != null && microProcess.isAlive()) {
+                try {
+                    microProcess.destroy();
+                    microProcess.waitFor(1, TimeUnit.MINUTES);
+                } catch (InterruptedException ignored) {
+                } finally {
+                    microProcess.destroyForcibly();
                 }
             }
         });
@@ -295,7 +285,7 @@ public class StartMojo extends BasePayaraMojo {
     private String evaluateExecutorName(Boolean withExtension) {
         String extension;
         if (withExtension) {
-            extension = "-" + Configuration.MICROBUNDLE_EXTENSION + ".jar";
+            extension = "-" + Configuration.MICROBUNDLE_EXTENSION + "." + JAR_EXTENSION;
         }
         else {
             extension = "." + mavenProject.getPackaging();
@@ -318,26 +308,23 @@ public class StartMojo extends BasePayaraMojo {
     }
 
     private void redirectStream(final InputStream inputStream, final PrintStream printStream) {
-        final Thread thread = new Thread(threadGroup, new Runnable() {
-            @Override
-            public void run() {
-                BufferedReader br;
-                StringBuilder sb = new StringBuilder();
+        final Thread thread = new Thread(threadGroup, () -> {
+            BufferedReader br;
+            StringBuilder sb = new StringBuilder();
 
-                String line;
-                try {
-                    br = new BufferedReader(new InputStreamReader(inputStream));
-                    while ((line = br.readLine()) != null) {
-                        sb.append(line);
-                        printStream.println(line);
-                        if (!immediateExit && sb.toString().contains(MICRO_READY_MESSAGE)) {
-                            microProcessorThread.interrupt();
-                            break;
-                        }
+            String line;
+            try {
+                br = new BufferedReader(new InputStreamReader(inputStream));
+                while ((line = br.readLine()) != null) {
+                    sb.append(line);
+                    printStream.println(line);
+                    if (!immediateExit && sb.toString().contains(MICRO_READY_MESSAGE)) {
+                        microProcessorThread.interrupt();
+                        break;
                     }
-                } catch (IOException e) {
-                    e.printStackTrace();
                 }
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         });
         thread.setDaemon(false);
@@ -345,14 +332,11 @@ public class StartMojo extends BasePayaraMojo {
     }
 
     private void redirectStreamToGivenOutputStream(final InputStream inputStream, final OutputStream outputStream) {
-        Thread thread = new Thread(threadGroup, new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    IOUtils.copy(inputStream, outputStream);
-                } catch (IOException e) {
-                    getLog().error("Error occurred while reading stream", e);
-                }
+        Thread thread = new Thread(threadGroup, () -> {
+            try {
+                IOUtils.copy(inputStream, outputStream);
+            } catch (IOException e) {
+                getLog().error("Error occurred while reading stream", e);
             }
         });
         thread.setDaemon(false);

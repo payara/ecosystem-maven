@@ -50,6 +50,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
+import static fish.payara.maven.plugins.micro.Configuration.JAR_EXTENSION;
+
 /**
  * Stop mojo that terminates running payara-micro invoked by @{code run} mojo
  *
@@ -140,7 +142,7 @@ public class StopMojo extends BasePayaraMojo {
     private String evaluateExecutorName(Boolean withExtension) {
         String extension;
         if (withExtension) {
-            extension = "-" + Configuration.MICROBUNDLE_EXTENSION + ".jar";
+            extension = "-" + Configuration.MICROBUNDLE_EXTENSION + "." + JAR_EXTENSION;
         }
         else {
             extension = "." + mavenProject.getPackaging();
