@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2017-2019 Payara Foundation and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017 Payara Foundation and/or its affiliates. All rights reserved.
  *
  * The contents of this file are subject to the terms of either the GNU
  * General Public License Version 2 only ("GPL") or the Common Development
@@ -38,44 +38,51 @@
  */
 package fish.payara.maven.plugins.micro.processor;
 
-import fish.payara.maven.plugins.micro.Configuration;
-import org.apache.maven.model.Plugin;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.twdata.maven.mojoexecutor.MojoExecutor;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Properties;
+import static org.apache.commons.lang.StringEscapeUtils.escapeJava;
 
 import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
 
 /**
- * @author mertcaliskan
+ * @author ondrejmihalyi
  */
-public abstract class BaseProcessor implements Configuration {
+public abstract class BaseSystemPropProcessor extends BaseProcessor {
 
-    private BaseProcessor nextProcessor;
-    
-    Plugin dependencyPlugin =
-            plugin(groupId("org.apache.maven.plugins"), artifactId("maven-dependency-plugin"), version("3.1.1"));
+    protected static final boolean APPEND = true;
 
-    Plugin resourcesPlugin =
-            plugin(groupId("org.apache.maven.plugins"), artifactId("maven-resources-plugin"), version("3.1.0"));
-
-    Plugin jarPlugin =
-            plugin(groupId("org.apache.maven.plugins"), artifactId("maven-jar-plugin"), version("3.1.1"));
-
-    Plugin replacerPlugin =
-            plugin(groupId("com.google.code.maven-replacer-plugin"), artifactId("replacer"), version("1.5.3"));
-
-    Plugin plainTextPlugin =
-            plugin(groupId("io.github.olivierlemasle.maven"), artifactId("plaintext-maven-plugin"), version("1.0.0"));
-
-    public abstract void handle(ExecutionEnvironment environment) throws MojoExecutionException;
-
-    public <PROCESSOR_TYPE extends BaseProcessor> PROCESSOR_TYPE next(PROCESSOR_TYPE processor) {
-        this.nextProcessor = processor;
-        return processor;
+    protected void addSystemPropertiesForPayaraMicro(Properties properties, boolean append, MojoExecutor.ExecutionEnvironment environment) throws MojoExecutionException {
+        executeMojo(plainTextPlugin,
+                goal("write"),
+                configuration(
+                        element(name("outputDirectory"), OUTPUT_FOLDER + MICROINF_FOLDER),
+                        element(name("files"),
+                                element(name("file"),
+                                        element(name("name"), "payara-boot.properties"),
+                                        element(name("append"), String.valueOf(append)),
+                                        element(name("lines"),
+                                                constructElementsForProperties(properties)
+                                        )
+                                )
+                        )
+                ),
+                environment
+        );
     }
 
-    void gotoNext(ExecutionEnvironment environment) throws MojoExecutionException {
-        if (nextProcessor != null) {
-            nextProcessor.handle(environment);
+    private Element[] constructElementsForProperties(Properties properties) {
+        List<Element> elements = new ArrayList<>();
+        for (Object key : properties.keySet()) {
+            Element element = element(
+                    name("line"),
+                    escapeJava(key + "=" + properties.get(key))
+            );
+            elements.add(element);
         }
+        return elements.toArray(new Element[elements.size()]);
     }
 }

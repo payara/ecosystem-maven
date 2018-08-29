@@ -21,6 +21,12 @@ This goal bundles the attached project's artifact into uber jar with specified c
         </executions>
         <configuration>
             <startClass>my.custom.start.class.Main</startClass>
+            <systemProperties>
+                <property>
+                    <name>payaramicro.port</name>
+                    <value>8888</value>
+                </property>
+            </systemProperties>
             <deployArtifacts>
                 <artifactItem>
                     <groupId>org.mycompany</groupId>
@@ -47,6 +53,7 @@ This goal bundles the attached project's artifact into uber jar with specified c
 - __payaraVersion__ (optional |  default: 5.191): By default ```bundle``` mojo fetches payara-micro with version 5.191.
 - __deployArtifacts__ (optional): Can contain a list of artifactItems, which defines the dependencies with their GAVs to be copied under ```MICRO-INF/deploy``` folder.
 - __customJars__ (optional): Can contain a list of artifactItems, which defines the dependencies with their GAVs to be copied under ```MICRO-INF/lib``` folder.
+- __systemProperties__ (optional): Can contain a list of `property` elements that specify system properties to add into the ```payara-boot.properties``` file . A `property` element contains `name` and `value` elements.
 
 ## start
 This goal start payara-micro with specified configurations. ```start``` is attached to the ```payara-micro``` phase. It can be executed as ```mvn payara-micro:start```. A sample usage would as follows:
