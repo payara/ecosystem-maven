@@ -41,42 +41,19 @@ package fish.payara.maven.plugins.micro.processor;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.twdata.maven.mojoexecutor.MojoExecutor;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
-import static org.apache.commons.lang.StringEscapeUtils.escapeJava;
-
-import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
 
 /**
  * @author mertcaliskan
  */
-public class SystemPropAppendProcessor extends BaseProcessor {
+public class SystemPropAppendProcessor extends BaseSystemPropProcessor {
 
     private Boolean appendSystemProperties;
 
     @Override
     public void handle(MojoExecutor.ExecutionEnvironment environment) throws MojoExecutionException {
         if (appendSystemProperties) {
-
-            executeMojo(plainTextPlugin,
-                    goal("write"),
-                    configuration(
-                            element(name("outputDirectory"), OUTPUT_FOLDER + MICROINF_FOLDER),
-                            element(name("files"),
-                                    element(name("file"),
-                                            element(name("name"),"payara-boot.properties"),
-                                            element(name("append"),"true"),
-                                            element(name("lines"),
-                                                    constructElementsForSystemProperties()
-                                            )
-                                    )
-                            )
-                    ),
-                    environment
-            );
+            addSystemPropertiesForPayaraMicro(System.getProperties(), APPEND, environment);
         }
-
         gotoNext(environment);
     }
 
@@ -85,16 +62,4 @@ public class SystemPropAppendProcessor extends BaseProcessor {
         return this;
     }
 
-    private Element[] constructElementsForSystemProperties() {
-        List<Element> elements = new ArrayList<>();
-        Properties properties = System.getProperties();
-        for (Object key : properties.keySet()) {
-            Element element = element(
-                    name("line"),
-                    escapeJava(key + "=" + properties.get(key))
-            );
-            elements.add(element);
-        }
-        return elements.toArray(new Element[elements.size()]);
-    }
 }

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2017-2018 Payara Foundation and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017 Payara Foundation and/or its affiliates. All rights reserved.
  *
  * The contents of this file are subject to the terms of either the GNU
  * General Public License Version 2 only ("GPL") or the Common Development
@@ -38,44 +38,39 @@
  */
 package fish.payara.maven.plugins.micro.processor;
 
-import fish.payara.maven.plugins.micro.Configuration;
-import org.apache.maven.model.Plugin;
+import fish.payara.maven.plugins.micro.Property;
+import java.util.List;
+import java.util.Properties;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.twdata.maven.mojoexecutor.MojoExecutor;
 
-import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
 
 /**
- * @author mertcaliskan
+ * @author ondrejmihalyi
  */
-public abstract class BaseProcessor implements Configuration {
+public class CustomPropPrependProcessor extends BaseSystemPropProcessor {
 
-    private BaseProcessor nextProcessor;
-    
-    Plugin dependencyPlugin =
-            plugin(groupId("org.apache.maven.plugins"), artifactId("maven-dependency-plugin"), version("3.1.1"));
+    private List<Property> properties;
 
-    Plugin resourcesPlugin =
-            plugin(groupId("org.apache.maven.plugins"), artifactId("maven-resources-plugin"), version("3.1.0"));
-
-    Plugin jarPlugin =
-            plugin(groupId("org.apache.maven.plugins"), artifactId("maven-jar-plugin"), version("3.1.0"));
-
-    Plugin replacerPlugin =
-            plugin(groupId("com.google.code.maven-replacer-plugin"), artifactId("replacer"), version("1.5.3"));
-
-    Plugin plainTextPlugin =
-            plugin(groupId("io.github.olivierlemasle.maven"), artifactId("plaintext-maven-plugin"), version("1.0.0"));
-
-    public abstract void handle(ExecutionEnvironment environment) throws MojoExecutionException;
-
-    public <PROCESSOR_TYPE extends BaseProcessor> PROCESSOR_TYPE next(PROCESSOR_TYPE processor) {
-        this.nextProcessor = processor;
-        return processor;
-    }
-
-    void gotoNext(ExecutionEnvironment environment) throws MojoExecutionException {
-        if (nextProcessor != null) {
-            nextProcessor.handle(environment);
+    @Override
+    public void handle(MojoExecutor.ExecutionEnvironment environment) throws MojoExecutionException {
+        if (!properties.isEmpty()) {
+            addSystemPropertiesForPayaraMicro(toJavaProperties(properties), !APPEND, environment);
         }
+        gotoNext(environment);
     }
+
+    public CustomPropPrependProcessor set(List<Property> propertyOptions) {
+        this.properties = propertyOptions;
+        return this;
+    }
+
+    private static Properties toJavaProperties(List<Property> properties) {
+        Properties result = new Properties();
+        for (Property opt : properties) {
+            result.put(opt.getName(), opt.getValue());
+        }
+        return result;
+    }
+
 }

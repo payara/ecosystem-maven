@@ -129,7 +129,12 @@ public class BundleMojo extends BasePayaraMojo {
      */
     @Parameter(property = "appendSystemProperties", defaultValue = "true")
     private Boolean appendSystemProperties;
-
+    
+    /**
+     * Specify default command line options for bundled JAR
+     */
+    @Parameter(property = "systemProperties")
+    private List<Property> systemProperties;
 
     public void execute() throws MojoExecutionException, MojoFailureException {
         if (skip) {
@@ -144,24 +149,18 @@ public class BundleMojo extends BasePayaraMojo {
 
     private BaseProcessor constructProcessorChain() throws MojoExecutionException {
         MicroUnpackProcessor microUnpackProcessor = new MicroUnpackProcessor();
-        CustomJarCopyProcessor customJarCopyProcessor = new CustomJarCopyProcessor();
-        CustomFileCopyProcessor customFileCopyProcessor = new CustomFileCopyProcessor();
-        BootCommandFileCopyProcessor bootCommandFileCopyProcessor = new BootCommandFileCopyProcessor();
-        DefinedArtifactDeployProcessor definedArtifactDeployProcessor = new DefinedArtifactDeployProcessor();
-        ArtifactDeployProcessor artifactDeployProcessor = new ArtifactDeployProcessor(getLog());
-        StartClassCopyReplaceProcessor startClassCopyReplaceProcessor = new StartClassCopyReplaceProcessor();
-        SystemPropAppendProcessor systemPropAppendProcessor = new SystemPropAppendProcessor();
-        MicroJarBundleProcessor microJarBundleProcessor = new MicroJarBundleProcessor();
 
-        microUnpackProcessor.set(payaraVersion).next(customJarCopyProcessor);
-        customJarCopyProcessor.set(customJars).next(customFileCopyProcessor);
-        customFileCopyProcessor.next(bootCommandFileCopyProcessor);
-        bootCommandFileCopyProcessor.next(definedArtifactDeployProcessor);
-        definedArtifactDeployProcessor.set(deployArtifacts).next(artifactDeployProcessor);
-        artifactDeployProcessor.set(autoDeployArtifact, autoDeployContextRoot, 
-        autoDeployEmptyContextRoot, mavenProject.getPackaging()).next(startClassCopyReplaceProcessor);
-        startClassCopyReplaceProcessor.set(startClass).next(systemPropAppendProcessor);
-        systemPropAppendProcessor.set(appendSystemProperties).next(microJarBundleProcessor);
+        microUnpackProcessor.set(payaraVersion)
+            .next(new CustomJarCopyProcessor()).set(customJars)
+            .next(new CustomFileCopyProcessor())
+            .next(new BootCommandFileCopyProcessor())
+            .next(new DefinedArtifactDeployProcessor()).set(deployArtifacts)
+            .next(new ArtifactDeployProcessor(getLog())).set(autoDeployArtifact, autoDeployContextRoot, 
+                  autoDeployEmptyContextRoot, mavenProject.getPackaging())
+            .next(new StartClassCopyReplaceProcessor()).set(startClass)
+            .next(new CustomPropPrependProcessor()).set(systemProperties)
+            .next(new SystemPropAppendProcessor()).set(appendSystemProperties)
+            .next(new MicroJarBundleProcessor());
 
         return microUnpackProcessor;
     }

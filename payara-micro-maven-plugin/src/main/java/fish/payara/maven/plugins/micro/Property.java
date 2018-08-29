@@ -36,46 +36,29 @@
  * only if the new code is made subject to such option by the copyright
  * holder.
  */
-package fish.payara.maven.plugins.micro.processor;
-
-import fish.payara.maven.plugins.micro.Configuration;
-import org.apache.maven.model.Plugin;
-import org.apache.maven.plugin.MojoExecutionException;
-
-import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
+package fish.payara.maven.plugins.micro;
 
 /**
- * @author mertcaliskan
+ * @author ondrejmihalyi
  */
-public abstract class BaseProcessor implements Configuration {
+public class Property {
 
-    private BaseProcessor nextProcessor;
-    
-    Plugin dependencyPlugin =
-            plugin(groupId("org.apache.maven.plugins"), artifactId("maven-dependency-plugin"), version("3.1.1"));
+    private String name;
+    private String value;
 
-    Plugin resourcesPlugin =
-            plugin(groupId("org.apache.maven.plugins"), artifactId("maven-resources-plugin"), version("3.1.0"));
-
-    Plugin jarPlugin =
-            plugin(groupId("org.apache.maven.plugins"), artifactId("maven-jar-plugin"), version("3.1.0"));
-
-    Plugin replacerPlugin =
-            plugin(groupId("com.google.code.maven-replacer-plugin"), artifactId("replacer"), version("1.5.3"));
-
-    Plugin plainTextPlugin =
-            plugin(groupId("io.github.olivierlemasle.maven"), artifactId("plaintext-maven-plugin"), version("1.0.0"));
-
-    public abstract void handle(ExecutionEnvironment environment) throws MojoExecutionException;
-
-    public <PROCESSOR_TYPE extends BaseProcessor> PROCESSOR_TYPE next(PROCESSOR_TYPE processor) {
-        this.nextProcessor = processor;
-        return processor;
+    public String getName() {
+        return name;
     }
 
-    void gotoNext(ExecutionEnvironment environment) throws MojoExecutionException {
-        if (nextProcessor != null) {
-            nextProcessor.handle(environment);
-        }
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getValue() {
+        return value;
+    }
+
+    public void setValue(String value) {
+        this.value = value;
     }
 }
