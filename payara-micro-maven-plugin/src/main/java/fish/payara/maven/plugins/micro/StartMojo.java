@@ -49,6 +49,7 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.dependency.fromConfiguration.ArtifactItem;
+import org.apache.maven.toolchain.Toolchain;
 import org.twdata.maven.mojoexecutor.MojoExecutor;
 
 import java.io.*;
@@ -70,7 +71,7 @@ public class StartMojo extends BasePayaraMojo {
 
     String ERROR_MESSAGE = "Errors occurred while executing payara-micro.";
 
-    @Parameter(property = "javaPath", defaultValue = "java")
+    @Parameter(property = "javaPath")
     private String javaPath;
 
     @Parameter(property = "payaraVersion", defaultValue = "5.182")
@@ -107,6 +108,7 @@ public class StartMojo extends BasePayaraMojo {
     private Process microProcess;
     private Thread microProcessorThread;
     private ThreadGroup threadGroup;
+    private Toolchain toolchain;
 
     StartMojo() {
         threadGroup = new ThreadGroup(MICRO_THREAD_NAME);
@@ -124,6 +126,7 @@ public class StartMojo extends BasePayaraMojo {
             return;
         }
 
+        toolchain = getToolchain();
         final String path = decideOnWhichMicroToUse();
 
         microProcessorThread = new Thread(threadGroup, () -> {
@@ -131,7 +134,7 @@ public class StartMojo extends BasePayaraMojo {
             final List<String> actualArgs = new ArrayList<>();
             getLog().info("Starting payara-micro from path: " + path);
             int indice = 0;
-            actualArgs.add(indice++, javaPath);
+            actualArgs.add(indice++, evaluateJavaPath());
             if (javaCommandLineOptions != null) {
                 for (Option option : javaCommandLineOptions) {
                     if (option.getKey() != null && option.getValue() != null) {
@@ -226,6 +229,18 @@ public class StartMojo extends BasePayaraMojo {
             Runtime.getRuntime().addShutdownHook(shutdownHook);
             microProcessorThread.run();
         }
+    }
+
+    private String evaluateJavaPath() {
+        String javaToUse = "java";
+
+        if (StringUtils.isNotEmpty(javaPath)) {
+            javaToUse = javaPath;
+        }
+        else if (toolchain != null) {
+            javaToUse = toolchain.findTool( "java" );
+        }
+        return javaToUse;
     }
 
     private String decideOnWhichMicroToUse() throws MojoExecutionException {
