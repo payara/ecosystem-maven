@@ -75,7 +75,6 @@ This goal start payara-micro with specified configurations. ```start``` is attac
                 <version>5.182</version>
             </artifactItem>
             <deployWar>true</deployWar>
-            <copySystemProperties>true</copySystemProperties>
             <javaCommandLineOptions>
                 <option>
                     <value>-Xdebug</value>
@@ -105,10 +104,10 @@ This goal start payara-micro with specified configurations. ```start``` is attac
 - __immediateExit__ (optional | default: false): If payara-micro is executed in ```daemon``` mode, the executor thread will wait for the ready message before shutting down its process. By setting ```immediateExit``` to ```true``` you can skip this and instantly interrupt the executor thread. 
 - __javaPath__ (optional | default: "java"): Absolute path to the ```java``` executable.
 - __payaraMicroAbsolutePath__ (optional): Absolute path to payara-micro executable.
-- __payaraVersion__ (optional): default: 5.182): The payara-micro version that will be used with ```start``` mojo.
+- __payaraVersion__ (optional | default: "5.182"): The payara-micro version that will be used with ```start``` mojo.
 - __artifactItem__ (optional): Defines payara-micro artifact with its coordinates. Specified artifact should be available in local maven repository.
 - __deployWar__ (optional | default: false): If the attached project is of type WAR, it will automatically be deployed to payara-micro if ```deployWar``` is set to ```true```. 
-- __copySystemProperties__ (optional | default: false): Allows passing all system properties available within the maven build to the payara-micro execution.
+- __copySystemProperties__ (deprecated): System properties propagate to the payara-micro execution by default so we deprecated and are ignoring this property from now on.
 - __javaCommandLineOptions__ (optional): Defines a list of command line options that will be passed to ```java``` executable. Command line options can either be defined as key-value pairs or just as list of values. key-value pairs will be formatted as ``key=value``.
 - __commandLineOptions__ (optional): Defines a list of command line options that will be passed onto payara-micro. Command line options can either be defined as key,value pairs or just as list of keys or values separately.
 
@@ -141,5 +140,5 @@ If an ```artifactItem``` is defined, it will take precedence for identifying cur
 
 ## Configuration tags
 
-- __processId__ (optional |): Process id of the running payara-micro.
+- __processId__ (optional): Process id of the running payara-micro.
 - __artifactItem__ (optional): Defines payara-micro artifact with its coordinates. This information is used to identify the process id of the running payara-micro.
