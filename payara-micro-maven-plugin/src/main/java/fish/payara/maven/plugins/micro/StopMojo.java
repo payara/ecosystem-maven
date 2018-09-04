@@ -44,6 +44,7 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.dependency.fromConfiguration.ArtifactItem;
+import org.apache.maven.toolchain.Toolchain;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -71,12 +72,16 @@ public class StopMojo extends BasePayaraMojo {
     @Parameter(property = "useUberJar", defaultValue = "false")
     private Boolean useUberJar;
 
+    private Toolchain toolchain;
+
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
         if (skip) {
             getLog().info("Stop mojo execution is skipped");
             return;
         }
+
+        toolchain = getToolchain();
 
         if (processId != null) {
             killProcess(processId);
@@ -93,7 +98,11 @@ public class StopMojo extends BasePayaraMojo {
 
         final Runtime re = Runtime.getRuntime();
         try {
-            Process jpsProcess = re.exec("jps -v");
+            String jpsPath = "jps";
+            if (toolchain != null) {
+                jpsPath = toolchain.findTool("jps");
+            }
+            Process jpsProcess = re.exec(jpsPath + " -v");
             InputStream inputStream = jpsProcess.getInputStream();
             BufferedReader in = new BufferedReader(new InputStreamReader(inputStream));
             String line;

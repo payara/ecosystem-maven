@@ -44,6 +44,8 @@ import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
+import org.apache.maven.toolchain.Toolchain;
+import org.apache.maven.toolchain.ToolchainManager;
 
 import static org.twdata.maven.mojoexecutor.MojoExecutor.ExecutionEnvironment;
 import static org.twdata.maven.mojoexecutor.MojoExecutor.executionEnvironment;
@@ -62,6 +64,9 @@ abstract class BasePayaraMojo extends AbstractMojo {
     @Component
     private BuildPluginManager pluginManager;
 
+    @Component
+    private ToolchainManager toolchainManager;
+
     @Parameter(property = "skip", defaultValue = "false")
     protected Boolean skip;
 
@@ -76,5 +81,12 @@ abstract class BasePayaraMojo extends AbstractMojo {
     
     protected String getProjectGAV(){
         return mavenProject.getGroupId() + ":" + mavenProject.getArtifactId() + ":" + mavenProject.getVersion();
+    }
+
+    protected Toolchain getToolchain() {
+        if ( toolchainManager != null ) {
+            return toolchainManager.getToolchainFromBuildContext("jdk", mavenSession);
+        }
+        return null;
     }
 }
