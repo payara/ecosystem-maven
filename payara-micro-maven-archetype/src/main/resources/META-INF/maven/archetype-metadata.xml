@@ -40,6 +40,9 @@
         <requiredProperty key="javaeeVersion">
             <defaultValue>8.0</defaultValue>
         </requiredProperty>
+        <requiredProperty key="microprofileVersion">
+            <defaultValue>2.0.1</defaultValue>
+        </requiredProperty>
         <requiredProperty key="payaraMicroVersion">
             <defaultValue>5.183</defaultValue>
         </requiredProperty>
