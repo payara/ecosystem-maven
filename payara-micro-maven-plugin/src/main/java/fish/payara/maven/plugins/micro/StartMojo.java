@@ -173,6 +173,7 @@ public class StartMojo extends BasePayaraMojo {
             }
 
             try {
+                getLog().debug("Starting Payara Micro with the these arguments: " + actualArgs);
                 final Runtime re = Runtime.getRuntime();
                 microProcess = re.exec(actualArgs.toArray(new String[actualArgs.size()]));
 
