@@ -52,7 +52,7 @@ public class SystemPropAppendProcessor extends BaseSystemPropProcessor {
     @Override
     public void handle(MojoExecutor.ExecutionEnvironment environment) throws MojoExecutionException {
         if (appendSystemProperties) {
-            addSystemPropertiesForPayaraMicro(System.getProperties(), APPEND, environment);
+            addSystemPropertiesForPayaraMicro(System.getProperties(), "Additional system properties from Maven build", environment);
         }
         gotoNext(environment);
     }

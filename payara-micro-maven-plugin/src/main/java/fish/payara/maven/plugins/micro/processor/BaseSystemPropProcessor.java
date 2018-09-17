@@ -38,12 +38,10 @@
  */
 package fish.payara.maven.plugins.micro.processor;
 
+import java.util.*;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.twdata.maven.mojoexecutor.MojoExecutor;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
 import static org.apache.commons.lang.StringEscapeUtils.escapeJava;
 
 import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
@@ -53,9 +51,9 @@ import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
  */
 public abstract class BaseSystemPropProcessor extends BaseProcessor {
 
-    protected static final boolean APPEND = true;
+    private static final boolean APPEND = true;
 
-    protected void addSystemPropertiesForPayaraMicro(Properties properties, boolean append, MojoExecutor.ExecutionEnvironment environment) throws MojoExecutionException {
+    protected void addSystemPropertiesForPayaraMicro(Properties properties, String comment, MojoExecutor.ExecutionEnvironment environment) throws MojoExecutionException {
         executeMojo(plainTextPlugin,
                 goal("write"),
                 configuration(
@@ -63,9 +61,9 @@ public abstract class BaseSystemPropProcessor extends BaseProcessor {
                         element(name("files"),
                                 element(name("file"),
                                         element(name("name"), "payara-boot.properties"),
-                                        element(name("append"), String.valueOf(append)),
+                                        element(name("append"), String.valueOf(APPEND)),
                                         element(name("lines"),
-                                                constructElementsForProperties(properties)
+                                                constructElementsForProperties(properties, comment)
                                         )
                                 )
                         )
@@ -74,12 +72,15 @@ public abstract class BaseSystemPropProcessor extends BaseProcessor {
         );
     }
 
-    private Element[] constructElementsForProperties(Properties properties) {
+    private Element[] constructElementsForProperties(Properties properties, String comment) {
         List<Element> elements = new ArrayList<>();
-        for (Object key : properties.keySet()) {
+        String commentLine = "\n# " + ((comment != null) ? comment : "Additional properties");
+        Element emptyLine = element(name("line"), commentLine);
+        elements.add(emptyLine);
+        for (Map.Entry<Object, Object> entry : properties.entrySet()) {
             Element element = element(
                     name("line"),
-                    escapeJava(key + "=" + properties.get(key))
+                    escapeJava(entry.getKey() + "=" + entry.getValue())
             );
             elements.add(element);
         }
