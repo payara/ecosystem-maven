@@ -49,11 +49,11 @@ This goal bundles the attached project's artifact into uber jar with specified c
 
 - __autoDeployArtifact__ (optional | default: true): If the extension of the produced artifact is <b>war</b>, it will be copied automatically to ```MICRO-INF/deploy``` folder when this property is set to true.
 - __startClass__ (optional): Replaces ```Start-Class``` definition that resides in MANIFEST.MF file with the provided class.
+- __systemProperties__ (optional): Can contain a list of `property` elements that specify system properties to insert at the beginning of the ```payara-boot.properties``` file . A `property` element contains `name` and `value` elements.
 - __appendSystemProperties__ (optional | default: true): Appends all system properties defined into the ```payara-boot.properties``` file.
 - __payaraVersion__ (optional |  default: 5.182): By default ```bundle``` mojo fetches payara-micro with version 5.182.
 - __deployArtifacts__ (optional): Can contain a list of artifactItems, which defines the dependencies with their GAVs to be copied under ```MICRO-INF/deploy``` folder.
 - __customJars__ (optional): Can contain a list of artifactItems, which defines the dependencies with their GAVs to be copied under ```MICRO-INF/lib``` folder.
-- __systemProperties__ (optional): Can contain a list of `property` elements that specify system properties to add into the ```payara-boot.properties``` file . A `property` element contains `name` and `value` elements.
 
 ## start
 This goal start payara-micro with specified configurations. ```start``` is attached to the ```payara-micro``` phase. It can be executed as ```mvn payara-micro:start```. A sample usage would as follows:
