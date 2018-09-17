@@ -83,7 +83,7 @@ This goal start payara-micro with specified configurations. ```start``` is attac
                     <key>-Xrunjdwp:transport</key>
                     <value>dt_socket,server=y,suspend=y,address=5005</value>
                  </option>
-            </systemProperties>            
+            </javaCommandLineOptions>            
             <commandLineOptions>
                 <option>
                     <key>--domainconfig</key>
