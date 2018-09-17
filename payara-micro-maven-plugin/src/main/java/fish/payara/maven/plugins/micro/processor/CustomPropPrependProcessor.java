@@ -55,7 +55,7 @@ public class CustomPropPrependProcessor extends BaseSystemPropProcessor {
     @Override
     public void handle(MojoExecutor.ExecutionEnvironment environment) throws MojoExecutionException {
         if (!properties.isEmpty()) {
-            addSystemPropertiesForPayaraMicro(toJavaProperties(properties), !APPEND, environment);
+            addSystemPropertiesForPayaraMicro(toJavaProperties(properties), "Additional custom system properties", environment);
         }
         gotoNext(environment);
     }
