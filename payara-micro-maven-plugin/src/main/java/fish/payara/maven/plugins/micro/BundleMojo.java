@@ -160,8 +160,8 @@ public class BundleMojo extends BasePayaraMojo {
                 autoDeployEmptyContextRoot,
                 mavenProject.getPackaging())
             .next(new StartClassCopyReplaceProcessor()).set(startClass)
-            .next(new CustomPropPrependProcessor()).set(systemProperties)
             .next(new SystemPropAppendProcessor()).set(appendSystemProperties)
+            .next(new CustomPropPrependProcessor()).set(systemProperties)
             .next(new MicroJarBundleProcessor());
 
         return microUnpackProcessor;
