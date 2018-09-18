@@ -1,7 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <!--
-
-  Copyright (c) 2017-2018 Payara Foundation and/or its affiliates. All rights reserved.
-
+  Copyright (c) 2018 Payara Foundation and/or its affiliates. All rights reserved.
   The contents of this file are subject to the terms of either the GNU
   General Public License Version 2 only ("GPL") or the Common Development
   and Distribution License("CDDL") (collectively, the "License").  You
@@ -10,20 +9,16 @@
   https://github.com/payara/Payara/blob/master/LICENSE.txt
   See the License for the specific
   language governing permissions and limitations under the License.
-
   When distributing the software, include this License Header Notice in each
   file and include the License file at glassfish/legal/LICENSE.txt.
-
   GPL Classpath Exception:
   The Payara Foundation designates this particular file as subject to the "Classpath"
   exception as provided by the Payara Foundation in the GPL Version 2 section of the License
   file that accompanied this code.
-
   Modifications:
   If applicable, add the following below the License Header, with the fields
   enclosed by brackets [] replaced by your own identifying information:
   "Portions Copyright [year] [name of copyright owner]"
-
   Contributor(s):
   If you wish your version of this file to be governed by only the CDDL or
   only the GPL Version 2, indicate your decision by adding "[Contributor]
@@ -36,61 +31,59 @@
   only if the new code is made subject to such option by the copyright
   holder.
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>fish.payara.maven.plugins</groupId>
-    <artifactId>payara-micro-maven-plugin</artifactId>
-    <version>1.0.3-SNAPSHOT</version>
-    <packaging>maven-plugin</packaging>
-    <name>Payara Micro Maven Plugin</name>
-    <description>Payara Micro Maven Plugin that incorporates payara-micro with the produced artifact</description>
-    <url>https://github.com/payara/ecosystem-maven/tree/master/payara-micro-maven-plugin</url>
-
-    <properties>
-        <java.compiler.source.version>1.8</java.compiler.source.version>
-        <java.compiler.target.version>1.8</java.compiler.target.version>
-    </properties>
-
-	<scm>
-        <connection>scm:git:git@github.com:payara/ecosystem-maven.git</connection>
-        <url>scm:git:git@github.com:payara/ecosystem-maven.git</url>
-        <developerConnection>scm:git@github.com:payara/ecosystem-maven.git</developerConnection>
-    </scm>
-    
+    <groupId>fish.payara.maven.archetypes</groupId>
+    <artifactId>payara-micro-maven-archetype</artifactId>
+    <version>1.0.2-SNAPSHOT</version>
+    <packaging>maven-archetype</packaging>
+    <name>Payara Micro Archetype</name>
+    <description>Archetype for Payara Micro application.</description>
+    <url>http://github.com/payara/ecosystem-maven</url>
     <licenses>
-      <license>
-          <name>CDDL + GPLv2 with classpath exception</name>
-          <url>https://raw.githubusercontent.com/payara/Payara/master/LICENSE.txt</url>
-          <distribution>repo</distribution>
-          <comments>A business-friendly OSS license</comments>
-      </license>
-  </licenses>
-
+        <license>
+            <name>CDDL + GPLv2 with classpath exception</name>
+            <url>https://raw.githubusercontent.com/payara/Payara/master/LICENSE.txt</url>
+            <distribution>repo</distribution>
+            <comments>A business-friendly OSS license</comments>
+        </license>
+    </licenses>
+    <scm>
+        <connection>scm:git:git://github.com/payara/ecosystem-maven.git</connection>
+        <developerConnection>scm:git:ssh@github.com:payara/ecosystem-maven.git</developerConnection>
+        <url>http://github.com/payara/ecosystem-maven</url>
+    </scm>
     <developers>
         <developer>
-            <id>mertcaliskan</id>
-            <name>Mert Caliskan</name>
+            <id>jgauravgupta</id>
+            <name>Gaurav Gupta</name>
             <organization>Payara</organization>
-            <timezone>GMT+2</timezone>
+            <timezone>GMT+5.5</timezone>
             <roles>
                 <role>developer</role>
             </roles>
         </developer>
     </developers>
-
+            
     <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.8.0</version>
-                <configuration>
-                    <source>${java.compiler.source.version}</source>
-                    <target>${java.compiler.target.version}</target>
-                </configuration>
-            </plugin>
+        <extensions>
+            <extension>
+                <groupId>org.apache.maven.archetype</groupId>
+                <artifactId>archetype-packaging</artifactId>
+                <version>3.0.1</version>
+            </extension>
+        </extensions>
 
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <artifactId>maven-archetype-plugin</artifactId>
+                    <version>3.0.1</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+        
+        <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
@@ -107,7 +100,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>3.0.1</version>
+                <version>3.0.0</version>
                 <executions>
                     <execution>
                         <id>attach-javadocs</id>
@@ -117,28 +110,10 @@
                     </execution>
                 </executions>
             </plugin>
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-plugin-plugin</artifactId>
-                <version>3.5.2</version>
-                <configuration>
-                    <goalPrefix></goalPrefix>
-                    <skipErrorNoDescriptorsFound>true</skipErrorNoDescriptorsFound>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>mojo-descriptor</id>
-                        <goals>
-                            <goal>descriptor</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-gpg-plugin</artifactId>
-                <version>1.6</version>
+                <version>1.5</version>
                 <executions>
                     <execution>
                         <id>sign-artifacts</id>
@@ -152,7 +127,7 @@
             <plugin>
                 <groupId>org.sonatype.plugins</groupId>
                 <artifactId>nexus-staging-maven-plugin</artifactId>
-                <version>1.6.8</version>
+                <version>1.6.7</version>
                 <extensions>true</extensions>
                 <configuration>
                     <serverId>ossrh</serverId>
@@ -162,27 +137,7 @@
             </plugin>
         </plugins>
     </build>
-
-    <dependencies>
-        <dependency>
-            <groupId>org.apache.maven.plugin-tools</groupId>
-            <artifactId>maven-plugin-annotations</artifactId>
-            <version>3.5.2</version>
-            <scope>provided</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.twdata.maven</groupId>
-            <artifactId>mojo-executor</artifactId>
-            <version>2.3.0</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-dependency-plugin</artifactId>
-            <version>3.1.1</version>
-        </dependency>
-    </dependencies>
-
+    
     <distributionManagement>
         <snapshotRepository>
             <id>ossrh</id>
@@ -193,4 +148,5 @@
             <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
         </repository>
     </distributionManagement>
+    
 </project>

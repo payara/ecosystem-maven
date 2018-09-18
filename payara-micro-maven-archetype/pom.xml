@@ -35,7 +35,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>fish.payara.maven.archetypes</groupId>
     <artifactId>payara-micro-maven-archetype</artifactId>
-    <version>1.0.2-SNAPSHOT</version>
+    <version>1.0.3-SNAPSHOT</version>
     <packaging>maven-archetype</packaging>
     <name>Payara Micro Archetype</name>
     <description>Archetype for Payara Micro application.</description>
