@@ -13,7 +13,8 @@
         <endorsed.dir>${project.build.directory}/endorsed</endorsed.dir>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <version.javaee>${javaeeVersion}</version.javaee>
-        <version.payara.micro>${payaraMicroVersion}</version.payara.micro>
+        <version.payara>${payaraMicroVersion}</version.payara>
+        <version.microprofile>${microprofileVersion}</version.microprofile>
     </properties>
     
     <dependencies>
@@ -22,6 +23,13 @@
             <artifactId>javaee-web-api</artifactId>
             <version>${version.javaee}</version>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.microprofile</groupId>
+            <artifactId>microprofile</artifactId>
+            <version>${version.microprofile}</version>
+            <scope>provided</scope>
+            <type>pom</type>
         </dependency>
     </dependencies>
 
@@ -50,9 +58,9 @@
             <plugin>
                 <groupId>fish.payara.maven.plugins</groupId>
                 <artifactId>payara-micro-maven-plugin</artifactId>
-                <version>1.0.1</version>
+                <version>1.0.2</version>
                 <configuration>
-                    <payaraVersion>${version.payara.micro}</payaraVersion>
+                    <payaraVersion>${version.payara}</payaraVersion>
                     <deployWar>true</deployWar>
 #if (${autoBindHttp} == "true")
                     <commandLineOptions>

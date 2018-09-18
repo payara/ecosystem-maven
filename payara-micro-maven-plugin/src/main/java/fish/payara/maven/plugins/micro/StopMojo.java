@@ -44,11 +44,14 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.dependency.fromConfiguration.ArtifactItem;
+import org.apache.maven.toolchain.Toolchain;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+
+import static fish.payara.maven.plugins.micro.Configuration.JAR_EXTENSION;
 
 /**
  * Stop mojo that terminates running payara-micro invoked by @{code run} mojo
@@ -69,12 +72,16 @@ public class StopMojo extends BasePayaraMojo {
     @Parameter(property = "useUberJar", defaultValue = "false")
     private Boolean useUberJar;
 
+    private Toolchain toolchain;
+
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
         if (skip) {
             getLog().info("Stop mojo execution is skipped");
             return;
         }
+
+        toolchain = getToolchain();
 
         if (processId != null) {
             killProcess(processId);
@@ -91,7 +98,11 @@ public class StopMojo extends BasePayaraMojo {
 
         final Runtime re = Runtime.getRuntime();
         try {
-            Process jpsProcess = re.exec("jps -v");
+            String jpsPath = "jps";
+            if (toolchain != null) {
+                jpsPath = toolchain.findTool("jps");
+            }
+            Process jpsProcess = re.exec(jpsPath + " -v");
             InputStream inputStream = jpsProcess.getInputStream();
             BufferedReader in = new BufferedReader(new InputStreamReader(inputStream));
             String line;
@@ -140,7 +151,7 @@ public class StopMojo extends BasePayaraMojo {
     private String evaluateExecutorName(Boolean withExtension) {
         String extension;
         if (withExtension) {
-            extension = "-" + Configuration.MICROBUNDLE_EXTENSION + ".jar";
+            extension = "-" + Configuration.MICROBUNDLE_EXTENSION + "." + JAR_EXTENSION;
         }
         else {
             extension = "." + mavenProject.getPackaging();

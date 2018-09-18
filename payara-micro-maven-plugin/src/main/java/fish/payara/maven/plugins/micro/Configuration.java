@@ -56,6 +56,7 @@ public interface Configuration {
     String OUTPUT_FOLDER = "${project.build.directory}" + EXTRACTED_PAYARAMICRO_FOLDER;
     String METAINF_FOLDER = OUTPUT_FOLDER + File.separator + "META-INF";
 
+    String JAR_EXTENSION = "jar";
     String WAR_EXTENSION = "war";
     String MICROBUNDLE_EXTENSION = "microbundle";
 
