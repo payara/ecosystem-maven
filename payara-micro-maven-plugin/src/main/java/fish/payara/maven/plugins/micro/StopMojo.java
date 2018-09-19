@@ -63,6 +63,7 @@ import java.util.function.Predicate;
 public class StopMojo extends BasePayaraMojo {
 
     private static final String ERROR_MESSAGE = "Error occurred while terminating payara-micro";
+    private static final int MAX_WAIT_FOR_PAYARA_SHUTDOWN_MILLIS = 5000;
 
     @Parameter(property = "artifactItem")
     private ArtifactItem artifactItem;
@@ -164,7 +165,7 @@ public class StopMojo extends BasePayaraMojo {
                     throw new RuntimeException(ex);
                 }
             }
-        } while (processRunning && System.currentTimeMillis() < startedWaitingAtMillis + 5000);
+        } while (processRunning && System.currentTimeMillis() < startedWaitingAtMillis + MAX_WAIT_FOR_PAYARA_SHUTDOWN_MILLIS);
         if (processRunning) {
             getLog().warn("Could not stop previously started payara-micro with process ID " + processId + " or waiting too long, proceeding further");
         }
