@@ -52,6 +52,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 
 import static fish.payara.maven.plugins.micro.Configuration.JAR_EXTENSION;
+import java.util.function.Predicate;
 
 /**
  * Stop mojo that terminates running payara-micro invoked by @{code run} mojo
@@ -68,7 +69,7 @@ public class StopMojo extends BasePayaraMojo {
 
     @Parameter(property = "processId")
     private String processId;
-    
+
     @Parameter(property = "useUberJar", defaultValue = "false")
     private Boolean useUberJar;
 
@@ -82,9 +83,15 @@ public class StopMojo extends BasePayaraMojo {
         }
 
         toolchain = getToolchain();
+        final Runtime re = Runtime.getRuntime();
 
         if (processId != null) {
             killProcess(processId);
+            try {
+                waitForProcessToStop(processId, re);
+            } catch (IOException e) {
+                getLog().error(ERROR_MESSAGE, e);
+            }
         }
 
         String executorName;
@@ -96,32 +103,70 @@ public class StopMojo extends BasePayaraMojo {
             executorName = "-Dgav=" + getProjectGAV();
         }
 
-        final Runtime re = Runtime.getRuntime();
         try {
-            String jpsPath = "jps";
-            if (toolchain != null) {
-                jpsPath = toolchain.findTool("jps");
-            }
-            Process jpsProcess = re.exec(jpsPath + " -v");
-            InputStream inputStream = jpsProcess.getInputStream();
-            BufferedReader in = new BufferedReader(new InputStreamReader(inputStream));
-            String line;
-            String processId = null;
-            while((line = in.readLine()) != null) {
-                if (line.contains(executorName)) {
-                    String[] split = line.split(" ");
-                    processId = split[0];
-                }
-            }
-            if (StringUtils.isNotEmpty(processId)) {
-                killProcess(processId);
-            }
-            else {
+            String pid = getProcessIdToKill(executorName, re);
+            if (StringUtils.isNotEmpty(pid)) {
+                killProcess(pid);
+                waitForProcessToStop(pid, re);
+            } else {
                 getLog().warn("Could not find process of running payara-micro?");
             }
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             getLog().error(ERROR_MESSAGE, e);
+        }
+    }
+
+    private String getProcessIdToKill(String executorName, Runtime re) throws IOException {
+        String lineWithPid = getLineFromJpsOutput(re, line -> line.contains(executorName));
+        if (lineWithPid != null) {
+            String[] split = lineWithPid.split(" ");
+            String pid = split[0];
+            return pid;
+        }
+        return null;
+    }
+
+    private boolean isProcessRunning(String pid, final Runtime re) throws IOException {
+        String lineWithPid = getLineFromJpsOutput(re, line -> {
+            String[] split = line.split(" ");
+            return split[0].equals(pid);
+        });
+        return lineWithPid != null;
+    }
+
+    private String getLineFromJpsOutput(final Runtime re, Predicate<String> linePredicate) throws IOException {
+        String jpsPath = "jps";
+        if (toolchain != null) {
+            jpsPath = toolchain.findTool("jps");
+        }
+        Process jpsProcess = re.exec(jpsPath + " -v");
+        InputStream inputStream = jpsProcess.getInputStream();
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(inputStream))) {
+            String line;
+            while ((line = in.readLine()) != null) {
+                if (linePredicate.test(line)) {
+                    return line;
+                }
+            }
+            return null;
+        }
+    }
+
+    private void waitForProcessToStop(String processId, final Runtime re) throws RuntimeException, IOException {
+        long startedWaitingAtMillis = System.currentTimeMillis();
+        boolean processRunning;
+        do {
+            processRunning = isProcessRunning(processId, re);
+            if (processRunning) {
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException ex) {
+                    throw new RuntimeException(ex);
+                }
+            }
+        } while (processRunning && System.currentTimeMillis() < startedWaitingAtMillis + Configuration.MAX_WAIT_FOR_PAYARA_SHUTDOWN_MILLIS);
+        if (processRunning) {
+            getLog().warn("Could not stop previously started payara-micro with process ID " + processId + " or waiting too long, proceeding further");
         }
     }
 
@@ -142,8 +187,7 @@ public class StopMojo extends BasePayaraMojo {
             if (result != 0) {
                 getLog().error(ERROR_MESSAGE);
             }
-        }
-        catch (IOException |InterruptedException e) {
+        } catch (IOException | InterruptedException e) {
             getLog().error(ERROR_MESSAGE, e);
         }
     }
@@ -152,8 +196,7 @@ public class StopMojo extends BasePayaraMojo {
         String extension;
         if (withExtension) {
             extension = "-" + Configuration.MICROBUNDLE_EXTENSION + "." + JAR_EXTENSION;
-        }
-        else {
+        } else {
             extension = "." + mavenProject.getPackaging();
         }
         if (StringUtils.isNotEmpty(mavenProject.getBuild().getFinalName())) {
@@ -164,18 +207,18 @@ public class StopMojo extends BasePayaraMojo {
 
     private boolean isUnix() {
         String osName = System.getProperty("os.name");
-        return osName.startsWith("Linux") ||
-                osName.startsWith("FreeBSD") ||
-                osName.startsWith("OpenBSD") ||
-                osName.startsWith("gnu") ||
-                osName.startsWith("gnu/kfreebsd") ||
-                osName.startsWith("netbsd") ||
-                osName.startsWith("Mac OS");
+        return osName.startsWith("Linux")
+                || osName.startsWith("FreeBSD")
+                || osName.startsWith("OpenBSD")
+                || osName.startsWith("gnu")
+                || osName.startsWith("gnu/kfreebsd")
+                || osName.startsWith("netbsd")
+                || osName.startsWith("Mac OS");
     }
 
     private boolean isWindows() {
         String osName = System.getProperty("os.name");
-        return osName.startsWith("Windows CE") ||
-                osName.startsWith("Windows");
+        return osName.startsWith("Windows CE")
+                || osName.startsWith("Windows");
     }
 }
