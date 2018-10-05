@@ -336,6 +336,7 @@ public class StartMojo extends BasePayaraMojo {
                     printStream.println(line);
                     if (!immediateExit && sb.toString().contains(MICRO_READY_MESSAGE)) {
                         microProcessorThread.interrupt();
+                        br.close()
                         break;
                     }
                 }
