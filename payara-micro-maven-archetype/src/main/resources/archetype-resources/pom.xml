@@ -13,6 +13,12 @@
         <endorsed.dir>${project.build.directory}/endorsed</endorsed.dir>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <version.javaee>${javaeeVersion}</version.javaee>
+        <version.concurrencyUtilities>1.0</version.concurrencyUtilities>
+        <version.jca>1.7</version.jca>
+        <version.jbatch>1.0.1</version.jbatch>
+#if (${addJcache} == "true")
+        <version.jcache>1.1.0</version.jcache>
+#end
         <version.payara>${payaraMicroVersion}</version.payara>
         <version.microprofile>${microprofileVersion}</version.microprofile>
     </properties>
@@ -25,12 +31,46 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
+            <groupId>javax.enterprise.concurrent</groupId>
+            <artifactId>javax.enterprise.concurrent-api</artifactId>
+            <version>${version.concurrencyUtilities}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>javax.resource</groupId>
+            <artifactId>javax.resource-api</artifactId>
+            <version>${version.jca}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>javax.batch</groupId>
+            <artifactId>javax.batch-api</artifactId>
+            <version>${version.jbatch}</version>
+            <scope>provided</scope>
+        </dependency>
+#if (${addJcache} == "true")
+        <dependency>
+            <groupId>javax.cache</groupId>
+            <artifactId>cache-api</artifactId>
+            <version>${version.jcache}</version>
+            <scope>provided</scope>
+        </dependency>
+#end
+        <dependency>
             <groupId>org.eclipse.microprofile</groupId>
             <artifactId>microprofile</artifactId>
             <version>${version.microprofile}</version>
             <scope>provided</scope>
             <type>pom</type>
         </dependency>
+#if (${addPayaraApi} == "true")
+        <dependency>
+            <groupId>fish.payara.api</groupId>
+            <artifactId>payara-api</artifactId>
+            <version>${version.payara}</version>
+            <scope>provided</scope>
+        </dependency>
+#end
     </dependencies>
 
     <build>

@@ -49,6 +49,12 @@
         <requiredProperty key="autoBindHttp">
             <defaultValue>true</defaultValue>
         </requiredProperty>
+        <requiredProperty key="addJcache">
+            <defaultValue>false</defaultValue>
+        </requiredProperty>
+        <requiredProperty key="addPayaraApi">
+            <defaultValue>false</defaultValue>
+        </requiredProperty>
     </requiredProperties>
     
     <fileSets>
