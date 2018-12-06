@@ -74,7 +74,7 @@ public class StartMojo extends BasePayaraMojo {
     @Parameter(property = "javaPath")
     private String javaPath;
 
-    @Parameter(property = "payaraVersion", defaultValue = "5.183")
+    @Parameter(property = "payaraVersion", defaultValue = "5.184")
     private String payaraVersion;
 
     @Parameter(property = "payaraMicroAbsolutePath")
@@ -336,7 +336,7 @@ public class StartMojo extends BasePayaraMojo {
                     printStream.println(line);
                     if (!immediateExit && sb.toString().contains(MICRO_READY_MESSAGE)) {
                         microProcessorThread.interrupt();
-                        br.close()
+                        br.close();
                         break;
                     }
                 }
