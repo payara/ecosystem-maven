@@ -75,6 +75,13 @@ This goal start payara-micro with specified configurations. ```start``` is attac
                 <version>5.184</version>
             </artifactItem>
             <deployWar>true</deployWar>
+            <classpathArtifactItems>
+                <artifactItem>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                    <version>1.7.25</version>
+                </artifactItem>
+            </classpathArtifactItems>
             <javaCommandLineOptions>
                 <option>
                     <value>-Xdebug</value>
@@ -110,6 +117,7 @@ If you want to execute the payara-micro plugin along with ```maven-toolchains-pl
 - __artifactItem__ (optional): Defines payara-micro artifact with its coordinates. Specified artifact should be available in local maven repository.
 - __deployWar__ (optional | default: false): If the attached project is of type WAR, it will automatically be deployed to payara-micro if ```deployWar``` is set to ```true```. 
 - __copySystemProperties__ (deprecated): System properties propagate to the payara-micro execution by default so we deprecated and are ignoring this property from now on.
+- __classpathArtifactItems__ (optional): Defines a list of artifact items with their GAV coordinates that will be passed to ```java``` executable as classpath parameter. If this tag contains at least one artifact item then execution of Payara Micro will be done with ```-cp``` instead of ```-jar```. The absolute file paths will be calculated and concatenated with OS specific path parameter. 
 - __javaCommandLineOptions__ (optional): Defines a list of command line options that will be passed to ```java``` executable. Command line options can either be defined as key-value pairs or just as list of values. key-value pairs will be formatted as ``key=value``.
 - __commandLineOptions__ (optional): Defines a list of command line options that will be passed onto payara-micro. Command line options can either be defined as key,value pairs or just as list of keys or values separately.
 
