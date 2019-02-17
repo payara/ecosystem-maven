@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2017-2018 Payara Foundation and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017-2019 Payara Foundation and/or its affiliates. All rights reserved.
  *
  * The contents of this file are subject to the terms of either the GNU
  * General Public License Version 2 only ("GPL") or the Common Development
@@ -105,6 +105,9 @@ public class StartMojo extends BasePayaraMojo {
     @Parameter(property = "javaCommandLineOptions")
     private List<Option> javaCommandLineOptions;
 
+    @Parameter(property = "classpathArtifactItems")
+    private List<ArtifactItem> classpathArtifactItems;
+
     private Process microProcess;
     private Thread microProcessorThread;
     private ThreadGroup threadGroup;
@@ -155,8 +158,26 @@ public class StartMojo extends BasePayaraMojo {
             }
 
             actualArgs.add(indice++, "-Dgav=" + getProjectGAV());
-            actualArgs.add(indice++, "-jar");
-            actualArgs.add(indice++, path);
+            if (classpathArtifactItems != null && classpathArtifactItems.size() > 0) {
+                actualArgs.add(indice++, "-cp");
+                List<String> artifactsPath = new ArrayList<>();
+                for (ArtifactItem artifactItem : classpathArtifactItems) {
+                    DefaultArtifact artifact = new DefaultArtifact(artifactItem.getGroupId(),
+                            artifactItem.getArtifactId(),
+                            artifactItem.getVersion(),
+                            null,
+                            "jar",
+                            null,
+                            new DefaultArtifactHandler("jar"));
+                    artifactsPath.add(findLocalPathOfArtifact(artifact));
+                }
+                artifactsPath.add(path);
+                actualArgs.add(indice++, StringUtils.join(artifactsPath, File.pathSeparator));
+                actualArgs.add(indice++, "fish.payara.micro.PayaraMicro");
+            } else {
+                actualArgs.add(indice++, "-jar");
+                actualArgs.add(indice++, path);
+            }
             if (deployWar && WAR_EXTENSION.equalsIgnoreCase(mavenProject.getPackaging())) {
                 actualArgs.add(indice++, "--deploy");
                 actualArgs.add(indice++, evaluateProjectArtifactAbsolutePath(false));
