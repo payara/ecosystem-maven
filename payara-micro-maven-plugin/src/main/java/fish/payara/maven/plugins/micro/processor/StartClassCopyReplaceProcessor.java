@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2017-2018 Payara Foundation and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017-2019 Payara Foundation and/or its affiliates. All rights reserved.
  *
  * The contents of this file are subject to the terms of either the GNU
  * General Public License Version 2 only ("GPL") or the Common Development
@@ -60,7 +60,7 @@ public class StartClassCopyReplaceProcessor extends BaseProcessor {
             String startClassName = startClass.substring(startClass.lastIndexOf(".") + 1);
 
             executeMojo(jarPlugin,
-                    goal("jar"),
+                    goal(JAR_EXTENSION),
                     configuration(
                             element(name("classesDirectory"), "${project.build.outputDirectory}"),
                             element(name("outputDirectory"), OUTPUT_FOLDER + MICROINF_LIB_FOLDER),

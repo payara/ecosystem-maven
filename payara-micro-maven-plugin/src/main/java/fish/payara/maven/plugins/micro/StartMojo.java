@@ -95,6 +95,9 @@ public class StartMojo extends BasePayaraMojo {
     @Parameter(property = "deployWar", defaultValue = "false")
     private Boolean deployWar;
 
+    @Parameter(property = "contextRoot")
+    private String contextRoot;
+
     @Deprecated
     @Parameter(property = "copySystemProperties", defaultValue = "false")
     private Boolean copySystemProperties;
@@ -166,9 +169,9 @@ public class StartMojo extends BasePayaraMojo {
                             artifactItem.getArtifactId(),
                             artifactItem.getVersion(),
                             null,
-                            "jar",
+                            JAR_EXTENSION,
                             null,
-                            new DefaultArtifactHandler("jar"));
+                            new DefaultArtifactHandler(JAR_EXTENSION));
                     artifactsPath.add(findLocalPathOfArtifact(artifact));
                 }
                 artifactsPath.add(path);
@@ -179,8 +182,16 @@ public class StartMojo extends BasePayaraMojo {
                 actualArgs.add(indice++, path);
             }
             if (deployWar && WAR_EXTENSION.equalsIgnoreCase(mavenProject.getPackaging())) {
+                if (useUberJar) {
+                    getLog().warn("useUberJar and deployWar are both set to true! You'll probably have " +
+                            "your application tried to deploy twice: 1. as uber jar 2. as a separate war");
+                }
                 actualArgs.add(indice++, "--deploy");
                 actualArgs.add(indice++, evaluateProjectArtifactAbsolutePath(false));
+                if (contextRoot != null) {
+                    actualArgs.add(indice++, "--contextroot");
+                    actualArgs.add(indice++, contextRoot);
+                }
             }
             if (commandLineOptions != null) {
                 for (Option option : commandLineOptions) {
