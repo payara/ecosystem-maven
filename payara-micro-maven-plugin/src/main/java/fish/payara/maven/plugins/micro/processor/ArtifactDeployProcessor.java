@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2017 Payara Foundation and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017-2019 Payara Foundation and/or its affiliates. All rights reserved.
  *
  * The contents of this file are subject to the terms of either the GNU
  * General Public License Version 2 only ("GPL") or the Common Development
@@ -39,17 +39,15 @@
 package fish.payara.maven.plugins.micro.processor;
 
 import com.google.common.io.Files;
-import java.io.File;
-import java.io.IOException;
 import org.apache.maven.model.Build;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.logging.Log;
 import org.twdata.maven.mojoexecutor.MojoExecutor;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import org.apache.maven.plugin.logging.Log;
 
 import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
 
@@ -57,6 +55,8 @@ import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
  * @author mertcaliskan
  */
 public class ArtifactDeployProcessor extends BaseProcessor {
+
+    private static final String CONTEXT_ROOT = "ROOT";
 
     private Boolean autoDeployArtifact;
     private String autoDeployContextRoot;
@@ -72,9 +72,8 @@ public class ArtifactDeployProcessor extends BaseProcessor {
     @Override
     public void handle(MojoExecutor.ExecutionEnvironment environment) throws MojoExecutionException {
 
+        // finalName is never null, maven provides a default if finalName not specified in pom.xml
         String finalName = environment.getMavenProject().getBuild().getFinalName();
-        // finalName is never null, maven provides a default 
-        // if finalName not specified in pom.xml
 
         if (autoDeployArtifact && WAR_EXTENSION.equalsIgnoreCase(packaging)) {
 
@@ -85,7 +84,7 @@ public class ArtifactDeployProcessor extends BaseProcessor {
                 if (autoDeployEmptyContextRoot
                         || contextRootSetButEmpty
                         || finalName.isEmpty()) {
-                    contextRoot = "ROOT";
+                    contextRoot = CONTEXT_ROOT;
                 } else {
                     contextRoot = finalName;
                 }

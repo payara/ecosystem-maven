@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2017-2018 Payara Foundation and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017-2019 Payara Foundation and/or its affiliates. All rights reserved.
  *
  * The contents of this file are subject to the terms of either the GNU
  * General Public License Version 2 only ("GPL") or the Common Development
@@ -40,7 +40,6 @@ package fish.payara.maven.plugins.micro;
 
 import fish.payara.maven.plugins.micro.processor.*;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
@@ -131,7 +130,7 @@ public class BundleMojo extends BasePayaraMojo {
     private Boolean appendSystemProperties;
 
 
-    public void execute() throws MojoExecutionException, MojoFailureException {
+    public void execute() throws MojoExecutionException {
         if (skip) {
             getLog().info("Bundle mojo execution is skipped");
             return;
@@ -142,7 +141,7 @@ public class BundleMojo extends BasePayaraMojo {
         processor.handle(environment);
     }
 
-    private BaseProcessor constructProcessorChain() throws MojoExecutionException {
+    private BaseProcessor constructProcessorChain() {
         MicroUnpackProcessor microUnpackProcessor = new MicroUnpackProcessor();
         CustomJarCopyProcessor customJarCopyProcessor = new CustomJarCopyProcessor();
         CustomFileCopyProcessor customFileCopyProcessor = new CustomFileCopyProcessor();
@@ -158,8 +157,10 @@ public class BundleMojo extends BasePayaraMojo {
         customFileCopyProcessor.next(bootCommandFileCopyProcessor);
         bootCommandFileCopyProcessor.next(definedArtifactDeployProcessor);
         definedArtifactDeployProcessor.set(deployArtifacts).next(artifactDeployProcessor);
-        artifactDeployProcessor.set(autoDeployArtifact, autoDeployContextRoot, 
-        autoDeployEmptyContextRoot, mavenProject.getPackaging()).next(startClassCopyReplaceProcessor);
+        artifactDeployProcessor.set(autoDeployArtifact,
+                                    autoDeployContextRoot,
+                                    autoDeployEmptyContextRoot,
+                                    mavenProject.getPackaging()).next(startClassCopyReplaceProcessor);
         startClassCopyReplaceProcessor.set(startClass).next(systemPropAppendProcessor);
         systemPropAppendProcessor.set(appendSystemProperties).next(microJarBundleProcessor);
 
