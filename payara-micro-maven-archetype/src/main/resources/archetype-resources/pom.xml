@@ -91,6 +91,9 @@
                         </option>
                     </commandLineOptions>
 #end
+#if (!${contextRoot} || ${contextRoot} != "")
+                    <contextRoot>${contextRoot}</contextRoot>
+#end
                 </configuration>
             </plugin>
         </plugins>
