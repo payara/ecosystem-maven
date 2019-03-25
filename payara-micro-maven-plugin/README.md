@@ -21,6 +21,8 @@ This goal bundles the attached project's artifact into uber jar with specified c
         </executions>
         <configuration>
             <startClass>my.custom.start.class.Main</startClass>
+            <appendSystemProperties>true</appendSystemProperties>
+            <payaraVersion>5.191</payaraVersion>
             <systemProperties>
                 <property>
                     <name>payaramicro.port</name>

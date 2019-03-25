@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2017 Payara Foundation and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017-2019 Payara Foundation and/or its affiliates. All rights reserved.
  *
  * The contents of this file are subject to the terms of either the GNU
  * General Public License Version 2 only ("GPL") or the Common Development
@@ -38,8 +38,13 @@
  */
 package fish.payara.maven.plugins.micro.processor;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.*;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.project.MavenProject;
 import org.twdata.maven.mojoexecutor.MojoExecutor;
 
 import static org.apache.commons.lang.StringEscapeUtils.escapeJava;
@@ -52,18 +57,28 @@ import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
 public abstract class BaseSystemPropProcessor extends BaseProcessor {
 
     private static final boolean APPEND = true;
+    private static final String PAYARA_BOOT_PROP_FILE = "payara-boot.properties";
+    private MavenProject mavenProject;
 
     protected void addSystemPropertiesForPayaraMicro(Properties properties, String comment, MojoExecutor.ExecutionEnvironment environment) throws MojoExecutionException {
+        Properties existingProperties = new Properties();
+
+        try(InputStream inputStream = new FileInputStream(mavenProject.getBuild().getDirectory() + EXTRACTED_PAYARAMICRO_FOLDER + MICROINF_FOLDER + File.separator + PAYARA_BOOT_PROP_FILE)) {
+            existingProperties.load(inputStream);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
         executeMojo(plainTextPlugin,
                 goal("write"),
                 configuration(
                         element(name("outputDirectory"), OUTPUT_FOLDER + MICROINF_FOLDER),
                         element(name("files"),
                                 element(name("file"),
-                                        element(name("name"), "payara-boot.properties"),
+                                        element(name("name"), PAYARA_BOOT_PROP_FILE),
                                         element(name("append"), String.valueOf(APPEND)),
                                         element(name("lines"),
-                                                constructElementsForProperties(properties, comment)
+                                                constructElementsForProperties(properties, existingProperties, comment)
                                         )
                                 )
                         )
@@ -72,7 +87,7 @@ public abstract class BaseSystemPropProcessor extends BaseProcessor {
         );
     }
 
-    private Element[] constructElementsForProperties(Properties properties, String comment) {
+    private Element[] constructElementsForProperties(Properties properties, Properties existingProperties, String comment) {
         List<Element> elements = new ArrayList<>();
         String commentLine = "\n# " + ((comment != null) ? comment : "Additional properties");
         Element emptyLine = element(name("line"), commentLine);
@@ -80,10 +95,16 @@ public abstract class BaseSystemPropProcessor extends BaseProcessor {
         for (Map.Entry<Object, Object> entry : properties.entrySet()) {
             Element element = element(
                     name("line"),
+                    (existingProperties.containsKey(entry.getKey()) ? "#" : "") +
                     escapeJava(entry.getKey() + "=" + entry.getValue())
             );
             elements.add(element);
         }
         return elements.toArray(new Element[elements.size()]);
+    }
+
+    public BaseSystemPropProcessor set(MavenProject mavenProject) {
+        this.mavenProject = mavenProject;
+        return this;
     }
 }

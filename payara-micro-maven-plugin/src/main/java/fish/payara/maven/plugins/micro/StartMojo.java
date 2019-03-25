@@ -373,7 +373,7 @@ public class StartMojo extends BasePayaraMojo {
                     }
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                getLog().error(ERROR_MESSAGE, e);
             }
         });
         thread.setDaemon(false);
