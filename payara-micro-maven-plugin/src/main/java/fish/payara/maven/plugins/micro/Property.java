@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2017 Payara Foundation and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017-2018 Payara Foundation and/or its affiliates. All rights reserved.
  *
  * The contents of this file are subject to the terms of either the GNU
  * General Public License Version 2 only ("GPL") or the Common Development
@@ -36,30 +36,29 @@
  * only if the new code is made subject to such option by the copyright
  * holder.
  */
-package fish.payara.maven.plugins.micro.processor;
-
-import org.apache.maven.plugin.MojoExecutionException;
-import org.twdata.maven.mojoexecutor.MojoExecutor;
-
+package fish.payara.maven.plugins.micro;
 
 /**
- * @author mertcaliskan
+ * @author ondrejmihalyi
  */
-public class SystemPropAppendProcessor extends BaseSystemPropProcessor {
+public class Property {
 
-    private Boolean appendSystemProperties;
+    private String name;
+    private String value;
 
-    @Override
-    public void handle(MojoExecutor.ExecutionEnvironment environment) throws MojoExecutionException {
-        if (appendSystemProperties) {
-            addSystemPropertiesForPayaraMicro(System.getProperties(), "Additional system properties from Maven build", environment);
-        }
-        gotoNext(environment);
+    public String getName() {
+        return name;
     }
 
-    public SystemPropAppendProcessor set(Boolean appendSystemProperties) {
-        this.appendSystemProperties = appendSystemProperties;
-        return this;
+    public void setName(String name) {
+        this.name = name;
     }
 
+    public String getValue() {
+        return value;
+    }
+
+    public void setValue(String value) {
+        this.value = value;
+    }
 }

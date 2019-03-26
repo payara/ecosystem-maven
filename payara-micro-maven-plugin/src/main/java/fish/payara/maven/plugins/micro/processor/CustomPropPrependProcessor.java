@@ -38,28 +38,39 @@
  */
 package fish.payara.maven.plugins.micro.processor;
 
+import fish.payara.maven.plugins.micro.Property;
+import java.util.List;
+import java.util.Properties;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.twdata.maven.mojoexecutor.MojoExecutor;
 
 
 /**
- * @author mertcaliskan
+ * @author ondrejmihalyi
  */
-public class SystemPropAppendProcessor extends BaseSystemPropProcessor {
+public class CustomPropPrependProcessor extends BaseSystemPropProcessor {
 
-    private Boolean appendSystemProperties;
+    private List<Property> properties;
 
     @Override
     public void handle(MojoExecutor.ExecutionEnvironment environment) throws MojoExecutionException {
-        if (appendSystemProperties) {
-            addSystemPropertiesForPayaraMicro(System.getProperties(), "Additional system properties from Maven build", environment);
+        if (!properties.isEmpty()) {
+            addSystemPropertiesForPayaraMicro(toJavaProperties(properties), "Additional custom system properties", environment);
         }
         gotoNext(environment);
     }
 
-    public SystemPropAppendProcessor set(Boolean appendSystemProperties) {
-        this.appendSystemProperties = appendSystemProperties;
+    public CustomPropPrependProcessor set(List<Property> propertyOptions) {
+        this.properties = propertyOptions;
         return this;
+    }
+
+    private static Properties toJavaProperties(List<Property> properties) {
+        Properties result = new Properties();
+        for (Property opt : properties) {
+            result.put(opt.getName(), opt.getValue());
+        }
+        return result;
     }
 
 }

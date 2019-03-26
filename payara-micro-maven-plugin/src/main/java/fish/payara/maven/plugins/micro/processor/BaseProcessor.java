@@ -68,8 +68,9 @@ public abstract class BaseProcessor implements Configuration {
 
     public abstract void handle(ExecutionEnvironment environment) throws MojoExecutionException;
 
-    public void next(BaseProcessor processor) {
+    public <PROCESSOR_TYPE extends BaseProcessor> PROCESSOR_TYPE next(PROCESSOR_TYPE processor) {
         this.nextProcessor = processor;
+        return processor;
     }
 
     void gotoNext(ExecutionEnvironment environment) throws MojoExecutionException {
