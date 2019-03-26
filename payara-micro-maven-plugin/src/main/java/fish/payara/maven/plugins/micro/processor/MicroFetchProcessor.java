@@ -56,7 +56,8 @@ public class MicroFetchProcessor extends BaseProcessor {
                 configuration(
                     element("groupId", MICRO_GROUPID),
                     element("artifactId", MICRO_ARTIFACTID),
-                    element("version", payaraVersion)
+                    element("version", payaraVersion),
+                    element("transitive", "false")
                 ),
                 environment
         );
