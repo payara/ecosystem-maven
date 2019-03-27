@@ -12,3 +12,13 @@
 hs_err_pid*
 
 */target/*
+
+# VS Code / Eclipse artefacts
+.settings/
+.vscode/
+.classpath
+.factorypath
+.project
+
+# Release plugin artefacts
+release.properties
