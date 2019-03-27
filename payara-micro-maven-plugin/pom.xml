@@ -36,8 +36,7 @@
   only if the new code is made subject to such option by the copyright
   holder.
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>fish.payara.maven.plugins</groupId>
     <artifactId>payara-micro-maven-plugin</artifactId>
@@ -46,27 +45,23 @@
     <name>Payara Micro Maven Plugin</name>
     <description>Payara Micro Maven Plugin that incorporates payara-micro with the produced artifact</description>
     <url>https://github.com/payara/ecosystem-maven/tree/master/payara-micro-maven-plugin</url>
-
     <properties>
         <java.compiler.source.version>1.8</java.compiler.source.version>
         <java.compiler.target.version>1.8</java.compiler.target.version>
     </properties>
-
-	<scm>
-        <connection>scm:git:git@github.com:payara/ecosystem-maven.git</connection>
-        <url>scm:git:git@github.com:payara/ecosystem-maven.git</url>
-        <developerConnection>scm:git@github.com:payara/ecosystem-maven.git</developerConnection>
+    <scm>
+        <connection>scm:git:https://github.com/payara/ecosystem-maven/</connection>
+        <url>https://github.com/payara/ecosystem-maven/</url>
+        <developerConnection>scm:git:https://github.com/payara/ecosystem-maven/</developerConnection>
     </scm>
-    
     <licenses>
-      <license>
-          <name>CDDL + GPLv2 with classpath exception</name>
-          <url>https://raw.githubusercontent.com/payara/Payara/master/LICENSE.txt</url>
-          <distribution>repo</distribution>
-          <comments>A business-friendly OSS license</comments>
-      </license>
-  </licenses>
-
+        <license>
+            <name>CDDL + GPLv2 with classpath exception</name>
+            <url>https://raw.githubusercontent.com/payara/Payara/master/LICENSE.txt</url>
+            <distribution>repo</distribution>
+            <comments>A business-friendly OSS license</comments>
+        </license>
+    </licenses>
     <developers>
         <developer>
             <id>mertcaliskan</id>
@@ -78,7 +73,6 @@
             </roles>
         </developer>
     </developers>
-
     <build>
         <plugins>
             <plugin>
@@ -90,7 +84,6 @@
                     <target>${java.compiler.target.version}</target>
                 </configuration>
             </plugin>
-
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
@@ -117,7 +110,6 @@
                     </execution>
                 </executions>
             </plugin>
-
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-plugin-plugin</artifactId>
@@ -135,7 +127,16 @@
                     </execution>
                 </executions>
             </plugin>
-
+            <plugin>
+                <artifactId>maven-release-plugin</artifactId>
+                <version>2.5.3</version>
+                <configuration>
+                    <pushChanges>false</pushChanges>
+                    <autoVersionSubmodules>true</autoVersionSubmodules>
+                    <localCheckout>true</localCheckout>
+                    <releaseProfiles>release-profile</releaseProfiles>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.sonatype.plugins</groupId>
                 <artifactId>nexus-staging-maven-plugin</artifactId>
@@ -149,7 +150,6 @@
             </plugin>
         </plugins>
     </build>
-
     <dependencies>
         <dependency>
             <groupId>org.apache.maven.plugin-tools</groupId>
@@ -157,7 +157,6 @@
             <version>3.6.0</version>
             <scope>provided</scope>
         </dependency>
-
         <dependency>
             <groupId>org.twdata.maven</groupId>
             <artifactId>mojo-executor</artifactId>
@@ -169,7 +168,6 @@
             <version>3.1.1</version>
         </dependency>
     </dependencies>
-
     <distributionManagement>
         <snapshotRepository>
             <id>ossrh</id>
@@ -180,7 +178,6 @@
             <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
         </repository>
     </distributionManagement>
-
     <profiles>
         <profile>
             <id>release-profile</id>
