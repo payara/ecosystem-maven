@@ -48,7 +48,7 @@ DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
             <defaultValue>8.0</defaultValue>
         </requiredProperty>
         <requiredProperty key="microprofileVersion">
-            <defaultValue>2.0.1</defaultValue>
+            <defaultValue>2.2</defaultValue>
         </requiredProperty>
         <requiredProperty key="payaraMicroVersion">
             <defaultValue>5.192</defaultValue>
