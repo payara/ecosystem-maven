@@ -46,6 +46,7 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.dependency.fromConfiguration.ArtifactItem;
 import org.twdata.maven.mojoexecutor.MojoExecutor;
 
+import java.io.File;
 import java.util.List;
 
 /**
@@ -84,6 +85,12 @@ public class BundleMojo extends BasePayaraMojo {
      */
     @Parameter(property = "payaraVersion", defaultValue = "5.192")
     private String payaraVersion;
+
+    /**
+     * User specified configuration files that will be copied into the MICRO-INF/domain directory
+     */
+    @Parameter
+    private List<File> customConfigs;
 
     /**
      * User specified jars that will be copied into the MICRO-INF/lib directory
@@ -151,7 +158,7 @@ public class BundleMojo extends BasePayaraMojo {
 
         microUnpackProcessor.set(payaraVersion)
             .next(new CustomJarCopyProcessor()).set(customJars)
-            .next(new CustomFileCopyProcessor())
+            .next(new CustomFileCopyProcessor(getLog())).set(customConfigs)
             .next(new BootCommandFileCopyProcessor())
             .next(new DefinedArtifactDeployProcessor()).set(deployArtifacts)
             .next(new ArtifactDeployProcessor(getLog())).set(

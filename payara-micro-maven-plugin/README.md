@@ -44,6 +44,10 @@ This goal bundles the attached project's artifact into uber jar with specified c
                     <version>6.0</version>
                 </artifactItem>
             </customJars>
+            <customConfigs>
+                <param>src/payara/resources/metrics.xml</param>
+                <param>src/payara/resources/other-config.xml</param>
+            </customConfigs>
         </configuration>
     </plugin>
 
@@ -56,6 +60,7 @@ This goal bundles the attached project's artifact into uber jar with specified c
 - __payaraVersion__ (optional |  default: 5.192): By default ```bundle``` mojo fetches payara-micro with version 5.192.
 - __deployArtifacts__ (optional): Can contain a list of artifactItems, which defines the dependencies with their GAVs to be copied under ```MICRO-INF/deploy``` folder.
 - __customJars__ (optional): Can contain a list of artifactItems, which defines the dependencies with their GAVs to be copied under ```MICRO-INF/lib``` folder.
+- __customConfigs__ (optional): Can contain a list of configuration files which will be copied to the ```MICRO-INF/domain``` folder. If the path is relative (i.e. does not start with / or a drive letter such as C:), the path is relative to the directory containing the POM file. If only a single configuration file is being supplied then the enclosing ```param``` tags can be ommitted. Note that by default this will always additionally search for files in ```src/main/resources``` named ```domain.xml```, ```keystore.jks```, ```login.conf```, and ```logging.properties```.
 
 ## start
 This goal start payara-micro with specified configurations. ```start``` is attached to the ```payara-micro``` phase. It can be executed as ```mvn payara-micro:start```. A sample usage would as follows:

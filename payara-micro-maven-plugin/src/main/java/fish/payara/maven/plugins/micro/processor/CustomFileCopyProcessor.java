@@ -39,36 +39,114 @@
 package fish.payara.maven.plugins.micro.processor;
 
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.logging.Log;
 import org.twdata.maven.mojoexecutor.MojoExecutor;
 
 import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author mertcaliskan
  */
 public class CustomFileCopyProcessor extends BaseProcessor {
 
+    /**
+     * User specified configuration files that will be copied into the
+     * MICRO-INF/domain directory
+     */
+    private List<File> customConfigs;
+
+    /**
+     * Logger
+     */
+    private final Log log;
+
+    /**
+     * Create a new Custom File Copy Processor instance.
+     * 
+     * @param log the logger to use
+     */
+    public CustomFileCopyProcessor(Log log) {
+        this.log = log;
+    }
+
     @Override
     public void handle(MojoExecutor.ExecutionEnvironment environment) throws MojoExecutionException {
+
         executeMojo(resourcesPlugin,
                 goal("copy-resources"),
                 configuration(
                         element(name("outputDirectory"), OUTPUT_FOLDER + MICROINF_DOMAIN_FOLDER),
                         element(name("resources"),
-                                element(name("resource"),
-                                        element(name("directory"),  "${project.build.resources[0].directory}"),
-                                        element(name("includes"),
-                                                element(name("include"), "domain.xml"),
-                                                element(name("include"), "keystore.jks"),
-                                                element(name("include"), "login.conf"),
-                                                element(name("include"), "logging.properties")
-                                        )
-                                )
+                                constructResourceElements()
                         )
                 ),
                 environment
         );
 
         gotoNext(environment);
+    }
+
+    /**
+     * Helper method to build the "resource" elements to pass to copy-resources.
+     * 
+     * This will include the default resources, and any custom configuration files
+     * which have been specified.
+     * 
+     * @return the array of elements. This will always be non-null and contain at
+     *         least one element.
+     */
+    protected MojoExecutor.Element[] constructResourceElements() {
+
+        List<MojoExecutor.Element> elements = new ArrayList<>();
+        /* Add in the default items */
+        elements.add(
+            element(name("resource"), 
+                element(name("directory"), "${project.build.resources[0].directory}"),
+                element(name("includes"), 
+                    element(name("include"), "domain.xml"),
+                    element(name("include"), "keystore.jks"), 
+                    element(name("include"), "login.conf"),
+                    element(name("include"), "logging.properties")
+                )
+            )
+        );
+
+        /* Add in the custom configuration file entries */
+        if (customConfigs != null && !customConfigs.isEmpty()) {
+
+            for (File file : customConfigs) {
+                if (file.exists()) {
+                    log.debug("Including custom configuration file [" + file.getAbsolutePath() + "]");
+
+                    elements.add(
+                        element(name("resource"),
+                            element(name("directory"), file.getParent()), 
+                            element(name("include"), file.getName())
+                        )
+                    );
+                } else {
+                    log.warn("Custom configuration file [" + file.getAbsolutePath()
+                            + "] doesn't exist, won't be copied");
+                }
+            }
+        }
+
+        return elements.toArray(new MojoExecutor.Element[elements.size()]);
+    }
+
+    /**
+     * Set the configuration files that will be copied in addition to the default
+     * entries.
+     * 
+     * @param customConfigs list of files to copy. This can be null.
+     * @return this instance.
+     */
+    public BaseProcessor set(List<File> customConfigs) {
+        this.customConfigs = customConfigs;
+        return this;
     }
 }
