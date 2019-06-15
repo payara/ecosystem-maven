@@ -60,7 +60,21 @@ This goal bundles the attached project's artifact into uber jar with specified c
 - __payaraVersion__ (optional |  default: 5.192): By default ```bundle``` mojo fetches payara-micro with version 5.192.
 - __deployArtifacts__ (optional): Can contain a list of artifactItems, which defines the dependencies with their GAVs to be copied under ```MICRO-INF/deploy``` folder.
 - __customJars__ (optional): Can contain a list of artifactItems, which defines the dependencies with their GAVs to be copied under ```MICRO-INF/lib``` folder.
-- __customConfigs__ (optional): Can contain a list of configuration files which will be copied to the ```MICRO-INF/domain``` folder. If the path is relative (i.e. does not start with / or a drive letter such as C:), the path is relative to the directory containing the POM file. If only a single configuration file is being supplied then the enclosing ```param``` tags can be ommitted. Note that by default this will always additionally search for files in ```src/main/resources``` named ```domain.xml```, ```keystore.jks```, ```login.conf```, and ```logging.properties```.
+
+This goal will always search for domain configuration files in ```src/main/resources``` to copy in to the ```MICRO-INF/domain``` directoy of the created uber jar. The files which are currently included are:
+
+* ```domain.xml```
+* ```hazelcast-config.xml```
+* ```keystore.jks```
+* ```login.conf```
+* ```logging.properties```
+* ```metrics.xml```
+
+Additionally boot command files will be included if they exist in ```src/main/resources``` and copied to the ```MICRO-INF``` directory. 
+
+* ```pre-boot-commands.txt```
+* ```post-boot-commands.txt```
+* ```post-deploy-commands.txt```
 
 ## start
 This goal start payara-micro with specified configurations. ```start``` is attached to the ```payara-micro``` phase. It can be executed as ```mvn payara-micro:start```. A sample usage would as follows:
