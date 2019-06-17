@@ -44,10 +44,6 @@ This goal bundles the attached project's artifact into uber jar with specified c
                     <version>6.0</version>
                 </artifactItem>
             </customJars>
-            <customConfigs>
-                <param>src/payara/resources/metrics.xml</param>
-                <param>src/payara/resources/other-config.xml</param>
-            </customConfigs>
         </configuration>
     </plugin>
 
