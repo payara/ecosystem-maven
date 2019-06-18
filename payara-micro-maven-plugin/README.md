@@ -57,6 +57,21 @@ This goal bundles the attached project's artifact into uber jar with specified c
 - __deployArtifacts__ (optional): Can contain a list of artifactItems, which defines the dependencies with their GAVs to be copied under ```MICRO-INF/deploy``` folder.
 - __customJars__ (optional): Can contain a list of artifactItems, which defines the dependencies with their GAVs to be copied under ```MICRO-INF/lib``` folder.
 
+This goal will always search for domain configuration files in ```src/main/resources``` to copy in to the ```MICRO-INF/domain``` directoy of the created uber jar. The files which are currently included are:
+
+* ```domain.xml```
+* ```hazelcast-config.xml```
+* ```keystore.jks```
+* ```login.conf```
+* ```logging.properties```
+* ```metrics.xml```
+
+Additionally boot command files will be included if they exist in ```src/main/resources``` and copied to the ```MICRO-INF``` directory. 
+
+* ```pre-boot-commands.txt```
+* ```post-boot-commands.txt```
+* ```post-deploy-commands.txt```
+
 ## start
 This goal start payara-micro with specified configurations. ```start``` is attached to the ```payara-micro``` phase. It can be executed as ```mvn payara-micro:start```. A sample usage would as follows:
 

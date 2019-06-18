@@ -50,20 +50,23 @@ public class CustomFileCopyProcessor extends BaseProcessor {
 
     @Override
     public void handle(MojoExecutor.ExecutionEnvironment environment) throws MojoExecutionException {
+
         executeMojo(resourcesPlugin,
                 goal("copy-resources"),
                 configuration(
                         element(name("outputDirectory"), OUTPUT_FOLDER + MICROINF_DOMAIN_FOLDER),
                         element(name("resources"),
-                                element(name("resource"),
-                                        element(name("directory"),  "${project.build.resources[0].directory}"),
-                                        element(name("includes"),
-                                                element(name("include"), "domain.xml"),
-                                                element(name("include"), "keystore.jks"),
-                                                element(name("include"), "login.conf"),
-                                                element(name("include"), "logging.properties")
-                                        )
+                            element(name("resource"), 
+                                element(name("directory"), "${project.build.resources[0].directory}"),
+                                element(name("includes"), 
+                                    element(name("include"), "domain.xml"),
+                                    element(name("include"), "hazelcast-config.xml"),
+                                    element(name("include"), "keystore.jks"), 
+                                    element(name("include"), "login.conf"),
+                                    element(name("include"), "logging.properties"),
+                                    element(name("include"), "metrics.xml")
                                 )
+                            )
                         )
                 ),
                 environment
