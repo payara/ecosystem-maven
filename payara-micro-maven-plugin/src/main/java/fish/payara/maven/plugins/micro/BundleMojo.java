@@ -162,7 +162,7 @@ public class BundleMojo extends BasePayaraMojo {
             .next(new StartClassCopyReplaceProcessor()).set(startClass)
             .next(new SystemPropAppendProcessor()).set(appendSystemProperties).set(mavenProject)
             .next(new CustomPropPrependProcessor()).set(systemProperties).set(mavenProject)
-            .next(new MicroJarBundleProcessor());
+            .next(new MicroJarBundleProcessor(uberJarClassifier));
 
         return microUnpackProcessor;
     }

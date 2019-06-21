@@ -56,6 +56,7 @@ This goal bundles the attached project's artifact into uber jar with specified c
 - __payaraVersion__ (optional |  default: 5.192): By default ```bundle``` mojo fetches payara-micro with version 5.192.
 - __deployArtifacts__ (optional): Can contain a list of artifactItems, which defines the dependencies with their GAVs to be copied under ```MICRO-INF/deploy``` folder.
 - __customJars__ (optional): Can contain a list of artifactItems, which defines the dependencies with their GAVs to be copied under ```MICRO-INF/lib``` folder.
+- __uberJarClassifier__ (optional | default: microbundle): Specifies the classifier to use for the generated uber-jar.
 
 This goal will always search for domain configuration files in ```src/main/resources``` to copy in to the ```MICRO-INF/domain``` directoy of the created uber jar. The files which are currently included are:
 
@@ -133,7 +134,8 @@ If you want to execute the payara-micro plugin along with ```maven-toolchains-pl
 
 ## Configuration tags
 
-- __useUberJar__ (optional | default: false): Use created uber-jar that resides in ```target``` folder. The name of the jar artifact will be resolved automatically by evaluating its final name, artifact id and version. This configuration has the higher precedence (in given order) compared to ```payaraMicroAbsolutePath```, ```payaraVersion``` and ```artifactItem```.   
+- __useUberJar__ (optional | default: false): Use created uber-jar that resides in ```target``` folder. The name of the jar artifact will be resolved automatically by evaluating its final name, artifact id, version, and uberJarClassifier. This configuration has the higher precedence (in given order) compared to ```payaraMicroAbsolutePath```, ```payaraVersion``` and ```artifactItem```.   
+- __uberJarClassifier__ (optional | default: microbundle): Specifies the classifier used when the uber-jar was created.
 - __daemon__ (optional | default: false): Starts payara-micro in separate JVM process and continues with the maven build.
 - __immediateExit__ (optional | default: false): If payara-micro is executed in ```daemon``` mode, the executor thread will wait for the ready message before shutting down its process. By setting ```immediateExit``` to ```true``` you can skip this and instantly interrupt the executor thread. 
 - __javaPath__ (optional): Absolute path to the ```java``` executable. This has higher priority to the java executable identified via Maven toolchain.
@@ -178,5 +180,7 @@ If you want to execute the payara-micro plugin along with ```maven-toolchains-pl
 
 ## Configuration tags
 
+- __useUberJar__ (optional | default: false): Use created uber-jar that resides in ```target``` folder. The name of the jar artifact will be resolved automatically by evaluating its final name, artifact id, version, and uberJarClassifier. This configuration has the higher precedence (in given order) compared to ```payaraMicroAbsolutePath```, ```payaraVersion``` and ```artifactItem```.   
+- __uberJarClassifier__ (optional | default: microbundle): Specifies the classifier used when the uber-jar was created.
 - __processId__ (optional): Process id of the running payara-micro.
 - __artifactItem__ (optional): Defines payara-micro artifact with its coordinates. This information is used to identify the process id of the running payara-micro.
