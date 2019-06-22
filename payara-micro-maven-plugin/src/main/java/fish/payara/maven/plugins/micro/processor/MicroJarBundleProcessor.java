@@ -50,13 +50,19 @@ import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
  */
 public class MicroJarBundleProcessor extends BaseProcessor {
 
+    private final String classifier;
+
+    public MicroJarBundleProcessor(String classifier) {
+        this.classifier = classifier;
+    }
+
     @Override
     public void handle(MojoExecutor.ExecutionEnvironment environment) throws MojoExecutionException {
         executeMojo(jarPlugin,
                 goal(JAR_EXTENSION),
                 configuration(
                         element(name("classesDirectory"), OUTPUT_FOLDER),
-                        element(name("classifier"), MICROBUNDLE_EXTENSION),
+                        element(name("classifier"), classifier),
                         element(name("archive"),
                                 element(name("compress"), "false"),
                                 element(name("manifestFile"), METAINF_FOLDER + File.separator + "MANIFEST.MF")

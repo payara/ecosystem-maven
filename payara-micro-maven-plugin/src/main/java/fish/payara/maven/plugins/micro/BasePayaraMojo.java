@@ -70,6 +70,9 @@ abstract class BasePayaraMojo extends AbstractMojo {
     @Parameter(property = "skip", defaultValue = "false")
     protected Boolean skip;
 
+    @Parameter(property = "uberJarClassifier", defaultValue = Configuration.MICROBUNDLE_EXTENSION)
+    protected String uberJarClassifier;
+
     private ExecutionEnvironment environment;
 
     ExecutionEnvironment getEnvironment() {

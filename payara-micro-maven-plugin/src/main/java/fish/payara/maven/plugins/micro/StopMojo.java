@@ -195,7 +195,7 @@ public class StopMojo extends BasePayaraMojo {
     private String evaluateExecutorName(Boolean withExtension) {
         String extension;
         if (withExtension) {
-            extension = "-" + Configuration.MICROBUNDLE_EXTENSION + "." + JAR_EXTENSION;
+            extension = "-" + uberJarClassifier + "." + JAR_EXTENSION;
         } else {
             extension = "." + mavenProject.getPackaging();
         }
