@@ -63,7 +63,7 @@ DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
             <defaultValue>false</defaultValue>
         </requiredProperty>
         <requiredProperty key="contextRoot">
-            <defaultValue>""</defaultValue>
+            <defaultValue>/</defaultValue>
         </requiredProperty>
     </requiredProperties>
     
