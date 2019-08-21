@@ -91,7 +91,7 @@
                         </option>
                     </commandLineOptions>
 #end
-#if (!${contextRoot} || ${contextRoot} != "")
+#if (!${contextRoot} || ${contextRoot} != "/")
                     <contextRoot>${contextRoot}</contextRoot>
 #end
                 </configuration>
