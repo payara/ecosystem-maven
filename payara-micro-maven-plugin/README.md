@@ -22,7 +22,7 @@ This goal bundles the attached project's artifact into uber jar with specified c
         <configuration>
             <startClass>my.custom.start.class.Main</startClass>
             <appendSystemProperties>true</appendSystemProperties>
-            <payaraVersion>5.192</payaraVersion>
+            <payaraVersion>5.193</payaraVersion>
             <systemProperties>
                 <property>
                     <name>payaramicro.port</name>
@@ -53,7 +53,7 @@ This goal bundles the attached project's artifact into uber jar with specified c
 - __startClass__ (optional): Replaces ```Start-Class``` definition that resides in MANIFEST.MF file with the provided class.
 - __systemProperties__ (optional): Can contain a list of `property` elements that specify system properties to insert at the beginning of the ```payara-boot.properties``` file . A `property` element contains `name` and `value` elements.
 - __appendSystemProperties__ (optional | default: true): Appends all system properties defined into the ```payara-boot.properties``` file.
-- __payaraVersion__ (optional |  default: 5.192): By default ```bundle``` mojo fetches payara-micro with version 5.192.
+- __payaraVersion__ (optional |  default: 5.193): By default ```bundle``` mojo fetches payara-micro with version 5.193.
 - __deployArtifacts__ (optional): Can contain a list of artifactItems, which defines the dependencies with their GAVs to be copied under ```MICRO-INF/deploy``` folder.
 - __customJars__ (optional): Can contain a list of artifactItems, which defines the dependencies with their GAVs to be copied under ```MICRO-INF/lib``` folder.
 - __uberJarClassifier__ (optional | default: microbundle): Specifies the classifier to use for the generated uber-jar.
@@ -93,11 +93,11 @@ This goal start payara-micro with specified configurations. ```start``` is attac
             <immediateExit>false</immediateExit>
             <javaPath>/path/to/Java/Executable</javaPath>
             <payaraMicroAbsolutePath>/path/to/payara-micro.jar</payaraMicroAbsolutePath>
-            <payaraVersion>5.192</payaraVersion>
+            <payaraVersion>5.193</payaraVersion>
             <artifactItem>
                 <groupId>fish.payara.extras</groupId>
                 <artifactId>payara-micro</artifactId>
-                <version>5.192</version>
+                <version>5.193</version>
             </artifactItem>
             <deployWar>true</deployWar>
             <contextRoot>myApp</contextRoot>
@@ -140,7 +140,7 @@ If you want to execute the payara-micro plugin along with ```maven-toolchains-pl
 - __immediateExit__ (optional | default: false): If payara-micro is executed in ```daemon``` mode, the executor thread will wait for the ready message before shutting down its process. By setting ```immediateExit``` to ```true``` you can skip this and instantly interrupt the executor thread. 
 - __javaPath__ (optional): Absolute path to the ```java``` executable. This has higher priority to the java executable identified via Maven toolchain.
 - __payaraMicroAbsolutePath__ (optional): Absolute path to payara-micro executable.
-- __payaraVersion__ (optional | default: "5.192"): The payara-micro version that will be used with ```start``` mojo.
+- __payaraVersion__ (optional | default: "5.193"): The payara-micro version that will be used with ```start``` mojo.
 - __artifactItem__ (optional): Defines payara-micro artifact with its coordinates. Specified artifact should be available in local maven repository.
 - __deployWar__ (optional | default: false): If the attached project is of type WAR, it will automatically be deployed to payara-micro if ```deployWar``` is set to ```true```. 
 - __contextRoot__ (optional): Defines the context root of an application. ```deployWar``` should be set to true in order to use the ```contextRoot```. 
@@ -171,7 +171,7 @@ If an ```artifactItem``` is defined, it will take precedence for identifying cur
             <artifactItem>
                 <groupId>fish.payara.extras</groupId>
                 <artifactId>payara-micro</artifactId>
-                <version>5.192</version>
+                <version>5.193</version>
             </artifactItem>
         </configuration>        
     </plugin>
