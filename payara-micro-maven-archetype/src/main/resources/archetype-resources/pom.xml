@@ -80,7 +80,7 @@
             <plugin>
                 <groupId>fish.payara.maven.plugins</groupId>
                 <artifactId>payara-micro-maven-plugin</artifactId>
-                <version>1.0.5</version>
+                <version>1.0.6</version>
                 <configuration>
                     <payaraVersion>${version.payara}</payaraVersion>
                     <deployWar>true</deployWar>
@@ -91,9 +91,7 @@
                         </option>
                     </commandLineOptions>
 #end
-#if (!${contextRoot} || ${contextRoot} != "/")
                     <contextRoot>${contextRoot}</contextRoot>
-#end
                 </configuration>
             </plugin>
         </plugins>
