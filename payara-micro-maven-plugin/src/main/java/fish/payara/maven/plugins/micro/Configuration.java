@@ -62,5 +62,4 @@ public interface Configuration {
 
     String MICRO_THREAD_NAME = "PayaraMicroThread";
     String MICRO_READY_MESSAGE = "ready in";
-    int MAX_WAIT_FOR_PAYARA_SHUTDOWN_MILLIS = 5000;
 }

@@ -184,3 +184,4 @@ If you want to execute the payara-micro plugin along with ```maven-toolchains-pl
 - __uberJarClassifier__ (optional | default: microbundle): Specifies the classifier used when the uber-jar was created.
 - __processId__ (optional): Process id of the running payara-micro.
 - __artifactItem__ (optional): Defines payara-micro artifact with its coordinates. This information is used to identify the process id of the running payara-micro.
+- __maxStopTimeoutMillis__ (optional | default: 5000): Max timeout to wait for payara-micro to stop.

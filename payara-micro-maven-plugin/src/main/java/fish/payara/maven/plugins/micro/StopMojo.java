@@ -75,6 +75,9 @@ public class StopMojo extends BasePayaraMojo {
 
     private Toolchain toolchain;
 
+    @Parameter(property = "maxStopTimeoutMillis", defaultValue = "5000")
+    private int maxStopTimeoutMillis;
+
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
         if (skip) {
@@ -164,7 +167,7 @@ public class StopMojo extends BasePayaraMojo {
                     throw new RuntimeException(ex);
                 }
             }
-        } while (processRunning && System.currentTimeMillis() < startedWaitingAtMillis + Configuration.MAX_WAIT_FOR_PAYARA_SHUTDOWN_MILLIS);
+        } while (processRunning && System.currentTimeMillis() < startedWaitingAtMillis + maxStopTimeoutMillis);
         if (processRunning) {
             getLog().warn("Could not stop previously started payara-micro with process ID " + processId + " or waiting too long, proceeding further");
         }
