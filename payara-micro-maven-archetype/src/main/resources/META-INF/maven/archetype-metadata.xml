@@ -44,16 +44,28 @@ DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
                       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   
     <requiredProperties>
-        <requiredProperty key="javaeeVersion">
-            <defaultValue>8.0</defaultValue>
+        <requiredProperty key="jakartaeeVersion">
+            <defaultValue>8.0.0</defaultValue>
         </requiredProperty>
         <requiredProperty key="microprofileVersion">
-            <defaultValue>2.2</defaultValue>
+            <defaultValue>3.2</defaultValue>
         </requiredProperty>
         <requiredProperty key="payaraMicroVersion">
-            <defaultValue>5.193</defaultValue>
+            <defaultValue>5.201</defaultValue>
         </requiredProperty>
         <requiredProperty key="autoBindHttp">
+            <defaultValue>true</defaultValue>
+        </requiredProperty>
+        <requiredProperty key="addConcurrentApi">
+            <defaultValue>true</defaultValue>
+        </requiredProperty>
+        <requiredProperty key="addResourceApi">
+            <defaultValue>true</defaultValue>
+        </requiredProperty>
+        <requiredProperty key="addJBatchApi">
+            <defaultValue>true</defaultValue>
+        </requiredProperty>
+        <requiredProperty key="addMicroprofileApi">
             <defaultValue>true</defaultValue>
         </requiredProperty>
         <requiredProperty key="addJcache">
@@ -61,6 +73,9 @@ DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
         </requiredProperty>
         <requiredProperty key="addPayaraApi">
             <defaultValue>false</defaultValue>
+        </requiredProperty>
+        <requiredProperty key="deployWar">
+            <defaultValue>true</defaultValue>
         </requiredProperty>
         <requiredProperty key="contextRoot">
             <defaultValue>/</defaultValue>
