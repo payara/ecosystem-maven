@@ -58,7 +58,7 @@ public class ReloadMojo extends BasePayaraMojo {
     private static final String RELOAD_FILE = ".reload";
 
     @Override
-    public void execute() throws MojoExecutionException, MojoFailureException {
+    public void execute() throws MojoExecutionException {
         if (skip) {
             getLog().info("Reload mojo execution is skipped");
             return;
@@ -71,7 +71,7 @@ public class ReloadMojo extends BasePayaraMojo {
 
         File explodedDir = new File(explodedDirPath);
         if (!explodedDir.exists()) {
-            throw new IllegalStateException(String.format("explodedDir[%s] not found", explodedDirPath));
+            throw new MojoExecutionException(String.format("explodedDir[%s] not found", explodedDirPath));
         }
         File reloadFile = new File(explodedDir, RELOAD_FILE);
         if (reloadFile.exists()) {
@@ -80,7 +80,7 @@ public class ReloadMojo extends BasePayaraMojo {
             try {
                 reloadFile.createNewFile();
             } catch (IOException ex) {
-                throw new IllegalStateException("Unable to create .reload file " + ex.toString());
+                throw new MojoExecutionException("Unable to create .reload file " + ex.toString());
             }
         }
 
