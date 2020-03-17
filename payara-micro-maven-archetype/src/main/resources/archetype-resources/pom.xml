@@ -99,14 +99,16 @@
                 <version>1.0.6</version>
                 <configuration>
                     <payaraVersion>${version.payara}</payaraVersion>
-                    <deployWar>${deployWar}</deployWar>
-                    <commandLineOptions>
+#if (${deployWar} == "true")
+                    <deployWar>true</deployWar>
+#end
 #if (${autoBindHttp} == "true")
+                    <commandLineOptions>
                         <option>
                             <key>--autoBindHttp</key>
                         </option>
-#end
                     </commandLineOptions>
+#end
                     <contextRoot>${contextRoot}</contextRoot>
                 </configuration>
             </plugin>
