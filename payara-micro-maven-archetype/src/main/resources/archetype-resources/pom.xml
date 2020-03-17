@@ -106,12 +106,6 @@
                             <key>--autoBindHttp</key>
                         </option>
 #end
-#if (${deployWar} == "false")
-                        <option>
-                            <key>--deploy</key>
-                            <value>${project.build.directory}/${project.build.finalName}</value>
-                        </option>
-#end
                     </commandLineOptions>
                     <contextRoot>${contextRoot}</contextRoot>
                 </configuration>
