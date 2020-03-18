@@ -74,7 +74,7 @@ public class StartMojo extends BasePayaraMojo {
     @Parameter(property = "javaPath")
     private String javaPath;
 
-    @Parameter(property = "payaraVersion", defaultValue = "5.193")
+    @Parameter(property = "payaraVersion", defaultValue = "5.201")
     private String payaraVersion;
 
     @Parameter(property = "payaraMicroAbsolutePath")
@@ -354,7 +354,7 @@ public class StartMojo extends BasePayaraMojo {
     }
 
     private String evaluateProjectArtifactAbsolutePath(String extension) {
-        String projectJarAbsolutePath = mavenProject.getBuild().getDirectory() + "/";
+        String projectJarAbsolutePath = mavenProject.getBuild().getDirectory() + File.separator;
         projectJarAbsolutePath += evaluateExecutorName(extension);
         return projectJarAbsolutePath;
     }
@@ -363,7 +363,7 @@ public class StartMojo extends BasePayaraMojo {
         if (StringUtils.isNotEmpty(mavenProject.getBuild().getFinalName())) {
             return mavenProject.getBuild().getFinalName() + extension;
         }
-        return mavenProject.getArtifact().getArtifactId() + mavenProject.getVersion() + extension;
+        return mavenProject.getArtifact().getArtifactId() + '-' + mavenProject.getVersion() + extension;
     }
 
     private void closeMicroProcess() {
