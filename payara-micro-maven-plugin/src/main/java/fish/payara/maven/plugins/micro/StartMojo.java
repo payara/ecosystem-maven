@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2017-2019 Payara Foundation and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017-2020 Payara Foundation and/or its affiliates. All rights reserved.
  *
  * The contents of this file are subject to the terms of either the GNU
  * General Public License Version 2 only ("GPL") or the Common Development
@@ -95,6 +95,21 @@ public class StartMojo extends BasePayaraMojo {
     @Parameter(property = "deployWar", defaultValue = "false")
     private Boolean deployWar;
 
+    /**
+     * Use exploded artifact for deployment.
+     */
+    @Parameter(property = "exploded", defaultValue = "false")
+    private Boolean exploded;
+
+    /**
+     * Attach a debugger. If set to "true", the process will suspend and wait
+     * for a debugger to attach on port 5005. If set to other value, will be
+     * appended to the argLine, allowing you to configure custom debug options.
+     *
+     */
+    @Parameter(property = "debug", defaultValue = "false")
+    private String debug;
+
     @Parameter(property = "contextRoot")
     private String contextRoot;
 
@@ -113,13 +128,14 @@ public class StartMojo extends BasePayaraMojo {
 
     private Process microProcess;
     private Thread microProcessorThread;
-    private ThreadGroup threadGroup;
+    private final ThreadGroup threadGroup;
     private Toolchain toolchain;
 
     StartMojo() {
         threadGroup = new ThreadGroup(MICRO_THREAD_NAME);
     }
 
+    @Override
     public void execute() throws MojoExecutionException {
         if (copySystemProperties) {
             getLog().warn("copySystemProperties is deprecated. " +
@@ -141,6 +157,15 @@ public class StartMojo extends BasePayaraMojo {
             getLog().info("Starting payara-micro from path: " + path);
             int indice = 0;
             actualArgs.add(indice++, evaluateJavaPath());
+
+            if(!"false".equalsIgnoreCase(debug)) {
+                if(Boolean.parseBoolean(debug)) {
+                    actualArgs.add(indice++, "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005");
+                } else {
+                    actualArgs.add(indice++, debug);
+                }
+            }
+
             if (javaCommandLineOptions != null) {
                 for (Option option : javaCommandLineOptions) {
                     if (option.getKey() != null && option.getValue() != null) {
@@ -187,7 +212,11 @@ public class StartMojo extends BasePayaraMojo {
                             "your application tried to deploy twice: 1. as uber jar 2. as a separate war");
                 }
                 actualArgs.add(indice++, "--deploy");
-                actualArgs.add(indice++, evaluateProjectArtifactAbsolutePath(false));
+                if (exploded) {
+                    actualArgs.add(indice++, evaluateProjectArtifactAbsolutePath(""));
+                } else {
+                    actualArgs.add(indice++, evaluateProjectArtifactAbsolutePath("." + mavenProject.getPackaging()));
+                }
             }
             if (contextRoot != null) {
                 actualArgs.add(indice++, "--contextroot");
@@ -278,7 +307,7 @@ public class StartMojo extends BasePayaraMojo {
 
     private String decideOnWhichMicroToUse() throws MojoExecutionException {
         if (useUberJar) {
-            String path = evaluateProjectArtifactAbsolutePath(true);
+            String path = evaluateProjectArtifactAbsolutePath("-" + uberJarClassifier + "." + JAR_EXTENSION);
 
             if (!Files.exists(Paths.get(path))) {
                 throw new MojoExecutionException("\"useUberJar\" option was set to \"true\" but detected path " + path + " does not exist. You need to execute the \"bundle\" goal before using this option.");
@@ -324,20 +353,13 @@ public class StartMojo extends BasePayaraMojo {
         return payaraMicroArtifact.getFile().getAbsolutePath();
     }
 
-    private String evaluateProjectArtifactAbsolutePath(Boolean withExtension) {
+    private String evaluateProjectArtifactAbsolutePath(String extension) {
         String projectJarAbsolutePath = mavenProject.getBuild().getDirectory() + File.separator;
-        projectJarAbsolutePath += evaluateExecutorName(withExtension);
+        projectJarAbsolutePath += evaluateExecutorName(extension);
         return projectJarAbsolutePath;
     }
 
-    private String evaluateExecutorName(Boolean withExtension) {
-        String extension;
-        if (withExtension) {
-            extension = "-" + uberJarClassifier + "." + JAR_EXTENSION;
-        }
-        else {
-            extension = "." + mavenProject.getPackaging();
-        }
+    private String evaluateExecutorName(String extension) {
         if (StringUtils.isNotEmpty(mavenProject.getBuild().getFinalName())) {
             return mavenProject.getBuild().getFinalName() + extension;
         }
