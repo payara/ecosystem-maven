@@ -325,7 +325,7 @@ public class StartMojo extends BasePayaraMojo {
     }
 
     private String evaluateProjectArtifactAbsolutePath(Boolean withExtension) {
-        String projectJarAbsolutePath = mavenProject.getBuild().getDirectory() + "/";
+        String projectJarAbsolutePath = mavenProject.getBuild().getDirectory() + File.separator;
         projectJarAbsolutePath += evaluateExecutorName(withExtension);
         return projectJarAbsolutePath;
     }
@@ -341,7 +341,7 @@ public class StartMojo extends BasePayaraMojo {
         if (StringUtils.isNotEmpty(mavenProject.getBuild().getFinalName())) {
             return mavenProject.getBuild().getFinalName() + extension;
         }
-        return mavenProject.getArtifact().getArtifactId() + mavenProject.getVersion() + extension;
+        return mavenProject.getArtifact().getArtifactId() + '-' + mavenProject.getVersion() + extension;
     }
 
     private void closeMicroProcess() {
