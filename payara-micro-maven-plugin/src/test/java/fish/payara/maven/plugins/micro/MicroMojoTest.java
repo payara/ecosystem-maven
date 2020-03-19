@@ -57,7 +57,6 @@ public class MicroMojoTest extends AbstractMojoTest {
             assertTrue(start.getMicroProcess().isAlive());
         } finally {
             start.closeMicroProcess();
-            assertFalse(start.getMicroProcess().isAlive());
         }
     }
 
