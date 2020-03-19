@@ -22,3 +22,4 @@ hs_err_pid*
 
 # Release plugin artefacts
 release.properties
+/payara-micro-maven-plugin/nbproject/

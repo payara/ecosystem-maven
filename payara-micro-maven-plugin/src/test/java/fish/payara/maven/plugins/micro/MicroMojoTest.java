@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2017-2019 Payara Foundation and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Payara Foundation and/or its affiliates. All rights reserved.
  *
  * The contents of this file are subject to the terms of either the GNU
  * General Public License Version 2 only ("GPL") or the Common Development
@@ -36,46 +36,47 @@
  * only if the new code is made subject to such option by the copyright
  * holder.
  */
-package fish.payara.maven.plugins.micro.processor;
 
-import fish.payara.maven.plugins.micro.Configuration;
-import org.apache.maven.model.Plugin;
-import org.apache.maven.plugin.MojoExecutionException;
+package fish.payara.maven.plugins.micro;
 
-import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
+import org.junit.Test;
 
-/**
- * @author mertcaliskan
- */
-public abstract class BaseProcessor implements Configuration {
+public class MicroMojoTest extends AbstractMojoTest {
 
-    private BaseProcessor nextProcessor;
-    
-    Plugin dependencyPlugin =
-            plugin(groupId("org.apache.maven.plugins"), artifactId("maven-dependency-plugin"), version("3.1.2"));
-
-    Plugin resourcesPlugin =
-            plugin(groupId("org.apache.maven.plugins"), artifactId("maven-resources-plugin"), version("3.1.0"));
-
-    Plugin jarPlugin =
-            plugin(groupId("org.apache.maven.plugins"), artifactId("maven-jar-plugin"), version("3.2.0"));
-
-    Plugin replacerPlugin =
-            plugin(groupId("com.google.code.maven-replacer-plugin"), artifactId("replacer"), version("1.5.3"));
-
-    Plugin plainTextPlugin =
-            plugin(groupId("io.github.olivierlemasle.maven"), artifactId("plaintext-maven-plugin"), version("1.0.0"));
-
-    public abstract void handle(ExecutionEnvironment environment) throws MojoExecutionException;
-
-    public <PROCESSOR_TYPE extends BaseProcessor> PROCESSOR_TYPE next(PROCESSOR_TYPE processor) {
-        this.nextProcessor = processor;
-        return processor;
-    }
-
-    void gotoNext(ExecutionEnvironment environment) throws MojoExecutionException {
-        if (nextProcessor != null) {
-            nextProcessor.handle(environment);
+    @Test
+    public void testStartMicro() throws Exception {
+        StartMojo start = getMojo(
+                "payara-micro/pom.xml",
+                "start",
+                StartMojo.class
+        );
+        assertNotNull(start);
+        try {
+            start.execute();
+            assertNotNull(start.getMicroProcess());
+            assertTrue(start.getMicroProcess().isAlive());
+        } finally {
+            start.closeMicroProcess();
+            assertFalse(start.getMicroProcess().isAlive());
         }
     }
+
+    @Test
+    public void testStopMicro() throws Exception {
+        StopMojo stop = getMojo(
+                "payara-micro/pom-without-config.xml",
+                "stop", StopMojo.class
+        );
+        assertNotNull(stop);
+    }
+
+    @Test
+    public void testBundleMicro() throws Exception {
+        BundleMojo bundle = getMojo(
+                "payara-micro/pom-without-config.xml",
+                "bundle", BundleMojo.class
+        );
+        assertNotNull(bundle);
+    }
+    
 }

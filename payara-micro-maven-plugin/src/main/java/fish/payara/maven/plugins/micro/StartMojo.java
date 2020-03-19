@@ -158,8 +158,8 @@ public class StartMojo extends BasePayaraMojo {
             int indice = 0;
             actualArgs.add(indice++, evaluateJavaPath());
 
-            if(!"false".equalsIgnoreCase(debug)) {
-                if(Boolean.parseBoolean(debug)) {
+            if (debug != null && !debug.equalsIgnoreCase("false")) {
+                if (Boolean.parseBoolean(debug)) {
                     actualArgs.add(indice++, "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005");
                 } else {
                     actualArgs.add(indice++, debug);
@@ -212,7 +212,7 @@ public class StartMojo extends BasePayaraMojo {
                             "your application tried to deploy twice: 1. as uber jar 2. as a separate war");
                 }
                 actualArgs.add(indice++, "--deploy");
-                if (exploded) {
+                if (Boolean.TRUE.equals(exploded)) {
                     actualArgs.add(indice++, evaluateProjectArtifactAbsolutePath(""));
                 } else {
                     actualArgs.add(indice++, evaluateProjectArtifactAbsolutePath("." + mavenProject.getPackaging()));
@@ -320,6 +320,17 @@ public class StartMojo extends BasePayaraMojo {
             return payaraMicroAbsolutePath;
         }
 
+        if (artifactItem.getGroupId() != null) {
+            DefaultArtifact artifact = new DefaultArtifact(artifactItem.getGroupId(),
+                    artifactItem.getArtifactId(),
+                    artifactItem.getVersion(),
+                    null,
+                    artifactItem.getType(),
+                    artifactItem.getClassifier(),
+                    new DefaultArtifactHandler("jar"));
+            return findLocalPathOfArtifact(artifact);
+        }
+
         if (payaraVersion != null) {
             MojoExecutor.ExecutionEnvironment environment = getEnvironment();
             MicroFetchProcessor microFetchProcessor = new MicroFetchProcessor();
@@ -330,17 +341,6 @@ public class StartMojo extends BasePayaraMojo {
                     null,
                     "jar",
                     null,
-                    new DefaultArtifactHandler("jar"));
-            return findLocalPathOfArtifact(artifact);
-        }
-
-        if (artifactItem.getGroupId() != null) {
-            DefaultArtifact artifact = new DefaultArtifact(artifactItem.getGroupId(),
-                    artifactItem.getArtifactId(),
-                    artifactItem.getVersion(),
-                    null,
-                    artifactItem.getType(),
-                    artifactItem.getClassifier(),
                     new DefaultArtifactHandler("jar"));
             return findLocalPathOfArtifact(artifact);
         }
@@ -363,10 +363,10 @@ public class StartMojo extends BasePayaraMojo {
         if (StringUtils.isNotEmpty(mavenProject.getBuild().getFinalName())) {
             return mavenProject.getBuild().getFinalName() + extension;
         }
-        return mavenProject.getArtifact().getArtifactId() + '-' + mavenProject.getVersion() + extension;
+        return mavenProject.getArtifactId() + '-' + mavenProject.getVersion() + extension;
     }
 
-    private void closeMicroProcess() {
+    void closeMicroProcess() {
         if (microProcess != null) {
             try {
                 microProcess.exitValue();
@@ -375,6 +375,10 @@ public class StartMojo extends BasePayaraMojo {
                 getLog().info("Terminated payara-micro.");
             }
         }
+    }
+
+    Process getMicroProcess() {
+        return this.microProcess;
     }
 
     private void redirectStream(final InputStream inputStream, final PrintStream printStream) {
