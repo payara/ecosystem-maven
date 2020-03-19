@@ -112,16 +112,13 @@ public abstract class AbstractMojoTest extends AbstractMojoTestCase {
     }
 
     protected ArtifactRepository getLocalRepository() {
-        File localRepositoryDirectory;
-        String localRepo = System.getProperty("maven.local.repo");
-        if (StringUtils.isNotEmpty(localRepo)) {
-            localRepositoryDirectory = new File(localRepo);
-        } else {
-            localRepositoryDirectory = new File(System.getProperty("user.home"), ".m2/repository");
-        }
+        String localRepo = "file://"
+                + System.getProperty("user.home") + System.getProperty("file.separator")
+                + ".m2" + System.getProperty("file.separator")
+                + "repository";
         return new MavenArtifactRepository(
                 DEFAULT_LOCAL_REPO_ID,
-                "file://" + localRepositoryDirectory.toURI().getPath(),
+                localRepo,
                 new DefaultRepositoryLayout(),
                 new ArtifactRepositoryPolicy(),
                 new ArtifactRepositoryPolicy()
