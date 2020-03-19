@@ -64,7 +64,7 @@ import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
 import org.codehaus.plexus.util.StringUtils;
 import org.eclipse.aether.RepositorySystemSession;
 
-public class AbstractMojoTest extends AbstractMojoTestCase {
+public abstract class AbstractMojoTest extends AbstractMojoTestCase {
 
     protected AbstractMojoTest() {
         try {
