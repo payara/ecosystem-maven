@@ -81,25 +81,25 @@ public class StartMojo extends BasePayaraMojo {
     private String payaraMicroAbsolutePath;
 
     @Parameter(property = "daemon", defaultValue = "false")
-    private Boolean daemon;
+    private boolean daemon;
 
     @Parameter(property = "immediateExit", defaultValue = "false")
-    private Boolean immediateExit;
+    private boolean immediateExit;
 
     @Parameter(property = "artifactItem")
     private ArtifactItem artifactItem;
 
     @Parameter(property = "useUberJar", defaultValue = "false")
-    private Boolean useUberJar;
+    private boolean useUberJar;
 
     @Parameter(property = "deployWar", defaultValue = "false")
-    private Boolean deployWar;
+    private boolean deployWar;
 
     /**
      * Use exploded artifact for deployment.
      */
     @Parameter(property = "exploded", defaultValue = "false")
-    private Boolean exploded;
+    private boolean exploded;
 
     /**
      * Attach a debugger. If set to "true", the process will suspend and wait
@@ -115,7 +115,7 @@ public class StartMojo extends BasePayaraMojo {
 
     @Deprecated
     @Parameter(property = "copySystemProperties", defaultValue = "false")
-    private Boolean copySystemProperties;
+    private boolean copySystemProperties;
 
     @Parameter(property = "commandLineOptions")
     private List<Option> commandLineOptions;
@@ -212,7 +212,7 @@ public class StartMojo extends BasePayaraMojo {
                             "your application tried to deploy twice: 1. as uber jar 2. as a separate war");
                 }
                 actualArgs.add(indice++, "--deploy");
-                if (Boolean.TRUE.equals(exploded)) {
+                if (exploded) {
                     actualArgs.add(indice++, evaluateProjectArtifactAbsolutePath(""));
                 } else {
                     actualArgs.add(indice++, evaluateProjectArtifactAbsolutePath("." + mavenProject.getPackaging()));

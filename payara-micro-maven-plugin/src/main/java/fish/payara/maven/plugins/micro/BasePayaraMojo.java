@@ -68,7 +68,7 @@ abstract class BasePayaraMojo extends AbstractMojo {
     private ToolchainManager toolchainManager;
 
     @Parameter(property = "skip", defaultValue = "false")
-    protected Boolean skip;
+    protected boolean skip;
 
     @Parameter(property = "uberJarClassifier", defaultValue = Configuration.MICROBUNDLE_EXTENSION)
     protected String uberJarClassifier;

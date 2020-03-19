@@ -102,7 +102,7 @@ public class BundleMojo extends BasePayaraMojo {
      * This behaviour can be disabled by setting @{code autoDeployArtifact} to false.
      */
     @Parameter(property = "autoDeployArtifact", defaultValue =  "true")
-    private Boolean autoDeployArtifact;
+    private boolean autoDeployArtifact;
 
     /**
      * Replaces the @{code Start-Class} definition that resides in MANIFEST.MF file with the provided class.
@@ -115,7 +115,7 @@ public class BundleMojo extends BasePayaraMojo {
      * If set to false, context root is derived from artifact name or finalName. Value of autoDeployContextRoot overrides this.
      */
     @Parameter(property = "autoDeployEmptyContextRoot", defaultValue = "true")
-    private Boolean autoDeployEmptyContextRoot;
+    private boolean autoDeployEmptyContextRoot;
 
     /**
      * Sets context root of the deployed artifact if autoDeployArtifact is true
@@ -127,7 +127,7 @@ public class BundleMojo extends BasePayaraMojo {
      * Appends all system properties defined into the @{code payara-boot.properties} file
      */
     @Parameter(property = "appendSystemProperties", defaultValue = "true")
-    private Boolean appendSystemProperties;
+    private boolean appendSystemProperties;
 
     /**
      * Specify default command line options for bundled JAR
@@ -135,6 +135,7 @@ public class BundleMojo extends BasePayaraMojo {
     @Parameter(property = "systemProperties")
     private List<Property> systemProperties;
 
+    @Override
     public void execute() throws MojoExecutionException {
         if (skip) {
             getLog().info("Bundle mojo execution is skipped");

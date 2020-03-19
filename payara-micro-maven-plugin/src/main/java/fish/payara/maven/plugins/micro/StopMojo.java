@@ -71,7 +71,7 @@ public class StopMojo extends BasePayaraMojo {
     private String processId;
 
     @Parameter(property = "useUberJar", defaultValue = "false")
-    private Boolean useUberJar;
+    private boolean useUberJar;
 
     private Toolchain toolchain;
 
