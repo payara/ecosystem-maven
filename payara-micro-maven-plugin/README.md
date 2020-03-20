@@ -2,8 +2,8 @@
 
 ## Summary
 Payara Micro Maven Plugin that incorporates payara-micro with the produced artifact. It requires JDK 1.8+.
- 
-### Latest version available: 1.0.7-SNAPSHOT
+
+### Latest version available: 1.0.7
 
 ## bundle
 This goal bundles the attached project's artifact into uber jar with specified configurations. ```bundle``` is attached to the ```install``` phase by default. A sample usage would as follows:
@@ -130,7 +130,7 @@ This goal start payara-micro with specified configurations. ```start``` is attac
         </configuration>
     </plugin>
     
-If you want to execute the payara-micro plugin along with ```maven-toolchains-plugin``` coooperatively, you need to execute the plugin as: ```mvn toolchains:toolchain payara-micro:start```.  
+If you want to execute the payara-micro plugin along with ```maven-toolchains-plugin``` cooperatively, you need to execute the plugin as: ```mvn toolchains:toolchain payara-micro:start```.  
 
 ## Configuration tags
 
@@ -176,7 +176,7 @@ If an ```artifactItem``` is defined, it will take precedence for identifying cur
         </configuration>        
     </plugin>
     
-If you want to execute the payara-micro plugin along with ```maven-toolchains-plugin``` coooperatively, you need to execute the plugin as: ```mvn toolchains:toolchain payara-micro:stop```.  
+If you want to execute the payara-micro plugin along with ```maven-toolchains-plugin``` cooperatively, you need to execute the plugin as: ```mvn toolchains:toolchain payara-micro:stop```.  
 
 ## Configuration tags
 
