@@ -81,25 +81,25 @@ public class StartMojo extends BasePayaraMojo {
     private String payaraMicroAbsolutePath;
 
     @Parameter(property = "daemon", defaultValue = "false")
-    private Boolean daemon;
+    private boolean daemon;
 
     @Parameter(property = "immediateExit", defaultValue = "false")
-    private Boolean immediateExit;
+    private boolean immediateExit;
 
     @Parameter(property = "artifactItem")
     private ArtifactItem artifactItem;
 
     @Parameter(property = "useUberJar", defaultValue = "false")
-    private Boolean useUberJar;
+    private boolean useUberJar;
 
     @Parameter(property = "deployWar", defaultValue = "false")
-    private Boolean deployWar;
+    private boolean deployWar;
 
     /**
      * Use exploded artifact for deployment.
      */
     @Parameter(property = "exploded", defaultValue = "false")
-    private Boolean exploded;
+    private boolean exploded;
 
     /**
      * Attach a debugger. If set to "true", the process will suspend and wait
@@ -115,7 +115,7 @@ public class StartMojo extends BasePayaraMojo {
 
     @Deprecated
     @Parameter(property = "copySystemProperties", defaultValue = "false")
-    private Boolean copySystemProperties;
+    private boolean copySystemProperties;
 
     @Parameter(property = "commandLineOptions")
     private List<Option> commandLineOptions;
@@ -158,8 +158,8 @@ public class StartMojo extends BasePayaraMojo {
             int indice = 0;
             actualArgs.add(indice++, evaluateJavaPath());
 
-            if(!"false".equalsIgnoreCase(debug)) {
-                if(Boolean.parseBoolean(debug)) {
+            if (debug != null && !debug.equalsIgnoreCase("false")) {
+                if (Boolean.parseBoolean(debug)) {
                     actualArgs.add(indice++, "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005");
                 } else {
                     actualArgs.add(indice++, debug);
@@ -320,6 +320,17 @@ public class StartMojo extends BasePayaraMojo {
             return payaraMicroAbsolutePath;
         }
 
+        if (artifactItem.getGroupId() != null) {
+            DefaultArtifact artifact = new DefaultArtifact(artifactItem.getGroupId(),
+                    artifactItem.getArtifactId(),
+                    artifactItem.getVersion(),
+                    null,
+                    artifactItem.getType(),
+                    artifactItem.getClassifier(),
+                    new DefaultArtifactHandler("jar"));
+            return findLocalPathOfArtifact(artifact);
+        }
+
         if (payaraVersion != null) {
             MojoExecutor.ExecutionEnvironment environment = getEnvironment();
             MicroFetchProcessor microFetchProcessor = new MicroFetchProcessor();
@@ -330,17 +341,6 @@ public class StartMojo extends BasePayaraMojo {
                     null,
                     "jar",
                     null,
-                    new DefaultArtifactHandler("jar"));
-            return findLocalPathOfArtifact(artifact);
-        }
-
-        if (artifactItem.getGroupId() != null) {
-            DefaultArtifact artifact = new DefaultArtifact(artifactItem.getGroupId(),
-                    artifactItem.getArtifactId(),
-                    artifactItem.getVersion(),
-                    null,
-                    artifactItem.getType(),
-                    artifactItem.getClassifier(),
                     new DefaultArtifactHandler("jar"));
             return findLocalPathOfArtifact(artifact);
         }
@@ -363,10 +363,10 @@ public class StartMojo extends BasePayaraMojo {
         if (StringUtils.isNotEmpty(mavenProject.getBuild().getFinalName())) {
             return mavenProject.getBuild().getFinalName() + extension;
         }
-        return mavenProject.getArtifact().getArtifactId() + '-' + mavenProject.getVersion() + extension;
+        return mavenProject.getArtifactId() + '-' + mavenProject.getVersion() + extension;
     }
 
-    private void closeMicroProcess() {
+    void closeMicroProcess() {
         if (microProcess != null) {
             try {
                 microProcess.exitValue();
@@ -375,6 +375,10 @@ public class StartMojo extends BasePayaraMojo {
                 getLog().info("Terminated payara-micro.");
             }
         }
+    }
+
+    Process getMicroProcess() {
+        return this.microProcess;
     }
 
     private void redirectStream(final InputStream inputStream, final PrintStream printStream) {

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2017-2020 Payara Foundation and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Payara Foundation and/or its affiliates. All rights reserved.
  *
  * The contents of this file are subject to the terms of either the GNU
  * General Public License Version 2 only ("GPL") or the Common Development
@@ -36,60 +36,46 @@
  * only if the new code is made subject to such option by the copyright
  * holder.
  */
+
 package fish.payara.maven.plugins.micro;
 
-import org.apache.maven.execution.MavenSession;
-import org.apache.maven.plugin.AbstractMojo;
-import org.apache.maven.plugin.BuildPluginManager;
-import org.apache.maven.plugins.annotations.Component;
-import org.apache.maven.plugins.annotations.Parameter;
-import org.apache.maven.project.MavenProject;
-import org.apache.maven.toolchain.Toolchain;
-import org.apache.maven.toolchain.ToolchainManager;
+import org.junit.Test;
 
-import static org.twdata.maven.mojoexecutor.MojoExecutor.ExecutionEnvironment;
-import static org.twdata.maven.mojoexecutor.MojoExecutor.executionEnvironment;
+public class MicroMojoTest extends AbstractMojoTest {
 
-/**
- * @author mertcaliskan
- */
-abstract class BasePayaraMojo extends AbstractMojo {
-
-    @Component
-    MavenProject mavenProject;
-
-    @Component
-    MavenSession mavenSession;
-
-    @Component
-    private BuildPluginManager pluginManager;
-
-    @Component
-    private ToolchainManager toolchainManager;
-
-    @Parameter(property = "skip", defaultValue = "false")
-    protected boolean skip;
-
-    @Parameter(property = "uberJarClassifier", defaultValue = Configuration.MICROBUNDLE_EXTENSION)
-    protected String uberJarClassifier;
-
-    private ExecutionEnvironment environment;
-
-    ExecutionEnvironment getEnvironment() {
-        if (environment == null) {
-            environment = executionEnvironment(mavenProject, mavenSession, pluginManager);
+    @Test
+    public void testStartMicro() throws Exception {
+        StartMojo start = getMojo(
+                "payara-micro/pom.xml",
+                "start",
+                StartMojo.class
+        );
+        assertNotNull(start);
+        try {
+            start.execute();
+            assertNotNull(start.getMicroProcess());
+            assertTrue(start.getMicroProcess().isAlive());
+        } finally {
+            start.closeMicroProcess();
         }
-        return environment;
+    }
+
+    @Test
+    public void testStopMicro() throws Exception {
+        StopMojo stop = getMojo(
+                "payara-micro/pom-without-config.xml",
+                "stop", StopMojo.class
+        );
+        assertNotNull(stop);
+    }
+
+    @Test
+    public void testBundleMicro() throws Exception {
+        BundleMojo bundle = getMojo(
+                "payara-micro/pom-without-config.xml",
+                "bundle", BundleMojo.class
+        );
+        assertNotNull(bundle);
     }
     
-    protected String getProjectGAV(){
-        return mavenProject.getGroupId() + ":" + mavenProject.getArtifactId() + ":" + mavenProject.getVersion();
-    }
-
-    protected Toolchain getToolchain() {
-        if ( toolchainManager != null ) {
-            return toolchainManager.getToolchainFromBuildContext("jdk", mavenSession);
-        }
-        return null;
-    }
 }
