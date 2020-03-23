@@ -40,7 +40,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>fish.payara.maven.plugins</groupId>
     <artifactId>payara-micro-maven-plugin</artifactId>
-    <version>1.0.7</version>
+    <version>1.0.8-SNAPSHOT</version>
     <packaging>maven-plugin</packaging>
     <name>Payara Micro Maven Plugin</name>
     <description>Payara Micro Maven Plugin that incorporates payara-micro with the produced artifact</description>
