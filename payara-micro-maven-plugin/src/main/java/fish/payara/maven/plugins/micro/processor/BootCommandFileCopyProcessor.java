@@ -54,6 +54,7 @@ public class BootCommandFileCopyProcessor extends BaseProcessor {
                 goal("copy-resources"),
                 configuration(
                         element(name("outputDirectory"), OUTPUT_FOLDER + MICROINF_FOLDER),
+                        element(name("overwrite"), "true"),
                         element(name("resources"),
                                 element(name("resource"),
                                         element(name("directory"),  "${project.build.resources[0].directory}"),
