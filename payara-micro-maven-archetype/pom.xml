@@ -2,7 +2,7 @@
 <!--
     DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
 
-    Copyright (c) [2018-2019] Payara Foundation and/or its affiliates. All rights reserved.
+    Copyright (c) [2018-2020] Payara Foundation and/or its affiliates. All rights reserved.
 
     The contents of this file are subject to the terms of either the GNU
     General Public License Version 2 only ("GPL") or the Common Development
@@ -42,7 +42,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>fish.payara.maven.archetypes</groupId>
     <artifactId>payara-micro-maven-archetype</artifactId>
-    <version>1.0.5</version>
+    <version>1.1.0</version>
     <packaging>maven-archetype</packaging>
     <name>Payara Micro Archetype</name>
     <description>Archetype for Payara Micro application.</description>
@@ -127,32 +127,21 @@
                 </executions>
             </plugin>
             <plugin>
-                <groupId>org.sonatype.plugins</groupId>
-                <artifactId>nexus-staging-maven-plugin</artifactId>
-                <version>1.6.8</version>
-                <extensions>true</extensions>
+                <artifactId>maven-release-plugin</artifactId>
+                <version>2.5.3</version>
                 <configuration>
-                    <serverId>ossrh</serverId>
-                    <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-                    <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                    <pushChanges>false</pushChanges>
+                    <autoVersionSubmodules>true</autoVersionSubmodules>
+                    <localCheckout>true</localCheckout>
+                    <releaseProfiles>release-profile</releaseProfiles>
                 </configuration>
             </plugin>
         </plugins>
     </build>
-    
-    <distributionManagement>
-        <snapshotRepository>
-            <id>ossrh</id>
-            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-        </snapshotRepository>
-        <repository>
-            <id>ossrh</id>
-            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-        </repository>
-    </distributionManagement>
+
     <profiles>
         <profile>
-            <id>release-profile</id>
+            <id>release</id>
             <build>
                 <plugins>
                     <plugin>
@@ -168,6 +157,73 @@
                                 </goals>
                             </execution>
                         </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>payara-enterprise</id>
+            <distributionManagement>
+                <repository>
+                    <id>payara-enterprise</id>
+                    <name>Payara Enterprise Nexus</name>
+                    <url>https://nexus.payara.fish/content/repositories/payara-enterprise/</url>
+                </repository>
+            </distributionManagement>
+            <repositories>
+                <repository>
+                    <id>payara-enterprise</id>
+                    <name>Payara Enterprise Nexus</name>
+                    <url>https://nexus.payara.fish/content/repositories/payara-enterprise/</url>
+                    <releases>
+                        <enabled>true</enabled>
+                    </releases>
+                    <snapshots>
+                        <enabled>false</enabled>
+                    </snapshots>
+                </repository>
+            </repositories>
+        </profile>
+        <profile>
+            <id>payara-community</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <distributionManagement>
+                <snapshotRepository>
+                    <id>ossrh</id>
+                    <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+                </snapshotRepository>
+                <repository>
+                    <id>ossrh</id>
+                    <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+                </repository>
+            </distributionManagement>
+            <repositories>
+                <repository>
+                    <id>central</id>
+                    <name>Central Repository</name>
+                    <url>https://repo.maven.apache.org/maven2</url>
+                    <releases>
+                        <enabled>true</enabled>
+                    </releases>
+                    <snapshots>
+                        <enabled>false</enabled>
+                    </snapshots>
+                </repository>
+            </repositories>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.sonatype.plugins</groupId>
+                        <artifactId>nexus-staging-maven-plugin</artifactId>
+                        <version>1.6.8</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <serverId>ossrh</serverId>
+                            <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+                            <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                        </configuration>
                     </plugin>
                 </plugins>
             </build>
