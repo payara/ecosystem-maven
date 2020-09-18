@@ -47,14 +47,8 @@ DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
         <requiredProperty key="jdkVersion">
             <defaultValue>1.8</defaultValue>
         </requiredProperty>
-        <requiredProperty key="jakartaeeVersion">
-            <defaultValue>8.0.0</defaultValue>
-        </requiredProperty>
-        <requiredProperty key="microprofileVersion">
-            <defaultValue>3.2</defaultValue>
-        </requiredProperty>
         <requiredProperty key="payaraMicroVersion">
-            <defaultValue>5.2020.3</defaultValue>
+            <defaultValue>5.2020.4</defaultValue>
         </requiredProperty>
         <requiredProperty key="autoBindHttp">
             <defaultValue>true</defaultValue>

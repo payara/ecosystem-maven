@@ -14,37 +14,31 @@
         <maven.compiler.source>${jdkVersion}</maven.compiler.source>
         <maven.compiler.target>${jdkVersion}</maven.compiler.target>
         <failOnMissingWebXml>false</failOnMissingWebXml>
-        <version.jakartaee>${jakartaeeVersion}</version.jakartaee>
-#if (${addConcurrentApi} == "true")
-        <version.concurrencyUtilities>1.1.2</version.concurrencyUtilities>
-#end
-#if (${addResourceApi} == "true")
-        <version.jca>1.7.4</version.jca>
-#end
-#if (${addJBatchApi} == "true")
-        <version.jbatch>1.0.2</version.jbatch>
-#end
-#if (${addJcache} == "true")
-        <version.jcache>1.1.0</version.jcache>
-#end
-#if (${addMicroprofileApi} == "true")
-        <version.microprofile>${microprofileVersion}</version.microprofile>
-#end
         <version.payara>${payaraMicroVersion}</version.payara>
     </properties>
     
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>fish.payara.api</groupId>
+                <artifactId>payara-bom</artifactId>
+                <version>${version.payara}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <dependencies>
         <dependency>
             <groupId>jakarta.platform</groupId>
             <artifactId>jakarta.jakartaee-web-api</artifactId>
-            <version>${version.jakartaee}</version>
             <scope>provided</scope>
         </dependency>
 #if (${addConcurrentApi} == "true")
         <dependency>
             <groupId>jakarta.enterprise.concurrent</groupId>
             <artifactId>jakarta.enterprise.concurrent-api</artifactId>
-            <version>${version.concurrencyUtilities}</version>
             <scope>provided</scope>
         </dependency>
 #end
@@ -52,7 +46,6 @@
         <dependency>
             <groupId>jakarta.resource</groupId>
             <artifactId>jakarta.resource-api</artifactId>
-            <version>${version.jca}</version>
             <scope>provided</scope>
         </dependency>
 #end
@@ -60,7 +53,6 @@
         <dependency>
             <groupId>jakarta.batch</groupId>
             <artifactId>jakarta.batch-api</artifactId>
-            <version>${version.jbatch}</version>
             <scope>provided</scope>
         </dependency>
 #end
@@ -68,7 +60,6 @@
         <dependency>
             <groupId>javax.cache</groupId>
             <artifactId>cache-api</artifactId>
-            <version>${version.jcache}</version>
             <scope>provided</scope>
         </dependency>
 #end
@@ -76,7 +67,6 @@
         <dependency>
             <groupId>org.eclipse.microprofile</groupId>
             <artifactId>microprofile</artifactId>
-            <version>${version.microprofile}</version>
             <scope>provided</scope>
             <type>pom</type>
         </dependency>
@@ -85,7 +75,6 @@
         <dependency>
             <groupId>fish.payara.api</groupId>
             <artifactId>payara-api</artifactId>
-            <version>${version.payara}</version>
             <scope>provided</scope>
         </dependency>
 #end
@@ -114,5 +103,19 @@
             </plugin>
         </plugins>
     </build>
+
+    <repositories>
+        <repository>
+            <id>payara-patched-externals</id>
+            <name>Payara Patched Externals</name>
+            <url>https://raw.github.com/payara/Payara_PatchedProjects/master</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
 
 </project>
