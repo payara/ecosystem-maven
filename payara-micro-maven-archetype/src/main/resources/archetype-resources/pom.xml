@@ -11,8 +11,8 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
+        <maven.compiler.source>${jdkVersion}</maven.compiler.source>
+        <maven.compiler.target>${jdkVersion}</maven.compiler.target>
         <failOnMissingWebXml>false</failOnMissingWebXml>
         <version.payara>${payaraMicroVersion}</version.payara>
     </properties>
@@ -85,7 +85,7 @@
             <plugin>
                 <groupId>fish.payara.maven.plugins</groupId>
                 <artifactId>payara-micro-maven-plugin</artifactId>
-                <version>1.1.0</version>
+                <version>1.1.1-SNAPSHOT</version>
                 <configuration>
                     <payaraVersion>${version.payara}</payaraVersion>
 #if (${deployWar} == "true")

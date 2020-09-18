@@ -19,7 +19,7 @@
         <version.jca>1.7.4</version.jca>
         <version.jbatch>1.0.2</version.jbatch>
         <version.microprofile>3.2</version.microprofile>
-        <version.payara>5.2020.3</version.payara>
+        <version.payara>5.2020.4</version.payara>
     </properties>
     
     <dependencies>
