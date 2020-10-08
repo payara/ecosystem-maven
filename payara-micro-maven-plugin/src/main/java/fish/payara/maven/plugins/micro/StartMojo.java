@@ -113,6 +113,13 @@ public class StartMojo extends BasePayaraMojo {
     @Parameter(property = "contextRoot")
     private String contextRoot;
 
+    /**
+     * Property passed by Apache NetBeans IDE to set contextRoot of the
+     * application
+     */
+    @Parameter(property = "netbeans.deploy.clientUrlPart")
+    private String clientUrlPart;
+
     @Deprecated
     @Parameter(property = "copySystemProperties", defaultValue = "false")
     private boolean copySystemProperties;
@@ -218,7 +225,10 @@ public class StartMojo extends BasePayaraMojo {
                     actualArgs.add(indice++, evaluateProjectArtifactAbsolutePath("." + mavenProject.getPackaging()));
                 }
             }
-            if (contextRoot != null) {
+            if(clientUrlPart != null && !clientUrlPart.trim().isEmpty()) {
+                actualArgs.add(indice++, "--contextroot");
+                actualArgs.add(indice++, clientUrlPart.trim());
+            } else if (contextRoot != null) {
                 actualArgs.add(indice++, "--contextroot");
                 actualArgs.add(indice++, contextRoot);
             }
