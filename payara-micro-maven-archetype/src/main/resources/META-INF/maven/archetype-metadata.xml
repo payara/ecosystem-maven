@@ -48,7 +48,7 @@ DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
             <defaultValue>1.8</defaultValue>
         </requiredProperty>
         <requiredProperty key="payaraMicroVersion">
-            <defaultValue>5.2020.4</defaultValue>
+            <defaultValue>5.2020.5</defaultValue>
         </requiredProperty>
         <requiredProperty key="autoBindHttp">
             <defaultValue>true</defaultValue>
