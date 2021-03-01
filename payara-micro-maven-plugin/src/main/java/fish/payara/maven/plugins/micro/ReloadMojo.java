@@ -88,10 +88,10 @@ public class ReloadMojo extends BasePayaraMojo {
             throw new MojoExecutionException(String.format("explodedDir[%s] not found", explodedDirPath));
         }
         File reloadFile = new File(explodedDir, RELOAD_FILE);
-        if (Boolean.TRUE.equals(hotDeploy)) {
+        if (hotDeploy) {
             Properties props = new Properties();
             props.setProperty("hotdeploy", "true");
-            if (Boolean.TRUE.equals(metadataChanged)) {
+            if (metadataChanged) {
                 props.setProperty("metadatachanged", "true");
             }
             if (sourcesChanged != null && !sourcesChanged.isEmpty()) {
