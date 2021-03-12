@@ -113,6 +113,9 @@ public class StartMojo extends BasePayaraMojo {
     @Parameter(property = "contextRoot")
     private String contextRoot;
 
+    @Parameter(property = "hotDeploy")
+    private boolean hotDeploy;
+
     /**
      * Property passed by Apache NetBeans IDE to set contextRoot of the
      * application
@@ -231,6 +234,9 @@ public class StartMojo extends BasePayaraMojo {
             } else if (contextRoot != null) {
                 actualArgs.add(indice++, "--contextroot");
                 actualArgs.add(indice++, contextRoot);
+            }
+            if(hotDeploy) {
+                actualArgs.add(indice++, "--hotdeploy");
             }
             if (commandLineOptions != null) {
                 for (Option option : commandLineOptions) {

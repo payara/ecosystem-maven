@@ -40,11 +40,16 @@ package fish.payara.maven.plugins.micro;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
 import java.io.IOException;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.util.Date;
+import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.apache.maven.model.Build;
+import org.apache.maven.plugins.annotations.Parameter;
 
 /**
  * Reload mojo that reloads exploded web application in running payara-micro
@@ -56,7 +61,16 @@ import org.apache.maven.model.Build;
 public class ReloadMojo extends BasePayaraMojo {
 
     private static final String RELOAD_FILE = ".reload";
+    
+    @Parameter(property = "hotDeploy")
+    private boolean hotDeploy;
 
+    @Parameter(property = "sourcesChanged")
+    private String sourcesChanged;
+
+    @Parameter(property = "metadataChanged")
+    private boolean metadataChanged;
+    
     @Override
     public void execute() throws MojoExecutionException {
         if (skip) {
@@ -74,7 +88,21 @@ public class ReloadMojo extends BasePayaraMojo {
             throw new MojoExecutionException(String.format("explodedDir[%s] not found", explodedDirPath));
         }
         File reloadFile = new File(explodedDir, RELOAD_FILE);
-        if (reloadFile.exists()) {
+        if (hotDeploy) {
+            Properties props = new Properties();
+            props.setProperty("hotdeploy", "true");
+            if (metadataChanged) {
+                props.setProperty("metadatachanged", "true");
+            }
+            if (sourcesChanged != null && !sourcesChanged.isEmpty()) {
+                props.setProperty("sourceschanged", sourcesChanged);
+            }
+            try (FileOutputStream outputStrem = new FileOutputStream(reloadFile)) {
+                props.store(outputStrem, null);
+            } catch (Exception ex) {
+                throw new MojoExecutionException("Unable to save .reload file " + ex.toString());
+            }
+        } else if (reloadFile.exists()) {
             reloadFile.setLastModified(System.currentTimeMillis());
         } else {
             try {
