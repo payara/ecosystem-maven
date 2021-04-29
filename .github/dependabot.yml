@@ -1,0 +1,35 @@
+version: 2
+updates:
+- package-ecosystem: maven
+  directory: "/payara-micro-maven-archetype"
+  schedule:
+    interval: weekly
+    time: "03:00"
+  open-pull-requests-limit: 10
+  labels:
+  - dependencies
+- package-ecosystem: maven
+  directory: "/payara-micro-maven-plugin"
+  schedule:
+    interval: weekly
+    time: "03:00"
+  open-pull-requests-limit: 10
+  labels:
+  - dependencies
+  ignore:
+  - dependency-name: org.apache.maven:maven-artifact
+    versions:
+    - "> 3.6.3, < 4"
+  - dependency-name: org.apache.maven:maven-compat
+    versions:
+    - "> 3.6.3, < 4"
+  - dependency-name: org.apache.maven:maven-core
+    versions:
+    - "> 3.6.3, < 4"
+  - dependency-name: org.apache.maven:maven-plugin-api
+    versions:
+    - "> 3.6.3, < 4"
+  - dependency-name: fish.payara.extras:payara-micro
+    versions:
+    - 5.2020.7
+    - 5.2021.1
