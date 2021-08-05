@@ -2,7 +2,7 @@
 <!--
 DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
 
-   Copyright (c) [2018-2019] Payara Foundation and/or its affiliates. All rights reserved.
+   Copyright (c) [2018-2021] Payara Foundation and/or its affiliates. All rights reserved.
 
     The contents of this file are subject to the terms of either the GNU
     General Public License Version 2 only ("GPL") or the Common Development
@@ -48,7 +48,7 @@ DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
             <defaultValue>1.8</defaultValue>
         </requiredProperty>
         <requiredProperty key="payaraMicroVersion">
-            <defaultValue>5.2020.5</defaultValue>
+            <defaultValue>5.2021.5</defaultValue>
         </requiredProperty>
         <requiredProperty key="autoBindHttp">
             <defaultValue>true</defaultValue>
