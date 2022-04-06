@@ -60,7 +60,8 @@ abstract class BaseDeployerProcessor extends BaseProcessor {
                     element("artifactId", artifactItem.getArtifactId()),
                     element("classifier", artifactItem.getClassifier()),
                     element("version", artifactItem.getVersion()),
-                    element("type", artifactItem.getType())
+                    element("type", artifactItem.getType()),
+                    element("destFileName", artifactItem.getDestFileName())
             );
             elements.add(element);
         }
