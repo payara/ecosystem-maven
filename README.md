@@ -1,8 +1,10 @@
-# ecosystem-maven
-Repository for Payara Maven Plugins & Tools
+# Payara Micro Maven Tools
 
-**ATTENTION**: Support for this repository is handled in the [Ecosystem Support repository](https://github.com/payara/ecosystem-support)
+### Ecosystem Plugin Support
+Support for the Payara Micro Maven Plugin and Maven Archetype is handled in the [Ecosystem Support Repository](https://github.com/payara/ecosystem-support)
 
-Please navigate to the specific project listed below for more information.
-## [payara-micro-maven-archetype](payara-micro-maven-archetype)
-## [payara-micro-maven-plugin](payara-micro-maven-plugin)
+### Payara Micro Maven Plugin Documentation
+Full documentation for the configuration options and usage of the Payara Micro Maven Plugin can be found in the [technical documentation](https://docs.payara.fish/community/docs/Technical%20Documentation/Ecosystem/Project%20Management%20Tools/Payara%20Micro%20Maven%20Plugin.html)
+
+### Payara Micro Maven Archetype Documentation
+Full documentation for the usage of the Payara Micro Maven Archetype can be found in the [technical documentation](https://docs.payara.fish/community/docs/Technical%20Documentation/Ecosystem/Project%20Management%20Tools/Payara%20Micro%20Maven%20Archetype.html)
