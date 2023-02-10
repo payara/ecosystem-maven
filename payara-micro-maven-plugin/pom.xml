@@ -48,8 +48,8 @@
     <properties>
         <java.compiler.source.version>1.8</java.compiler.source.version>
         <java.compiler.target.version>1.8</java.compiler.target.version>
-        <maven-api.version>3.6.3</maven-api.version>
-        <payara.version>5.2021.5</payara.version>
+        <maven-api.version>3.8.7</maven-api.version>
+        <payara.version>6.2023.1</payara.version>
     </properties>
     <scm>
         <connection>scm:git:https://github.com/payara/ecosystem-maven/</connection>

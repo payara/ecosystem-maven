@@ -14,12 +14,12 @@
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
         <failOnMissingWebXml>false</failOnMissingWebXml>
-        <version.jakartaee>8.0.0</version.jakartaee>
-        <version.concurrencyUtilities>1.1.2</version.concurrencyUtilities>
-        <version.jca>1.7.4</version.jca>
-        <version.jbatch>1.0.2</version.jbatch>
-        <version.microprofile>3.2</version.microprofile>
-        <version.payara>5.2021.5</version.payara>
+        <version.jakartaee>10.0.0</version.jakartaee>
+        <version.concurrencyUtilities>3.0.2</version.concurrencyUtilities>
+        <version.jca>2.1.0</version.jca>
+        <version.jbatch>2.1.1</version.jbatch>
+        <version.microprofile>5.0</version.microprofile>
+        <version.payara>6.2023.1</version.payara>
     </properties>
     
     <dependencies>
