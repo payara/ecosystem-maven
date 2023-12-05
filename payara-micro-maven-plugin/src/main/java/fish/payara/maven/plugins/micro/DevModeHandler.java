@@ -83,23 +83,23 @@ public class DevModeHandler implements Runnable {
     private final MavenProject project;
     private final Log log;
     private final ExecutorService executorService;
-    private List<String> devModeGoals;
+    private final List<String> devModeGoals;
     private WatchService watchService;
     private Future<?> buildReloadTask;
-    private AtomicBoolean cleanPending = new AtomicBoolean(false);
-    private ConcurrentHashMap<String, Boolean> sourceUpdatedPending = new ConcurrentHashMap<>();
+    private final AtomicBoolean cleanPending = new AtomicBoolean(false);
+    private final ConcurrentHashMap<String, Boolean> sourceUpdatedPending = new ConcurrentHashMap<>();
 
     public DevModeHandler(MavenProject project, Log log, String devModeGoals) {
         this.project = project;
         this.log = log;
         this.devModeGoals = asList(devModeGoals.split("\\s+"));
-        this.executorService = Executors.newFixedThreadPool(2);
+        this.executorService = Executors.newSingleThreadExecutor();
     }
 
     @Override
     public void run() {
         try {
-            Path sourcePath = Paths.get(project.getBasedir() + File.separator +"src");
+            Path sourcePath = Paths.get(project.getBasedir() + File.separator + "src");
             this.watchService = FileSystems.getDefault().newWatchService();
             sourcePath.register(watchService,
                     ENTRY_CREATE,
@@ -114,7 +114,8 @@ public class DevModeHandler implements Runnable {
                     if (buildReloadTask != null && !buildReloadTask.isDone()) {
                         buildReloadTask.cancel(true);
                     }
-                    boolean fileDeletedOrRenamed = false, resourceModified = false;
+                    boolean fileDeletedOrRenamed = false;
+                    boolean resourceModified = false;
                     boolean testClassesModified = false;
                     List<String> goalsList = new ArrayList<>(devModeGoals);
                     for (WatchEvent<?> event : key.pollEvents()) {
@@ -126,7 +127,7 @@ public class DevModeHandler implements Runnable {
                         Path projectRoot = Paths.get(project.getBasedir().toURI());
                         Path resourcesDirectory = projectRoot.resolve("src").resolve("main").resolve("resources");
                         Path testDirectory = projectRoot.resolve("src").resolve("test");
-                        
+
                         if (fullPath.startsWith(resourcesDirectory)) {
                             resourceModified = true;
                         }
@@ -143,46 +144,10 @@ public class DevModeHandler implements Runnable {
                             cleanPending.set(true);
                         }
                     }
-                    if (fileDeletedOrRenamed || cleanPending.get() || sourceUpdatedPending.size() > 1) {
-                        goalsList.add(0, "clean");
-                    } else if (!resourceModified) {
-                        goalsList.add("-Dmaven.resources.skip=true");
-                    }
-                    if (!testClassesModified) {
-                        goalsList.add("-Dmaven.test.skip=true");
-                    } else {
-                        goalsList.add("-DskipTests");
-                    }
 
-                    buildReloadTask = executorService.submit(() -> {
-                        InvocationRequest request = new DefaultInvocationRequest();
-                        request.setPomFile(new File(project.getBasedir(), "pom.xml"));
-                        request.setGoals(goalsList);
-                        log.info("Maven goals: " + goalsList);
-                        System.setProperty("maven.multiModuleProjectDirectory", project.getBasedir().toString());
+                    updateGoalsList(goalsList, fileDeletedOrRenamed, resourceModified, testClassesModified);
 
-                        Invoker invoker = new DefaultInvoker();
-                        invoker.setLogger(new InvokerLoggerImpl(log));
-                        invoker.setInputStream(InputStream.nullInputStream());
-                        try {
-                            InvocationResult result = invoker.execute(request);
-                            if (result.getExitCode() != 0) {
-                                log.debug("Auto-build failed with exit code: " + result.getExitCode());
-                            } else {
-                                log.info(project.getName() + " auto-build successful");
-                                cleanPending.set(false);
-                                sourceUpdatedPending.clear();
-                                ReloadMojo reloadMojo = new ReloadMojo(project, log);
-                                try {
-                                    reloadMojo.execute();
-                                } catch (MojoExecutionException ex) {
-                                    log.error("Error invoking Reload", ex);
-                                }
-                            }
-                        } catch (MavenInvocationException ex) {
-                            log.error("Error invoking Maven", ex);
-                        }
-                    });
+                    executeBuildReloadTask(goalsList);
                     key.reset();
                 }
             }
@@ -203,5 +168,51 @@ public class DevModeHandler implements Runnable {
         } catch (IOException ex) {
             Logger.getLogger(DevModeHandler.class.getName()).log(Level.SEVERE, null, ex);
         }
+    }
+
+    private void updateGoalsList(List<String> goalsList, boolean fileDeletedOrRenamed, boolean resourceModified,
+            boolean testClassesModified) {
+        if (fileDeletedOrRenamed || cleanPending.get() || sourceUpdatedPending.size() > 1) {
+            goalsList.add(0, "clean");
+        } else if (!resourceModified) {
+            goalsList.add("-Dmaven.resources.skip=true");
+        }
+        if (!testClassesModified) {
+            goalsList.add("-Dmaven.test.skip=true");
+        } else {
+            goalsList.add("-DskipTests");
+        }
+    }
+
+    private void executeBuildReloadTask(List<String> goalsList) {
+        buildReloadTask = executorService.submit(() -> {
+            InvocationRequest request = new DefaultInvocationRequest();
+            request.setPomFile(new File(project.getBasedir(), "pom.xml"));
+            request.setGoals(goalsList);
+            log.info("Maven goals: " + goalsList);
+            System.setProperty("maven.multiModuleProjectDirectory", project.getBasedir().toString());
+
+            Invoker invoker = new DefaultInvoker();
+            invoker.setLogger(new InvokerLoggerImpl(log));
+            invoker.setInputStream(InputStream.nullInputStream());
+            try {
+                InvocationResult result = invoker.execute(request);
+                if (result.getExitCode() != 0) {
+                    log.debug("Auto-build failed with exit code: " + result.getExitCode());
+                } else {
+                    log.info(project.getName() + " auto-build successful");
+                    cleanPending.set(false);
+                    sourceUpdatedPending.clear();
+                    ReloadMojo reloadMojo = new ReloadMojo(project, log);
+                    try {
+                        reloadMojo.execute();
+                    } catch (MojoExecutionException ex) {
+                        log.error("Error invoking Reload", ex);
+                    }
+                }
+            } catch (MavenInvocationException ex) {
+                log.error("Error invoking Maven", ex);
+            }
+        });
     }
 }
