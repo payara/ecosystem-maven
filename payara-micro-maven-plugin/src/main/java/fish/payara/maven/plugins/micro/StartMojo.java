@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2017-2021 Payara Foundation and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017-2023 Payara Foundation and/or its affiliates. All rights reserved.
  *
  * The contents of this file are subject to the terms of either the GNU
  * General Public License Version 2 only ("GPL") or the Common Development
@@ -64,7 +64,7 @@ import static fish.payara.maven.plugins.micro.Configuration.*;
 /**
  * Run mojo that executes payara-micro
  *
- * @author mertcaliskan
+ * @author mertcaliskan, Gaurav Gupta
  */
 @Mojo(name = "start")
 public class StartMojo extends BasePayaraMojo {
@@ -100,6 +100,12 @@ public class StartMojo extends BasePayaraMojo {
      */
     @Parameter(property = "exploded", defaultValue = "false")
     private boolean exploded;
+
+    @Parameter(property = "devMode", defaultValue = "false")
+    private boolean devMode;
+
+    @Parameter(property = "devModeGoals", defaultValue = "compile war:exploded -Dmaven.compiler.useIncrementalCompilation=false")
+    private String devModeGoals;
 
     /**
      * Attach a debugger. If set to "true", the process will suspend and wait
@@ -147,10 +153,20 @@ public class StartMojo extends BasePayaraMojo {
 
     @Override
     public void execute() throws MojoExecutionException {
+        if (devMode) {
+            if (devModeGoals.contains("exploded")) {
+                exploded = true;
+            }
+            DevModeHandler devModeHandler = new DevModeHandler(this.getEnvironment().getMavenProject(), this.getLog(), devModeGoals);
+            Thread devModeThread = new Thread(devModeHandler);
+            devModeThread.setDaemon(true);
+            devModeThread.start();
+        }
+
         if (copySystemProperties) {
-            getLog().warn("copySystemProperties is deprecated. " +
-                    "System properties of the regarding maven execution " +
-                    "will be passed to the payara-micro automatically.");
+            getLog().warn("copySystemProperties is deprecated. "
+                    + "System properties of the regarding maven execution "
+                    + "will be passed to the payara-micro automatically.");
         }
 
         if (skip) {
@@ -181,8 +197,7 @@ public class StartMojo extends BasePayaraMojo {
                     if (option.getKey() != null && option.getValue() != null) {
                         String systemProperty = String.format("%s=%s", option.getKey(), option.getValue());
                         actualArgs.add(indice++, systemProperty);
-                    }
-                    else if (option.getValue() != null) {
+                    } else if (option.getValue() != null) {
                         actualArgs.add(indice++, option.getValue());
                     }
                 }
@@ -218,8 +233,8 @@ public class StartMojo extends BasePayaraMojo {
             }
             if (deployWar && WAR_EXTENSION.equalsIgnoreCase(mavenProject.getPackaging())) {
                 if (useUberJar) {
-                    getLog().warn("useUberJar and deployWar are both set to true! You'll probably have " +
-                            "your application tried to deploy twice: 1. as uber jar 2. as a separate war");
+                    getLog().warn("useUberJar and deployWar are both set to true! You'll probably have "
+                            + "your application tried to deploy twice: 1. as uber jar 2. as a separate war");
                 }
                 actualArgs.add(indice++, "--deploy");
                 if (exploded) {
@@ -228,14 +243,14 @@ public class StartMojo extends BasePayaraMojo {
                     actualArgs.add(indice++, evaluateProjectArtifactAbsolutePath("." + mavenProject.getPackaging()));
                 }
             }
-            if(clientUrlPart != null && !clientUrlPart.trim().isEmpty()) {
+            if (clientUrlPart != null && !clientUrlPart.trim().isEmpty()) {
                 actualArgs.add(indice++, "--contextroot");
                 actualArgs.add(indice++, clientUrlPart.trim());
             } else if (contextRoot != null) {
                 actualArgs.add(indice++, "--contextroot");
                 actualArgs.add(indice++, contextRoot);
             }
-            if(hotDeploy) {
+            if (hotDeploy) {
                 actualArgs.add(indice++, "--hotdeploy");
             }
             if (commandLineOptions != null) {
@@ -266,13 +281,10 @@ public class StartMojo extends BasePayaraMojo {
                 if (exitCode != 0) {
                     throw new MojoFailureException(ERROR_MESSAGE);
                 }
-            }
-            catch (InterruptedException ignored) {
-            }
-            catch (Exception e) {
+            } catch (InterruptedException ignored) {
+            } catch (Exception e) {
                 throw new RuntimeException(ERROR_MESSAGE, e);
-            }
-            finally {
+            } finally {
                 if (!daemon) {
                     closeMicroProcess();
                 }
@@ -302,11 +314,11 @@ public class StartMojo extends BasePayaraMojo {
                     e.printStackTrace();
                 }
             }
-        }
-        else {
+        } else {
             Runtime.getRuntime().addShutdownHook(shutdownHook);
             microProcessorThread.run();
         }
+
     }
 
     private String evaluateJavaPath() {
@@ -314,9 +326,8 @@ public class StartMojo extends BasePayaraMojo {
 
         if (StringUtils.isNotEmpty(javaPath)) {
             javaToUse = javaPath;
-        }
-        else if (toolchain != null) {
-            javaToUse = toolchain.findTool( "java" );
+        } else if (toolchain != null) {
+            javaToUse = toolchain.findTool("java");
         }
         return javaToUse;
     }
