@@ -99,16 +99,22 @@ public class DevModeHandler implements Runnable {
         stopRequested.set(true);
     }
 
+    public boolean isAlive() {
+        return !stopRequested.get();
+    }
+
     @Override
     public void run() {
         try {
             Path sourcePath = Paths.get(project.getBasedir() + File.separator + "src");
+            Path pom = Paths.get(project.getBasedir() + File.separator + "pom.xml");
             this.watchService = FileSystems.getDefault().newWatchService();
             sourcePath.register(watchService,
                     ENTRY_CREATE,
                     ENTRY_DELETE,
                     ENTRY_MODIFY);
 
+            register(pom);
             registerAllDirectories(sourcePath);
 
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -120,7 +126,7 @@ public class DevModeHandler implements Runnable {
                 }
             }));
 
-            while (!stopRequested.get()) {
+            while (isAlive()) {
                 WatchKey key = watchService.poll(60, TimeUnit.SECONDS);
                 if (key != null) {
                     if (buildReloadTask != null && !buildReloadTask.isDone()) {
@@ -148,7 +154,7 @@ public class DevModeHandler implements Runnable {
                         }
                         if (kind == StandardWatchEventKinds.ENTRY_CREATE) {
                             if (Files.isDirectory(fullPath, LinkOption.NOFOLLOW_LINKS)) {
-                                registerDirectory(fullPath);
+                                register(fullPath);
                             }
                         }
                         if (kind == StandardWatchEventKinds.ENTRY_DELETE) {
@@ -171,12 +177,12 @@ public class DevModeHandler implements Runnable {
     private void registerAllDirectories(Path path) throws IOException {
         Files.walk(path)
                 .filter(Files::isDirectory)
-                .forEach(this::registerDirectory);
+                .forEach(this::register);
     }
 
-    private void registerDirectory(Path dir) {
+    private void register(Path path) {
         try {
-            dir.register(watchService, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
+            path.register(watchService, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
         } catch (IOException ex) {
             log.error("Error registering directories", ex);
         }
