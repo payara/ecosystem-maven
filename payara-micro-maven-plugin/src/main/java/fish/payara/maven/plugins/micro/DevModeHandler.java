@@ -62,8 +62,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
@@ -88,12 +86,17 @@ public class DevModeHandler implements Runnable {
     private Future<?> buildReloadTask;
     private final AtomicBoolean cleanPending = new AtomicBoolean(false);
     private final ConcurrentHashMap<String, Boolean> sourceUpdatedPending = new ConcurrentHashMap<>();
+    private final AtomicBoolean stopRequested = new AtomicBoolean(false);
 
     public DevModeHandler(MavenProject project, Log log, String devModeGoals) {
         this.project = project;
         this.log = log;
         this.devModeGoals = asList(devModeGoals.split("\\s+"));
         this.executorService = Executors.newSingleThreadExecutor();
+    }
+
+    public void stop() {
+        stopRequested.set(true);
     }
 
     @Override
@@ -108,7 +111,16 @@ public class DevModeHandler implements Runnable {
 
             registerAllDirectories(sourcePath);
 
-            while (true) {
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                try {
+                    buildReloadTask.cancel(true);
+                    executorService.shutdown();
+                } catch (Exception ex) {
+                    log.error(ex);
+                }
+            }));
+
+            while (!stopRequested.get()) {
                 WatchKey key = watchService.poll(60, TimeUnit.SECONDS);
                 if (key != null) {
                     if (buildReloadTask != null && !buildReloadTask.isDone()) {
@@ -152,7 +164,7 @@ public class DevModeHandler implements Runnable {
                 }
             }
         } catch (IOException | InterruptedException ex) {
-            Logger.getLogger(DevModeHandler.class.getName()).log(Level.SEVERE, null, ex);
+            log.error(ex);
         }
     }
 
@@ -166,7 +178,7 @@ public class DevModeHandler implements Runnable {
         try {
             dir.register(watchService, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
         } catch (IOException ex) {
-            Logger.getLogger(DevModeHandler.class.getName()).log(Level.SEVERE, null, ex);
+            log.error("Error registering directories", ex);
         }
     }
 

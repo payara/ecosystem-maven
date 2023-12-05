@@ -153,14 +153,17 @@ public class StartMojo extends BasePayaraMojo {
 
     @Override
     public void execute() throws MojoExecutionException {
+        final DevModeHandler devModeHandler;
         if (devMode) {
             if (devModeGoals.contains("exploded")) {
                 exploded = true;
             }
-            DevModeHandler devModeHandler = new DevModeHandler(this.getEnvironment().getMavenProject(), this.getLog(), devModeGoals);
+            devModeHandler = new DevModeHandler(this.getEnvironment().getMavenProject(), this.getLog(), devModeGoals);
             Thread devModeThread = new Thread(devModeHandler);
             devModeThread.setDaemon(true);
             devModeThread.start();
+        } else {
+            devModeHandler = null;
         }
 
         if (copySystemProperties) {
@@ -300,6 +303,9 @@ public class StartMojo extends BasePayaraMojo {
                 } finally {
                     microProcess.destroyForcibly();
                 }
+            }
+            if(devModeHandler != null) {
+                devModeHandler.stop();
             }
         });
 
