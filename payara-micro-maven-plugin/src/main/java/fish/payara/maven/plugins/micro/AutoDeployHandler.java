@@ -42,6 +42,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.FileSystems;
+import java.nio.file.FileVisitOption;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
@@ -59,14 +60,17 @@ import java.nio.file.WatchService;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
-import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import org.apache.commons.io.FileUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
@@ -111,15 +115,14 @@ public class AutoDeployHandler implements Runnable {
     @Override
     public void run() {
         try {
-            Path sourcePath = Paths.get(project.getBasedir() + File.separator + "src");
-//            Path pomXmlPath = Paths.get(project.getBasedir() + File.separator + "pom.xml");
+            Path sourcePath = project.getBasedir().toPath().resolve("src");
             this.watchService = FileSystems.getDefault().newWatchService();
             sourcePath.register(watchService,
                     ENTRY_CREATE,
                     ENTRY_DELETE,
                     ENTRY_MODIFY);
 
-//            pomXmlPath.register(watchService, ENTRY_MODIFY);
+//            register(project.getBasedir().toPath());
             registerAllDirectories(sourcePath);
 
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -143,9 +146,12 @@ public class AutoDeployHandler implements Runnable {
                     for (WatchEvent<?> event : key.pollEvents()) {
                         WatchEvent.Kind<?> kind = event.kind();
                         Path changed = (Path) event.context();
+                        Path fullPath = ((Path) key.watchable()).resolve(changed);
+//                        if (fullPath.startsWith(project.getBuild().getDirectory())) {
+//                            continue;
+//                        }
                         log.info("Source modified: " + changed + " - " + kind);
 
-                        Path fullPath = ((Path) key.watchable()).resolve(changed);
                         Path projectRoot = Paths.get(project.getBasedir().toURI());
                         Path sourceRoot = projectRoot.resolve("src");
                         Path mainDirectory = sourceRoot.resolve("main");
@@ -170,11 +176,10 @@ public class AutoDeployHandler implements Runnable {
                             cleanPending.set(true);
                         }
                     }
-
-                    boolean onlyJavaFilesUpdated = sourceUpdatedPending.values().stream().allMatch(v -> v) 
-                            && sourceUpdatedPending.keySet().stream().allMatch(k -> k.endsWith(".java-ENTRY_MODIFY"));
-                    List<String> goalsList = updateGoalsList(fileDeletedOrRenamed, resourceModified, testClassesModified, onlyJavaFilesUpdated);
-                    executeBuildReloadTask(goalsList, onlyJavaFilesUpdated);
+                    if (sourceUpdatedPending.size() > 1) {
+                        List<String> goalsList = updateGoalsList(fileDeletedOrRenamed, resourceModified, testClassesModified);
+                        executeBuildReloadTask(goalsList);
+                    }
                     key.reset();
                 }
             }
@@ -198,18 +203,22 @@ public class AutoDeployHandler implements Runnable {
     }
 
     private List<String> updateGoalsList(boolean fileDeletedOrRenamed, boolean resourceModified,
-            boolean testClassesModified, boolean onlyJavaFilesUpdated) {
+            boolean testClassesModified) {
+        boolean onlyJavaFilesUpdated = sourceUpdatedPending.values().stream().allMatch(v -> v)
+                && sourceUpdatedPending.keySet().stream().allMatch(k -> k.endsWith(".java-ENTRY_MODIFY"));
         List<String> goalsList = new ArrayList<>();
         if (fileDeletedOrRenamed || cleanPending.get() || sourceUpdatedPending.size() > 1) {
             goalsList.add(0, "clean");
             goalsList.add("resources:resources");
+            resourceModified = true;
         } else if (resourceModified) {
             goalsList.add("resources:resources");
         }
         goalsList.add("compiler:compile");
         if (onlyJavaFilesUpdated) {
             goalsList.add("-Dmaven.compiler.useIncrementalCompilation=false");
-        } else {
+        }
+        if (resourceModified || !onlyJavaFilesUpdated) {
             goalsList.add("war:exploded");
         }
         if (!testClassesModified) {
@@ -221,8 +230,12 @@ public class AutoDeployHandler implements Runnable {
         return goalsList;
     }
 
-    private void executeBuildReloadTask(List<String> goalsList, boolean onlyJavaFilesUpdated) {
+    private void executeBuildReloadTask(List<String> goalsList) {
         buildReloadTask = executorService.submit(() -> {
+            if (goalsList.get(0).equals("clean")) {
+                deleteBuildDir(project.getBuild().getDirectory());
+                goalsList.remove(0);
+            }
             InvocationRequest request = new DefaultInvocationRequest();
             request.setPomFile(new File(project.getBasedir(), "pom.xml"));
             request.setGoals(goalsList);
@@ -238,7 +251,7 @@ public class AutoDeployHandler implements Runnable {
                     log.debug("Auto-build failed with exit code: " + result.getExitCode());
                 } else {
                     log.info(project.getName() + " auto-build successful");
-                    if (onlyJavaFilesUpdated) {
+                    if (!goalsList.contains("war:exploded")) {
                         explodedWarIncremental();
                     }
                     cleanPending.set(false);
@@ -285,4 +298,45 @@ public class AutoDeployHandler implements Runnable {
         }
     }
 
+    public void deleteBuildDir(String filePath) {
+        try {
+            Path fileToDelete = Paths.get(filePath);
+            Files.walkFileTree(fileToDelete, EnumSet.of(FileVisitOption.FOLLOW_LINKS), Integer.MAX_VALUE, new DeleteFileVisitor());
+        } catch (IOException e) {
+            log.error("Error occurred while deleting the file: ", e);
+        }
+    }
+
+    class DeleteFileVisitor extends SimpleFileVisitor<Path> {
+
+        @Override
+        public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+            try {
+                Files.delete(file);
+            } catch (IOException e) {
+                log.error("Error occurred while deleting the file: ", e);
+            }
+            return FileVisitResult.CONTINUE;
+        }
+
+        @Override
+        public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
+            try {
+                Files.delete(file);
+            } catch (IOException e) {
+                log.error("Error occurred while deleting the file: ", e);
+            }
+            return FileVisitResult.CONTINUE;
+        }
+
+        @Override
+        public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+            try {
+                Files.delete(dir);
+            } catch (IOException e) {
+                log.error("Error occurred while deleting the directory: ", e);
+            }
+            return FileVisitResult.CONTINUE;
+        }
+    }
 }
