@@ -94,16 +94,16 @@ public class StartMojo extends BasePayaraMojo {
     private boolean useUberJar;
 
     @Parameter(property = "deployWar", defaultValue = "false")
-    private boolean deployWar;
+    protected boolean deployWar;
 
     /**
      * Use exploded artifact for deployment.
      */
     @Parameter(property = "exploded", defaultValue = "false")
-    private boolean exploded;
+    protected boolean exploded;
 
     @Parameter(property = "autoDeploy", defaultValue = "false")
-    private boolean autoDeploy;
+    protected boolean autoDeploy;
 
     /**
      * Attach a debugger. If set to "true", the process will suspend and wait
@@ -112,13 +112,13 @@ public class StartMojo extends BasePayaraMojo {
      *
      */
     @Parameter(property = "debug", defaultValue = "false")
-    private String debug;
+    protected String debug;
 
     @Parameter(property = "contextRoot")
     private String contextRoot;
 
     @Parameter(property = "hotDeploy")
-    private boolean hotDeploy;
+    protected boolean hotDeploy;
 
     /**
      * The directory where the webapp is built, default value is exploded war.
@@ -159,7 +159,6 @@ public class StartMojo extends BasePayaraMojo {
     public void execute() throws MojoExecutionException {
         final AutoDeployHandler autoDeployHandler;
         if (autoDeploy) {
-            exploded = true;
             autoDeployHandler = new AutoDeployHandler(this.getEnvironment().getMavenProject(), webappDirectory, this.getLog());
             Thread devModeThread = new Thread(autoDeployHandler);
             devModeThread.setDaemon(true);

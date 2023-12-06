@@ -127,7 +127,9 @@ public class AutoDeployHandler implements Runnable {
 
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 try {
-                    buildReloadTask.cancel(true);
+                    if (buildReloadTask != null && !buildReloadTask.isDone()) {
+                        buildReloadTask.cancel(true);
+                    }
                     executorService.shutdown();
                 } catch (Exception ex) {
                     log.error(ex);
