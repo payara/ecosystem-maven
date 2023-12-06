@@ -60,6 +60,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static fish.payara.maven.plugins.micro.Configuration.*;
+import java.nio.file.Path;
 
 /**
  * Run mojo that executes payara-micro
@@ -101,11 +102,8 @@ public class StartMojo extends BasePayaraMojo {
     @Parameter(property = "exploded", defaultValue = "false")
     private boolean exploded;
 
-    @Parameter(property = "devMode", defaultValue = "false")
-    private boolean devMode;
-
-    @Parameter(property = "devModeGoals", defaultValue = "compile war:exploded -Dmaven.compiler.useIncrementalCompilation=false")
-    private String devModeGoals;
+    @Parameter(property = "autoDeploy", defaultValue = "false")
+    private boolean autoDeploy;
 
     /**
      * Attach a debugger. If set to "true", the process will suspend and wait
@@ -121,6 +119,12 @@ public class StartMojo extends BasePayaraMojo {
 
     @Parameter(property = "hotDeploy")
     private boolean hotDeploy;
+
+    /**
+     * The directory where the webapp is built, default value is exploded war.
+     */
+    @Parameter(defaultValue = "${project.build.directory}/${project.build.finalName}", required = true)
+    private File webappDirectory;
 
     /**
      * Property passed by Apache NetBeans IDE to set contextRoot of the
@@ -153,17 +157,15 @@ public class StartMojo extends BasePayaraMojo {
 
     @Override
     public void execute() throws MojoExecutionException {
-        final DevModeHandler devModeHandler;
-        if (devMode) {
-            if (devModeGoals.contains("exploded")) {
-                exploded = true;
-            }
-            devModeHandler = new DevModeHandler(this.getEnvironment().getMavenProject(), this.getLog(), devModeGoals);
-            Thread devModeThread = new Thread(devModeHandler);
+        final AutoDeployHandler autoDeployHandler;
+        if (autoDeploy) {
+            exploded = true;
+            autoDeployHandler = new AutoDeployHandler(this.getEnvironment().getMavenProject(), webappDirectory, this.getLog());
+            Thread devModeThread = new Thread(autoDeployHandler);
             devModeThread.setDaemon(true);
             devModeThread.start();
         } else {
-            devModeHandler = null;
+            autoDeployHandler = null;
         }
 
         if (copySystemProperties) {
@@ -304,8 +306,8 @@ public class StartMojo extends BasePayaraMojo {
                     microProcess.destroyForcibly();
                 }
             }
-            if(devModeHandler != null) {
-                devModeHandler.stop();
+            if (autoDeployHandler != null) {
+                autoDeployHandler.stop();
             }
         });
 
