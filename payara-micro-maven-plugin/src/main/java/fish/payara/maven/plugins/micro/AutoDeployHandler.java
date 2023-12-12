@@ -41,6 +41,7 @@ package fish.payara.maven.plugins.micro;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.channels.FileChannel;
 import java.nio.file.FileSystems;
 import java.nio.file.FileVisitOption;
 import java.nio.file.FileVisitResult;
@@ -50,6 +51,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
 import java.nio.file.StandardWatchEventKinds;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
@@ -68,9 +70,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import org.apache.commons.io.FileUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
@@ -152,7 +151,7 @@ public class AutoDeployHandler implements Runnable {
 //                        if (fullPath.startsWith(project.getBuild().getDirectory())) {
 //                            continue;
 //                        }
-                        log.info("Source modified: " + changed + " - " + kind);
+                        log.debug("Source modified: " + changed + " - " + kind);
 
                         Path projectRoot = Paths.get(project.getBasedir().toURI());
                         Path sourceRoot = projectRoot.resolve("src");
@@ -178,8 +177,12 @@ public class AutoDeployHandler implements Runnable {
                             cleanPending.set(true);
                         }
                     }
-                    if (sourceUpdatedPending.size() > 1) {
+                    
+                        log.debug("sourceUpdatedPending: " + sourceUpdatedPending + " "+ log);
+                    if (!sourceUpdatedPending.isEmpty()) {
+                        log.info("Auto-build started for " + project.getName());
                         List<String> goalsList = updateGoalsList(fileDeletedOrRenamed, resourceModified, testClassesModified);
+                        log.debug("goalsList: " + goalsList);
                         executeBuildReloadTask(goalsList);
                     }
                     key.reset();
@@ -241,7 +244,7 @@ public class AutoDeployHandler implements Runnable {
             InvocationRequest request = new DefaultInvocationRequest();
             request.setPomFile(new File(project.getBasedir(), "pom.xml"));
             request.setGoals(goalsList);
-            log.info("Maven goals: " + goalsList);
+            log.debug("Maven goals: " + goalsList);
             System.setProperty("maven.multiModuleProjectDirectory", project.getBasedir().toString());
 
             Invoker invoker = new DefaultInvoker();
@@ -252,7 +255,7 @@ public class AutoDeployHandler implements Runnable {
                 if (result.getExitCode() != 0) {
                     log.debug("Auto-build failed with exit code: " + result.getExitCode());
                 } else {
-                    log.info(project.getName() + " auto-build successful");
+                    log.info("Auto-build successful for " + project.getName());
                     if (!goalsList.contains("war:exploded")) {
                         explodedWarIncremental();
                     }
@@ -311,13 +314,29 @@ public class AutoDeployHandler implements Runnable {
 
     class DeleteFileVisitor extends SimpleFileVisitor<Path> {
 
+        private boolean hasJarExtension(Path file) {
+            return file.getFileName().toString().toLowerCase().endsWith(".jar");
+        }
+
         @Override
-        public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-            try {
-                Files.delete(file);
-            } catch (IOException e) {
-                log.error("Error occurred while deleting the file: ", e);
-            }
+        public FileVisitResult visitFile(Path path, BasicFileAttributes attrs) throws IOException {
+           
+                if (Files.isRegularFile(path)) {
+                    if (hasJarExtension(path)) {
+                        try {
+                            Files.delete(path);
+                        } catch (IOException e) {
+                            // Ignore locked jar
+                        }
+                    } else {
+                        try {
+                            Files.delete(path);
+                        } catch (IOException e) {
+                            log.error("Error occurred while deleting the file: ", e);
+                        }
+                    }
+                }
+            
             return FileVisitResult.CONTINUE;
         }
 
@@ -335,6 +354,8 @@ public class AutoDeployHandler implements Runnable {
         public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
             try {
                 Files.delete(dir);
+            } catch (java.nio.file.DirectoryNotEmptyException e) {
+                // Ignore
             } catch (IOException e) {
                 log.error("Error occurred while deleting the directory: ", e);
             }
