@@ -122,7 +122,6 @@ public class AutoDeployHandler implements Runnable {
                     ENTRY_DELETE,
                     ENTRY_MODIFY);
 
-//            register(project.getBasedir().toPath());
             registerAllDirectories(sourcePath);
 
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -149,9 +148,6 @@ public class AutoDeployHandler implements Runnable {
                         WatchEvent.Kind<?> kind = event.kind();
                         Path changed = (Path) event.context();
                         Path fullPath = ((Path) key.watchable()).resolve(changed);
-//                        if (fullPath.startsWith(project.getBuild().getDirectory())) {
-//                            continue;
-//                        }
                         log.debug("Source modified: " + changed + " - " + kind);
 
                         Path projectRoot = Paths.get(project.getBasedir().toURI());
