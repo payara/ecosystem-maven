@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2020-2021 Payara Foundation and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020-2023 Payara Foundation and/or its affiliates. All rights reserved.
  *
  * The contents of this file are subject to the terms of either the GNU
  * General Public License Version 2 only ("GPL") or the Common Development
@@ -46,12 +46,11 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.PrintWriter;
-import java.util.Date;
 import java.util.Properties;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.apache.maven.model.Build;
+import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.project.MavenProject;
 
 /**
  * Reload mojo that reloads exploded web application in running payara-micro
@@ -72,6 +71,11 @@ public class ReloadMojo extends BasePayaraMojo {
 
     @Parameter(property = "metadataChanged")
     private boolean metadataChanged;
+
+    public ReloadMojo(MavenProject mavenProject, Log log) {
+        this.mavenProject = mavenProject;
+        this.setLog(log);
+    }
     
     @Override
     public void execute() throws MojoExecutionException {
@@ -90,6 +94,7 @@ public class ReloadMojo extends BasePayaraMojo {
             throw new MojoExecutionException(String.format("explodedDir[%s] not found", explodedDirPath));
         }
         File reloadFile = new File(explodedDir, RELOAD_FILE);
+        getLog().info("Reloading " + explodedDir);
         if (hotDeploy) {
             Properties props = new Properties();
             props.setProperty("hotdeploy", "true");
