@@ -47,6 +47,7 @@ import java.nio.file.FileVisitOption;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
@@ -344,6 +345,8 @@ public class AutoDeployHandler implements Runnable {
         public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
             try {
                 Files.delete(file);
+            } catch (NoSuchFileException e) {
+                 log.debug("Error occurred while deleting the file: ", e);
             } catch (IOException e) {
                 log.error("Error occurred while deleting the file: ", e);
             }
