@@ -70,7 +70,10 @@ import java.nio.file.Path;
 @Mojo(name = "start")
 public class StartMojo extends BasePayaraMojo {
 
-    String ERROR_MESSAGE = "Errors occurred while executing payara-micro.";
+    private static final String ERROR_MESSAGE = "Errors occurred while executing payara-micro.";
+    private static final String PRE_BOOT = "--prebootcommandfile";
+    private static final String POST_BOOT = "--postbootcommandfile";
+    private static final String POST_DEPLOY = "--postdeploycommandfile";
 
     @Parameter(property = "javaPath")
     private String javaPath;
@@ -150,6 +153,8 @@ public class StartMojo extends BasePayaraMojo {
     private Thread microProcessorThread;
     private final ThreadGroup threadGroup;
     private Toolchain toolchain;
+    private AutoDeployHandler autoDeployHandler;
+    private List<String> rebootOnChange = new ArrayList<>();
 
     StartMojo() {
         threadGroup = new ThreadGroup(MICRO_THREAD_NAME);
@@ -157,9 +162,8 @@ public class StartMojo extends BasePayaraMojo {
 
     @Override
     public void execute() throws MojoExecutionException {
-        final AutoDeployHandler autoDeployHandler;
-        if (autoDeploy) {
-            autoDeployHandler = new AutoDeployHandler(this.getEnvironment().getMavenProject(), webappDirectory, this.getLog());
+        if (autoDeploy && autoDeployHandler == null) {
+            autoDeployHandler = new AutoDeployHandler(this, webappDirectory);
             Thread devModeThread = new Thread(autoDeployHandler);
             devModeThread.setDaemon(true);
             devModeThread.start();
@@ -261,6 +265,17 @@ public class StartMojo extends BasePayaraMojo {
                 for (Option option : commandLineOptions) {
                     if (option.getKey() != null) {
                         actualArgs.add(indice++, option.getKey());
+                        if(autoDeploy
+                                && option.getValue() != null
+                                && !option.getValue().isEmpty()
+                                && (option.getKey().equals(PRE_BOOT)
+                                || option.getKey().equals(POST_BOOT)
+                                || option.getKey().equals(POST_DEPLOY))) {
+                            Path bootpath = Paths.get(option.getValue());
+                            if (Files.exists(bootpath)) {
+                                rebootOnChange.add(bootpath.getFileName().toString());
+                            }
+                        }
                     }
                     if (option.getValue() != null) {
                         actualArgs.add(indice++, option.getValue());
@@ -282,7 +297,7 @@ public class StartMojo extends BasePayaraMojo {
                 }
 
                 int exitCode = microProcess.waitFor();
-                if (exitCode != 0) {
+                if (exitCode != 0 && !autoDeploy) {
                     throw new MojoFailureException(ERROR_MESSAGE);
                 }
             } catch (InterruptedException ignored) {
@@ -292,21 +307,6 @@ public class StartMojo extends BasePayaraMojo {
                 if (!daemon) {
                     closeMicroProcess();
                 }
-            }
-        });
-
-        final Thread shutdownHook = new Thread(threadGroup, () -> {
-            if (microProcess != null && microProcess.isAlive()) {
-                try {
-                    microProcess.destroy();
-                    microProcess.waitFor(1, TimeUnit.MINUTES);
-                } catch (InterruptedException ignored) {
-                } finally {
-                    microProcess.destroyForcibly();
-                }
-            }
-            if (autoDeployHandler != null) {
-                autoDeployHandler.stop();
             }
         });
 
@@ -322,10 +322,32 @@ public class StartMojo extends BasePayaraMojo {
                 }
             }
         } else {
-            Runtime.getRuntime().addShutdownHook(shutdownHook);
+            Runtime.getRuntime().addShutdownHook(getShutdownHook());
             microProcessorThread.run();
+            
+            if(autoDeploy) {
+                while(autoDeployHandler.isAlive()) {
+                    microProcessorThread.run();
+                }
+            }
         }
+    }
 
+    private Thread getShutdownHook() {
+        return new Thread(threadGroup, () -> {
+            if (microProcess != null && microProcess.isAlive()) {
+                try {
+                    microProcess.destroy();
+                    microProcess.waitFor(1, TimeUnit.MINUTES);
+                } catch (InterruptedException ignored) {
+                } finally {
+                    microProcess.destroyForcibly();
+                }
+            }
+            if (autoDeployHandler != null) {
+                autoDeployHandler.stop();
+            }
+        });
     }
 
     private String evaluateJavaPath() {
@@ -413,6 +435,10 @@ public class StartMojo extends BasePayaraMojo {
 
     Process getMicroProcess() {
         return this.microProcess;
+    }
+
+    List<String> getRebootOnChange() {
+        return rebootOnChange;
     }
 
     private void redirectStream(final InputStream inputStream, final PrintStream printStream) {
