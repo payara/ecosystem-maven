@@ -71,6 +71,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
@@ -87,6 +89,7 @@ import org.apache.maven.shared.invoker.MavenInvocationException;
  */
 public class AutoDeployHandler implements Runnable {
 
+    private final StartMojo start;
     private final MavenProject project;
     private final File webappDirectory;
     private final Log log;
@@ -96,12 +99,15 @@ public class AutoDeployHandler implements Runnable {
     private final AtomicBoolean cleanPending = new AtomicBoolean(false);
     private final ConcurrentHashMap<String, Boolean> sourceUpdatedPending = new ConcurrentHashMap<>();
     private final AtomicBoolean stopRequested = new AtomicBoolean(false);
+    private final Path buildPath;
 
-    public AutoDeployHandler(MavenProject project, File webappDirectory, Log log) {
-        this.project = project;
+    public AutoDeployHandler(StartMojo start, File webappDirectory) {
+        this.start = start;
+        this.project = start.getEnvironment().getMavenProject();
         this.webappDirectory = webappDirectory;
-        this.log = log;
+        this.log = start.getLog();
         this.executorService = Executors.newSingleThreadExecutor();
+        this.buildPath = project.getBasedir().toPath().resolve("target");
     }
 
     public void stop() {
@@ -115,14 +121,14 @@ public class AutoDeployHandler implements Runnable {
     @Override
     public void run() {
         try {
-            Path sourcePath = project.getBasedir().toPath().resolve("src");
+            Path rootPath = project.getBasedir().toPath();
             this.watchService = FileSystems.getDefault().newWatchService();
-            sourcePath.register(watchService,
+            rootPath.register(watchService,
                     ENTRY_CREATE,
                     ENTRY_DELETE,
                     ENTRY_MODIFY);
 
-            registerAllDirectories(sourcePath);
+            registerAllDirectories(rootPath);
 
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 try {
@@ -138,18 +144,29 @@ public class AutoDeployHandler implements Runnable {
             while (isAlive()) {
                 WatchKey key = watchService.poll(60, TimeUnit.SECONDS);
                 if (key != null) {
+                    List<WatchEvent<?>> filteredEvents = new ArrayList<>();
+                    for (WatchEvent<?> event : key.pollEvents()) {
+                        Path changed = (Path) event.context();
+                        Path fullPath = ((Path) key.watchable()).resolve(changed);
+                        if(fullPath.startsWith(buildPath)){
+                            continue;
+                        }
+                        filteredEvents.add(event);
+                    }
+                    if(!filteredEvents.isEmpty()) {
                     if (buildReloadTask != null && !buildReloadTask.isDone()) {
                         buildReloadTask.cancel(true);
                     }
                     boolean fileDeletedOrRenamed = false;
                     boolean resourceModified = false;
                     boolean testClassesModified = false;
-                    for (WatchEvent<?> event : key.pollEvents()) {
+                    boolean rebootRequired = false;
+                    for (WatchEvent<?> event : filteredEvents) {
                         WatchEvent.Kind<?> kind = event.kind();
                         Path changed = (Path) event.context();
                         Path fullPath = ((Path) key.watchable()).resolve(changed);
                         log.debug("Source modified: " + changed + " - " + kind);
-
+                        
                         Path projectRoot = Paths.get(project.getBasedir().toURI());
                         Path sourceRoot = projectRoot.resolve("src");
                         Path mainDirectory = sourceRoot.resolve("main");
@@ -166,21 +183,28 @@ public class AutoDeployHandler implements Runnable {
                         }
                         if (kind == StandardWatchEventKinds.ENTRY_CREATE) {
                             if (Files.isDirectory(fullPath, LinkOption.NOFOLLOW_LINKS)) {
-                                register(fullPath);
+                                register(fullPath); // register watch service for newly created dir
                             }
                         }
                         if (kind == StandardWatchEventKinds.ENTRY_DELETE) {
                             fileDeletedOrRenamed = true;
                             cleanPending.set(true);
                         }
+                        if (start.getRebootOnChange().contains(changed.toString())) {
+                            rebootRequired = true;
+                            fileDeletedOrRenamed = true;
+                            cleanPending.set(true);
+                            break;
+                        }
                     }
                     
-                        log.debug("sourceUpdatedPending: " + sourceUpdatedPending + " "+ log);
+                    log.debug("sourceUpdatedPending: " + sourceUpdatedPending + " "+ log);
                     if (!sourceUpdatedPending.isEmpty()) {
                         log.info("Auto-build started for " + project.getName());
                         List<String> goalsList = updateGoalsList(fileDeletedOrRenamed, resourceModified, testClassesModified);
                         log.debug("goalsList: " + goalsList);
-                        executeBuildReloadTask(goalsList);
+                        executeBuildReloadTask(goalsList, rebootRequired);
+                    }
                     }
                     key.reset();
                 }
@@ -197,8 +221,12 @@ public class AutoDeployHandler implements Runnable {
     }
 
     private void register(Path path) {
+        boolean isChild = path.startsWith(buildPath) && (path.equals(buildPath) || ! buildPath.relativize(path).equals(path));
         try {
-            path.register(watchService, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
+            if (!isChild) {
+                log.debug("register watch service for " + path);
+                path.register(watchService, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
+            }
         } catch (IOException ex) {
             log.error("Error registering directories", ex);
         }
@@ -232,7 +260,7 @@ public class AutoDeployHandler implements Runnable {
         return goalsList;
     }
 
-    private void executeBuildReloadTask(List<String> goalsList) {
+    private void executeBuildReloadTask(List<String> goalsList, boolean pomXmlModified) {
         buildReloadTask = executorService.submit(() -> {
             if (goalsList.get(0).equals("clean")) {
                 deleteBuildDir(project.getBuild().getDirectory());
@@ -258,11 +286,18 @@ public class AutoDeployHandler implements Runnable {
                     }
                     cleanPending.set(false);
                     sourceUpdatedPending.clear();
-                    ReloadMojo reloadMojo = new ReloadMojo(project, log);
-                    try {
-                        reloadMojo.execute();
-                    } catch (MojoExecutionException ex) {
-                        log.error("Error invoking Reload", ex);
+                    
+                    if (pomXmlModified) {
+                        if (start.getMicroProcess().isAlive()) {
+                            start.getMicroProcess().destroy();
+                        }
+                    } else {
+                        ReloadMojo reloadMojo = new ReloadMojo(project, log);
+                        try {
+                            reloadMojo.execute();
+                        } catch (MojoExecutionException ex) {
+                            log.error("Error invoking Reload", ex);
+                        }
                     }
                 }
             } catch (MavenInvocationException ex) {
