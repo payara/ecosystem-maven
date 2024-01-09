@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2020-2023 Payara Foundation and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020-2024 Payara Foundation and/or its affiliates. All rights reserved.
  *
  * The contents of this file are subject to the terms of either the GNU
  * General Public License Version 2 only ("GPL") or the Common Development
@@ -123,6 +123,30 @@ public class ReloadMojo extends BasePayaraMojo {
             }
         }
 
+    }
+
+    public boolean isHotDeploy() {
+        return hotDeploy;
+    }
+
+    public void setHotDeploy(boolean hotDeploy) {
+        this.hotDeploy = hotDeploy;
+    }
+
+    public String getSourcesChanged() {
+        return sourcesChanged;
+    }
+
+    public void setSourcesChanged(String sourcesChanged) {
+        this.sourcesChanged = sourcesChanged;
+    }
+
+    public boolean isMetadataChanged() {
+        return metadataChanged;
+    }
+
+    public void setMetadataChanged(boolean metadataChanged) {
+        this.metadataChanged = metadataChanged;
     }
 
 }
