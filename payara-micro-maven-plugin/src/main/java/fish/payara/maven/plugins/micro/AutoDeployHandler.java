@@ -78,6 +78,7 @@ import org.apache.maven.shared.invoker.InvocationRequest;
 import org.apache.maven.shared.invoker.InvocationResult;
 import org.apache.maven.shared.invoker.Invoker;
 import org.apache.maven.shared.invoker.MavenInvocationException;
+import org.openqa.selenium.JavascriptExecutor;
 
 /**
  *
@@ -93,7 +94,7 @@ public class AutoDeployHandler implements Runnable {
     private WatchService watchService;
     private Future<?> buildReloadTask;
     private final AtomicBoolean cleanPending = new AtomicBoolean(false);
-    private List<Source> sourceUpdatedPending = new CopyOnWriteArrayList<>();
+    private final List<Source> sourceUpdatedPending = new CopyOnWriteArrayList<>();
     private final AtomicBoolean stopRequested = new AtomicBoolean(false);
     private final Path buildPath;
 
@@ -196,6 +197,7 @@ public class AutoDeployHandler implements Runnable {
 
                         log.debug("sourceUpdatedPending: " + sourceUpdatedPending + " " + log);
                         if (!sourceUpdatedPending.isEmpty()) {
+                            updateTitle("Building");
                             log.info("Auto-build started for " + project.getName());
                             List<String> goalsList = updateGoalsList(fileDeletedOrRenamed, resourceModified, testClassesModified);
                             log.debug("goalsList: " + goalsList);
@@ -230,7 +232,7 @@ public class AutoDeployHandler implements Runnable {
 
     private List<String> updateGoalsList(boolean fileDeletedOrRenamed, boolean resourceModified,
             boolean testClassesModified) {
-        boolean onlyJavaFilesUpdated = sourceUpdatedPending.stream().allMatch(k -> k.path.endsWith(".java") && k.kind == ENTRY_MODIFY && k.javaClass);
+        boolean onlyJavaFilesUpdated = sourceUpdatedPending.stream().allMatch(k -> k.path.toString().endsWith(".java") && k.kind == ENTRY_MODIFY && k.javaClass);
         List<String> goalsList = new ArrayList<>();
         if (fileDeletedOrRenamed || cleanPending.get() || sourceUpdatedPending.size() > 1) {
             goalsList.add(0, "clean");
@@ -239,23 +241,25 @@ public class AutoDeployHandler implements Runnable {
         } else if (resourceModified) {
             goalsList.add("resources:resources");
         }
-        goalsList.add("compiler:compile");
+        goalsList.add("org.apache.maven.plugins:maven-compiler-plugin:3.12.1:compile"); //v3.12.1 is required as is includes fix https://github.com/apache/maven-compiler-plugin/pull/213
         if (onlyJavaFilesUpdated) {
             goalsList.add("-Dmaven.compiler.useIncrementalCompilation=false");
         }
         if (resourceModified || !onlyJavaFilesUpdated) {
             goalsList.add("war:exploded");
+        } else {
+            Path outputDirectory = Paths.get(webappDirectory.toPath().toString(), "WEB-INF", "classes");
+            goalsList.add("-Dmaven.compiler.outputDirectory=\"" + outputDirectory.toString() + "\"");
         }
         if (!testClassesModified) {
             goalsList.add("-Dmaven.test.skip=true");
         } else {
             goalsList.add("-DskipTests");
         }
-
         return goalsList;
     }
 
-    private void executeBuildReloadTask(List<String> goalsList, boolean pomXmlModified) {
+    private void executeBuildReloadTask(List<String> goalsList, boolean rebootRequired) {
         buildReloadTask = executorService.submit(() -> {
             if (goalsList.get(0).equals("clean")) {
                 deleteBuildDir(project.getBuild().getDirectory());
@@ -274,17 +278,19 @@ public class AutoDeployHandler implements Runnable {
                 InvocationResult result = invoker.execute(request);
                 if (result.getExitCode() != 0) {
                     log.debug("Auto-build failed with exit code: " + result.getExitCode());
+                    updateTitle("Build failed");
                 } else {
                     log.info("Auto-build successful for " + project.getName());
-                    if (!goalsList.contains("war:exploded")) {
-                        explodedWarIncremental();
-                    }
-
-                    if (pomXmlModified) {
+                    cleanPending.set(false);
+                    sourceUpdatedPending.clear();
+                    
+                    if (rebootRequired) {
                         if (start.getMicroProcess().isAlive()) {
+                            updateTitle("Restarting");
                             start.getMicroProcess().destroy();
                         }
                     } else {
+                        updateTitle("Reloading");
                         ReloadMojo reloadMojo = new ReloadMojo(project, log);
                         if (start.hotDeploy) {
                             Path rootPath = project.getBasedir().toPath();
@@ -317,41 +323,18 @@ public class AutoDeployHandler implements Runnable {
         });
     }
 
-    // Remove this function if https://github.com/apache/maven-compiler-plugin/pull/213 merged
-    public void explodedWarIncremental() {
-        Path sourceDir = Paths.get(project.getBuild().getOutputDirectory());
-        Path outputDirectory = Paths.get(webappDirectory.toPath().toString(), "WEB-INF", "classes");
-        Path targetDir = outputDirectory;
-        long currentTime = Instant.now().toEpochMilli();
-
-        try {
-            Files.walkFileTree(sourceDir, new SimpleFileVisitor<Path>() {
-                @Override
-                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                    long modifiedTime = attrs.lastModifiedTime().toMillis();
-                    long timeDifference = currentTime - modifiedTime;
-
-                    // Check if the file was modified or created within the last 30 seconds
-                    if (timeDifference <= 30000) {
-                        Path targetFile = targetDir.resolve(sourceDir.relativize(file));
-                        Files.createDirectories(targetFile.getParent());
-                        Files.copy(file, targetFile, StandardCopyOption.REPLACE_EXISTING);
-                        log.info("Copying to " + targetFile);
-                    }
-                    return FileVisitResult.CONTINUE;
-                }
-            });
-        } catch (IOException ex) {
-            log.error("Error invoking exploded war incremental", ex);
-        }
-    }
-
     public void deleteBuildDir(String filePath) {
         try {
             Path fileToDelete = Paths.get(filePath);
             Files.walkFileTree(fileToDelete, EnumSet.of(FileVisitOption.FOLLOW_LINKS), Integer.MAX_VALUE, new DeleteFileVisitor());
         } catch (IOException e) {
             log.error("Error occurred while deleting the file: ", e);
+        }
+    }
+    
+    private void updateTitle(String state) {
+        if (start.getDriver() != null) {
+            ((JavascriptExecutor) start.getDriver()).executeScript(String.format("document.title = '%s %s';", state, project.getName()));
         }
     }
 

@@ -62,4 +62,6 @@ public interface Configuration {
 
     String MICRO_THREAD_NAME = "PayaraMicroThread";
     String MICRO_READY_MESSAGE = "ready in";
+    
+    String PAYARA_MICRO_URLS = "Payara Micro URLs:";
 }

@@ -60,7 +60,15 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static fish.payara.maven.plugins.micro.Configuration.*;
+import java.awt.Desktop;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.Path;
+import java.util.Properties;
+import org.openqa.selenium.JavascriptException;
+import org.openqa.selenium.JavascriptExecutor;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.devtools.DevTools;
 
 /**
  * Run mojo that executes payara-micro
@@ -108,6 +116,12 @@ public class StartMojo extends BasePayaraMojo {
     @Parameter(property = "autoDeploy", defaultValue = "false")
     protected boolean autoDeploy;
 
+    @Parameter(property = "liveReload", defaultValue = "false")
+    protected boolean liveReload;
+
+    @Parameter(property = "browser")
+    protected String browser;
+
     /**
      * Attach a debugger. If set to "true", the process will suspend and wait
      * for a debugger to attach on port 5005. If set to other value, will be
@@ -154,7 +168,9 @@ public class StartMojo extends BasePayaraMojo {
     private final ThreadGroup threadGroup;
     private Toolchain toolchain;
     private AutoDeployHandler autoDeployHandler;
-    private List<String> rebootOnChange = new ArrayList<>();
+    private final List<String> rebootOnChange = new ArrayList<>();
+    private WebDriver driver;
+    private String payaraMicroURL;
 
     StartMojo() {
         threadGroup = new ThreadGroup(MICRO_THREAD_NAME);
@@ -265,7 +281,7 @@ public class StartMojo extends BasePayaraMojo {
                 for (Option option : commandLineOptions) {
                     if (option.getKey() != null) {
                         actualArgs.add(indice++, option.getKey());
-                        if(autoDeploy
+                        if (autoDeploy
                                 && option.getValue() != null
                                 && !option.getValue().isEmpty()
                                 && (option.getKey().equals(PRE_BOOT)
@@ -324,9 +340,9 @@ public class StartMojo extends BasePayaraMojo {
         } else {
             Runtime.getRuntime().addShutdownHook(getShutdownHook());
             microProcessorThread.run();
-            
-            if(autoDeploy) {
-                while(autoDeployHandler.isAlive()) {
+
+            if (autoDeploy) {
+                while (autoDeployHandler.isAlive()) {
                     microProcessorThread.run();
                 }
             }
@@ -346,6 +362,19 @@ public class StartMojo extends BasePayaraMojo {
             }
             if (autoDeployHandler != null) {
                 autoDeployHandler.stop();
+            }
+            if (driver != null) {
+                try {
+                    saveProperties(payaraMicroURL, driver.getCurrentUrl());
+                } catch (Exception ex) {
+                        getLog().debug(ex);
+                } finally {
+                     try {
+                        driver.quit();
+                    } catch (Throwable t) {
+                        getLog().debug(t);
+                    }
+                }
             }
         });
     }
@@ -469,7 +498,52 @@ public class StartMojo extends BasePayaraMojo {
     private void redirectStreamToGivenOutputStream(final InputStream inputStream, final OutputStream outputStream) {
         Thread thread = new Thread(threadGroup, () -> {
             try {
-                IOUtils.copy(inputStream, outputStream);
+                if (liveReload && outputStream instanceof PrintStream) {
+                    StringBuilder sb = new StringBuilder();
+                    String line;
+                    BufferedReader br = new BufferedReader(new InputStreamReader(inputStream));
+                    PrintStream printStream = (PrintStream) outputStream;
+
+                    while ((line = br.readLine()) != null) {
+                        sb.append(line);
+                        printStream.println(line);
+                        if (line.contains(PAYARA_MICRO_URLS)) {
+                            line = br.readLine();
+                            if (line != null) {
+                                sb.append(line);
+                                printStream.println(line);
+                                payaraMicroURL = line.trim();
+                                getLog().debug("PayaraMicroURL " + payaraMicroURL);
+                                try {
+                                    driver = WebDriverFactory.createWebDriver(browser);
+                                    driver.get(getProperty(payaraMicroURL, payaraMicroURL));
+                                    driver.navigate().refresh();
+                                } catch (Exception ex) {
+                                    getLog().debug("Error in running ChromeDriver:" + ex.getMessage());
+                                    try {
+                                        if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
+                                            Desktop.getDesktop().browse(new URI(payaraMicroURL));
+                                        }
+                                    } catch (IOException | URISyntaxException e) {
+                                        getLog().debug("Error in running Desktop browse:" + e.getMessage());
+                                    } finally {
+                                        driver = null;
+                                    }
+                                }
+                            }
+                        } else if (payaraMicroURL != null
+                                && driver != null
+                                && line.contains("was successfully deployed")) {
+                            try {
+                                driver.navigate().refresh();
+                            } catch (Exception ex) {
+                                getLog().debug("Error in refreshing with ChromeDriver:" + ex.getMessage());
+                            }
+                        }
+                    }
+                } else {
+                    IOUtils.copy(inputStream, outputStream);
+                }
             } catch (IOException e) {
                 getLog().error("Error occurred while reading stream", e);
             }
@@ -477,4 +551,78 @@ public class StartMojo extends BasePayaraMojo {
         thread.setDaemon(false);
         thread.start();
     }
+
+    public static void saveProperties(String key, String value) {
+        String tempDir = System.getProperty("java.io.tmpdir");
+
+        // File path in the system's default temporary directory to store the properties
+        String filePath = tempDir + File.separator + "payara-maven-config.properties";
+
+        Properties prop = new Properties();
+        OutputStream output = null;
+
+        try {
+            output = new FileOutputStream(filePath);
+
+            // Set the key-value pair
+            prop.setProperty(key, value);
+
+            // Save properties to the file
+            prop.store(output, null);
+        } catch (IOException io) {
+            io.printStackTrace();
+        } finally {
+            if (output != null) {
+                try {
+                    output.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    public static String getProperty(String key, String defaultValue) {
+
+        String tempDir = System.getProperty("java.io.tmpdir");
+
+        // File path in the system's default temporary directory to store the properties
+        String filePath = tempDir + File.separator + "payara-maven-config.properties";
+        Properties prop = new Properties();
+        InputStream input = null;
+        String value = null;
+
+        try {
+            File file = new File(filePath);
+            if (!file.exists()) {
+                saveProperties(key, key);
+            }
+            input = new FileInputStream(filePath);
+
+            // Load the properties file
+            prop.load(input);
+
+            // Get the value for the provided key
+            value = prop.getProperty(key);
+            if (value == null) {
+                value = defaultValue;
+            }
+        } catch (IOException io) {
+            io.printStackTrace();
+        } finally {
+            if (input != null) {
+                try {
+                    input.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return value;
+    }
+
+    public WebDriver getDriver() {
+        return driver;
+    }
+
 }
