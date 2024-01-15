@@ -207,9 +207,23 @@ public class AutoDeployHandler implements Runnable {
                     key.reset();
                 }
             }
-        } catch (IOException | InterruptedException ex) {
+        } catch (Exception ex) {
             log.error(ex);
+            if (hasInotifyLimitReachedException(ex)) {
+                log.error("Error starting WatchService. User limit of inotify instances reached or too many open files.");
+                log.error("Please increase the max_user_watches configuration.");
+            }
         }
+    }
+
+    private boolean hasInotifyLimitReachedException(Throwable ex) {
+        while (ex != null) {
+            if (ex instanceof IOException && ex.getMessage().contains("User limit of inotify instances reached")) {
+                return true;
+            }
+            ex = ex.getCause();
+        }
+        return false;
     }
 
     private void registerAllDirectories(Path path) throws IOException {
