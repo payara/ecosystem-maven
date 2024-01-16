@@ -48,7 +48,7 @@ import org.apache.maven.plugins.annotations.Mojo;
  */
 @Mojo(name = "dev")
 public class DevMojo extends StartMojo {
-
+    
     @Override
     public void execute() throws MojoExecutionException {
         liveReload = true;
@@ -58,6 +58,7 @@ public class DevMojo extends StartMojo {
         if (trimLog == null) {
             trimLog = !getLog().isDebugEnabled();
         }
+        keepState = true;
         super.execute();
     }
 }

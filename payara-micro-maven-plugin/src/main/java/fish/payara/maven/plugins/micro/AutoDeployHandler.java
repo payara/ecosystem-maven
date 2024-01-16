@@ -305,6 +305,7 @@ public class AutoDeployHandler implements Runnable {
                     } else {
                         updateTitle("Reloading");
                         ReloadMojo reloadMojo = new ReloadMojo(project, log);
+                        reloadMojo.setKeepState(start.keepState);
                         if (start.hotDeploy) {
                             Path rootPath = project.getBasedir().toPath();
                             List<String> sourcesChanged = new ArrayList<>();

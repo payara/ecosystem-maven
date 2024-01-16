@@ -111,6 +111,9 @@ public class StartMojo extends BasePayaraMojo {
 
     @Parameter(property = "autoDeploy", defaultValue = "false")
     protected boolean autoDeploy;
+    
+    @Parameter(property = "keepState", defaultValue = "false")
+    protected boolean keepState;
 
     @Parameter(property = "liveReload", defaultValue = "false")
     protected boolean liveReload;
