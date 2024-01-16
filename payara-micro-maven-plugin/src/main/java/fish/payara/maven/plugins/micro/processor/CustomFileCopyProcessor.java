@@ -62,7 +62,8 @@ public class CustomFileCopyProcessor extends BaseProcessor {
                                 element(name("includes"), 
                                     element(name("include"), "domain.xml"),
                                     element(name("include"), "hazelcast-config.xml"),
-                                    element(name("include"), "keystore.jks"), 
+                                    element(name("include"), "keystore.jks"),
+                                    element(name("include"), "keystore.p12"),
                                     element(name("include"), "login.conf"),
                                     element(name("include"), "logging.properties"),
                                     element(name("include"), "metrics.xml")
