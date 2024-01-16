@@ -533,12 +533,15 @@ public class StartMojo extends BasePayaraMojo {
                             }
                         } else if (payaraMicroURL != null
                                 && driver != null
-                                && line.contains("was successfully deployed")) {
+                                && line.contains(APP_DEPLOYED)) {
                             try {
                                 driver.navigate().refresh();
                             } catch (Exception ex) {
                                 getLog().debug("Error in refreshing with ChromeDriver:" + ex.getMessage());
                             }
+                        } else if (autoDeploy
+                                && line.contains(INOTIFY_USER_LIMIT_REACHED_MESSAGE)) {
+                                getLog().error(WATCH_SERVICE_ERROR_MESSAGE);
                         }
                     }
                 } else {

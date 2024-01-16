@@ -38,6 +38,8 @@
  */
 package fish.payara.maven.plugins.micro;
 
+import static fish.payara.maven.plugins.micro.Configuration.INOTIFY_USER_LIMIT_REACHED_MESSAGE;
+import static fish.payara.maven.plugins.micro.Configuration.WATCH_SERVICE_ERROR_MESSAGE;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -50,7 +52,6 @@ import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
-import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardWatchEventKinds;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
@@ -59,7 +60,6 @@ import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
@@ -210,15 +210,14 @@ public class AutoDeployHandler implements Runnable {
         } catch (Exception ex) {
             log.error(ex);
             if (hasInotifyLimitReachedException(ex)) {
-                log.error("Error starting WatchService. User limit of inotify instances reached or too many open files.");
-                log.error("Please increase the max_user_watches configuration.");
+                log.error(WATCH_SERVICE_ERROR_MESSAGE);
             }
         }
     }
 
     private boolean hasInotifyLimitReachedException(Throwable ex) {
         while (ex != null) {
-            if (ex instanceof IOException && ex.getMessage().contains("User limit of inotify instances reached")) {
+            if (ex instanceof IOException && ex.getMessage().contains(INOTIFY_USER_LIMIT_REACHED_MESSAGE)) {
                 return true;
             }
             ex = ex.getCause();
