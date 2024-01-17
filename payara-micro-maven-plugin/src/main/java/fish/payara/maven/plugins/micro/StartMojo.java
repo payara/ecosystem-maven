@@ -513,25 +513,27 @@ public class StartMojo extends BasePayaraMojo {
                                 sb.append(line);
                                 printStream.println(line);
                                 payaraMicroURL = line.trim();
-                                getLog().debug("PayaraMicroURL " + payaraMicroURL);
-                                try {
-                                    driver = WebDriverFactory.createWebDriver(browser);
-                                    driver.get(getProperty(payaraMicroURL, payaraMicroURL));
-                                    driver.navigate().refresh();
-                                } catch (Exception ex) {
-                                    getLog().debug("Error in running ChromeDriver:" + ex.getMessage());
+                                if (!payaraMicroURL.isEmpty()) {
                                     try {
-                                        if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
-                                            Desktop.getDesktop().browse(new URI(payaraMicroURL));
+                                        driver = WebDriverFactory.createWebDriver(browser);
+                                        driver.get(getProperty(payaraMicroURL, payaraMicroURL));
+                                        driver.navigate().refresh();
+                                    } catch (Exception ex) {
+                                        getLog().debug("Error in running ChromeDriver:" + ex.getMessage());
+                                        try {
+                                            if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
+                                                Desktop.getDesktop().browse(new URI(payaraMicroURL));
+                                            }
+                                        } catch (IOException | URISyntaxException e) {
+                                            getLog().debug("Error in running Desktop browse:" + e.getMessage());
+                                        } finally {
+                                            driver = null;
                                         }
-                                    } catch (IOException | URISyntaxException e) {
-                                        getLog().debug("Error in running Desktop browse:" + e.getMessage());
-                                    } finally {
-                                        driver = null;
                                     }
                                 }
                             }
                         } else if (payaraMicroURL != null
+                                && !payaraMicroURL.isEmpty()
                                 && driver != null
                                 && line.contains(APP_DEPLOYED)) {
                             try {

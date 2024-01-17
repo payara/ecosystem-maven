@@ -59,7 +59,6 @@ public class WebDriverFactory {
     public static WebDriver createWebDriver(String browser) {
         WebDriver driver = null;
         if (browser == null) {
-            System.out.println("broweser null" );
             browser = getDefaultBrowser();
         }
 
@@ -101,10 +100,8 @@ public class WebDriverFactory {
 
     public static String getDefaultBrowser() {
         if (isChromeBrowserInstalled()) {
-            System.out.println("Chrome found");
             return "chrome";
         } else if (isFirefoxBrowserInstalled()) {
-            System.out.println("firefox found");
             return "firefox";
         } else {
             String os = System.getProperty("os.name").toLowerCase();
