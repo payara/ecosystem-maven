@@ -62,4 +62,10 @@ public interface Configuration {
 
     String MICRO_THREAD_NAME = "PayaraMicroThread";
     String MICRO_READY_MESSAGE = "ready in";
+    
+    String PAYARA_MICRO_URLS = "Payara Micro URLs:";
+    String APP_DEPLOYED = "was successfully deployed";
+    String INOTIFY_USER_LIMIT_REACHED_MESSAGE = "User limit of inotify instances reached";
+    String WATCH_SERVICE_ERROR_MESSAGE = "Error starting WatchService. User limit of inotify instances reached or too many open files. Please increase the max_user_watches configuration.";
+
 }

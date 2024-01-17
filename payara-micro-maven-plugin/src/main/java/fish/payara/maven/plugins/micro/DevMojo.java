@@ -51,6 +51,7 @@ public class DevMojo extends StartMojo {
 
     @Override
     public void execute() throws MojoExecutionException {
+        liveReload = true;
         deployWar = true;
         exploded = true;
         autoDeploy = true;
