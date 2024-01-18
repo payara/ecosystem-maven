@@ -118,8 +118,8 @@ public class StartMojo extends BasePayaraMojo {
     @Parameter(property = "browser")
     protected String browser;
 
-    @Parameter(property = "trimLog", defaultValue = "false")
-    protected boolean trimLog;
+    @Parameter(property = "trimLog")
+    protected Boolean trimLog;
 
     /**
      * Attach a debugger. If set to "true", the process will suspend and wait
@@ -178,6 +178,9 @@ public class StartMojo extends BasePayaraMojo {
 
     @Override
     public void execute() throws MojoExecutionException {
+        if(trimLog == null) {
+            trimLog = false;
+        }
         if (autoDeploy && autoDeployHandler == null) {
             autoDeployHandler = new AutoDeployHandler(this, webappDirectory);
             Thread devModeThread = new Thread(autoDeployHandler);
@@ -504,7 +507,6 @@ public class StartMojo extends BasePayaraMojo {
                     PrintStream printStream = (PrintStream) outputStream;
 
                     while ((line = br.readLine()) != null) {
-                        printStream.println(line);
                         printStream.println(trimLog? LogUtils.trimLog(line):line);
                         if (line.contains(PAYARA_MICRO_URLS)) {
                             line = br.readLine();

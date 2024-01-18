@@ -55,7 +55,9 @@ public class DevMojo extends StartMojo {
         deployWar = true;
         exploded = true;
         autoDeploy = true;
-        trimLog = !getLog().isDebugEnabled();
+        if (trimLog == null) {
+            trimLog = !getLog().isDebugEnabled();
+        }
         super.execute();
     }
 }
