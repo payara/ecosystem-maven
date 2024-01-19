@@ -109,14 +109,14 @@ public class StartMojo extends BasePayaraMojo {
     @Parameter(property = "exploded", defaultValue = "false")
     protected boolean exploded;
 
-    @Parameter(property = "autoDeploy", defaultValue = "false")
-    protected boolean autoDeploy;
+    @Parameter(property = "autoDeploy")
+    protected Boolean autoDeploy;
     
-    @Parameter(property = "keepState", defaultValue = "false")
-    protected boolean keepState;
+    @Parameter(property = "keepState")
+    protected Boolean keepState;
 
-    @Parameter(property = "liveReload", defaultValue = "false")
-    protected boolean liveReload;
+    @Parameter(property = "liveReload")
+    protected Boolean liveReload;
 
     @Parameter(property = "browser")
     protected String browser;
@@ -183,6 +183,15 @@ public class StartMojo extends BasePayaraMojo {
     public void execute() throws MojoExecutionException {
         if(trimLog == null) {
             trimLog = false;
+        }
+        if (autoDeploy == null) {
+            autoDeploy = false;
+        }
+        if (liveReload == null) {
+            liveReload = false;
+        }
+        if (keepState == null) {
+            keepState = false;
         }
         if (autoDeploy && autoDeployHandler == null) {
             autoDeployHandler = new AutoDeployHandler(this, webappDirectory);
