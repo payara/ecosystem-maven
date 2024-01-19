@@ -82,7 +82,7 @@ public class StartMojo extends BasePayaraMojo {
     @Parameter(property = "javaPath")
     private String javaPath;
 
-    @Parameter(property = "payaraVersion", defaultValue = "6.2023.1")
+    @Parameter(property = "payaraVersion", defaultValue = "6.2023.12")
     private String payaraVersion;
 
     @Parameter(property = "payaraMicroAbsolutePath")
