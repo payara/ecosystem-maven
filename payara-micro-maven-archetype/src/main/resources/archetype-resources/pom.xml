@@ -98,7 +98,7 @@
             <plugin>
                 <groupId>fish.payara.maven.plugins</groupId>
                 <artifactId>payara-micro-maven-plugin</artifactId>
-                <version>2.0</version>
+                <version>2.1</version>
                 <configuration>
                     <payaraVersion>${version.payara}</payaraVersion>
 #if (${deployWar} == "true")
