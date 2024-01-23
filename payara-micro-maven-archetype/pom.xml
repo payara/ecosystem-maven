@@ -42,7 +42,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>fish.payara.maven.archetypes</groupId>
     <artifactId>payara-micro-maven-archetype</artifactId>
-    <version>2.1</version>
+    <version>2.2-SNAPSHOT</version>
     <packaging>maven-archetype</packaging>
     <name>Payara Micro Archetype</name>
     <description>Archetype for Payara Micro application.</description>
@@ -66,15 +66,6 @@
             <name>Gaurav Gupta</name>
             <organization>Payara</organization>
             <timezone>GMT+5.5</timezone>
-            <roles>
-                <role>developer</role>
-            </roles>
-        </developer>
-        <developer>
-            <id>mulderbaba</id>
-            <name>Mert Caliskan</name>
-            <organization>Payara</organization>
-            <timezone>GMT+2</timezone>
             <roles>
                 <role>developer</role>
             </roles>
@@ -222,7 +213,7 @@
                         <configuration>
                             <serverId>ossrh</serverId>
                             <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-                            <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                            <autoReleaseAfterClose>false</autoReleaseAfterClose>
                         </configuration>
                     </plugin>
                 </plugins>
