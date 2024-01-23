@@ -63,6 +63,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -305,6 +306,7 @@ public class AutoDeployHandler implements Runnable {
                     } else {
                         updateTitle("Reloading");
                         ReloadMojo reloadMojo = new ReloadMojo(project, log);
+                        reloadMojo.setKeepState(start.keepState);
                         if (start.hotDeploy) {
                             Path rootPath = project.getBasedir().toPath();
                             List<String> sourcesChanged = new ArrayList<>();
@@ -344,11 +346,9 @@ public class AutoDeployHandler implements Runnable {
             log.error("Error occurred while deleting the file: ", e);
         }
     }
-    
+
     private void updateTitle(String state) {
-        if (start.getDriver() != null) {
-            ((JavascriptExecutor) start.getDriver()).executeScript(String.format("document.title = '%s %s';", state, project.getName()));
-        }
+        WebDriverFactory.executeScript(String.format("document.title = '%s %s';", state, project.getName()), start.getDriver(), log);
     }
 
     class DeleteFileVisitor extends SimpleFileVisitor<Path> {

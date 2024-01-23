@@ -71,6 +71,9 @@ public class ReloadMojo extends BasePayaraMojo {
 
     @Parameter(property = "metadataChanged")
     private boolean metadataChanged;
+    
+    @Parameter(property = "keepState", defaultValue = "false")
+    protected boolean keepState;
 
     public ReloadMojo(MavenProject mavenProject, Log log) {
         this.mavenProject = mavenProject;
@@ -95,14 +98,19 @@ public class ReloadMojo extends BasePayaraMojo {
         }
         File reloadFile = new File(explodedDir, RELOAD_FILE);
         getLog().info("Reloading " + explodedDir);
-        if (hotDeploy) {
+        if (hotDeploy || keepState) {
             Properties props = new Properties();
-            props.setProperty("hotdeploy", "true");
-            if (metadataChanged) {
-                props.setProperty("metadatachanged", "true");
+            if (keepState) {
+                props.setProperty("keepState", Boolean.TRUE.toString());
             }
-            if (sourcesChanged != null && !sourcesChanged.isEmpty()) {
-                props.setProperty("sourceschanged", sourcesChanged);
+            if (hotDeploy) {
+                props.setProperty("hotdeploy", Boolean.TRUE.toString());
+                if (metadataChanged) {
+                    props.setProperty("metadatachanged", Boolean.TRUE.toString());
+                }
+                if (sourcesChanged != null && !sourcesChanged.isEmpty()) {
+                    props.setProperty("sourceschanged", sourcesChanged);
+                }
             }
             try (FileOutputStream outputStrem = new FileOutputStream(reloadFile)) {
                 props.store(outputStrem, null);
@@ -131,6 +139,14 @@ public class ReloadMojo extends BasePayaraMojo {
 
     public void setHotDeploy(boolean hotDeploy) {
         this.hotDeploy = hotDeploy;
+    }
+
+    public boolean isKeepState() {
+        return keepState;
+    }
+
+    public void setKeepState(boolean keepState) {
+        this.keepState = keepState;
     }
 
     public String getSourcesChanged() {

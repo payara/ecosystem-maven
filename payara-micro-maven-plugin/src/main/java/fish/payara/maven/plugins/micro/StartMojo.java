@@ -109,11 +109,14 @@ public class StartMojo extends BasePayaraMojo {
     @Parameter(property = "exploded", defaultValue = "false")
     protected boolean exploded;
 
-    @Parameter(property = "autoDeploy", defaultValue = "false")
-    protected boolean autoDeploy;
+    @Parameter(property = "autoDeploy")
+    protected Boolean autoDeploy;
+    
+    @Parameter(property = "keepState")
+    protected Boolean keepState;
 
-    @Parameter(property = "liveReload", defaultValue = "false")
-    protected boolean liveReload;
+    @Parameter(property = "liveReload")
+    protected Boolean liveReload;
 
     @Parameter(property = "browser")
     protected String browser;
@@ -180,6 +183,15 @@ public class StartMojo extends BasePayaraMojo {
     public void execute() throws MojoExecutionException {
         if(trimLog == null) {
             trimLog = false;
+        }
+        if (autoDeploy == null) {
+            autoDeploy = false;
+        }
+        if (liveReload == null) {
+            liveReload = false;
+        }
+        if (keepState == null) {
+            keepState = false;
         }
         if (autoDeploy && autoDeployHandler == null) {
             autoDeployHandler = new AutoDeployHandler(this, webappDirectory);
@@ -518,13 +530,13 @@ public class StartMojo extends BasePayaraMojo {
                                         driver = WebDriverFactory.createWebDriver(browser);
                                         driver.get(PropertiesUtils.getProperty(payaraMicroURL, payaraMicroURL));
                                     } catch (Exception ex) {
-                                        getLog().error("Error in running WebDriver:" + ex.getMessage());
+                                        getLog().error("Error in running WebDriver" , ex);
                                         try {
                                             if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
                                                 Desktop.getDesktop().browse(new URI(payaraMicroURL));
                                             }
                                         } catch (IOException | URISyntaxException e) {
-                                            getLog().error("Error in running Desktop browse:" + e.getMessage());
+                                            getLog().error("Error in running Desktop browse", e);
                                         } finally {
                                             driver = null;
                                         }
@@ -538,7 +550,7 @@ public class StartMojo extends BasePayaraMojo {
                             try {
                                 driver.navigate().refresh();
                             } catch (Exception ex) {
-                                getLog().error("Error in refreshing with WebDriver:" + ex.getMessage());
+                                getLog().debug("Error in refreshing with WebDriver", ex);
                             }
                         } else if (autoDeploy
                                 && line.contains(INOTIFY_USER_LIMIT_REACHED_MESSAGE)) {

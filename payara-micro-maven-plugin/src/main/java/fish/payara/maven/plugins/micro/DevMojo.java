@@ -40,6 +40,7 @@ package fish.payara.maven.plugins.micro;
 
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
 
 /**
  * Run mojo that executes payara-micro in dev mode
@@ -51,12 +52,19 @@ public class DevMojo extends StartMojo {
 
     @Override
     public void execute() throws MojoExecutionException {
-        liveReload = true;
         deployWar = true;
         exploded = true;
-        autoDeploy = true;
+        if (autoDeploy == null) {
+            autoDeploy = true;
+        }
+        if (liveReload == null) {
+            liveReload = true;
+        }
+        if (keepState == null) {
+            keepState = true;
+        }
         if (trimLog == null) {
-            trimLog = !getLog().isDebugEnabled();
+            trimLog = true;
         }
         super.execute();
     }

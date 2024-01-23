@@ -51,6 +51,9 @@ import org.openqa.selenium.firefox.FirefoxOptions;
 import org.openqa.selenium.safari.SafariDriver;
 import io.github.bonigarcia.wdm.WebDriverManager;
 import java.io.File;
+import org.apache.maven.plugin.logging.Log;
+import org.openqa.selenium.JavascriptExecutor;
+import org.openqa.selenium.WebDriverException;
 import org.openqa.selenium.ie.InternetExplorerDriver;
 import org.openqa.selenium.ie.InternetExplorerOptions;
 
@@ -163,6 +166,16 @@ public class WebDriverFactory {
                 }
             }
             return false;
+        }
+    }
+    
+    public static void executeScript(String script, WebDriver driver, Log log) {
+        if (driver != null && driver instanceof JavascriptExecutor) {
+            try {
+                ((JavascriptExecutor) driver).executeScript(script);
+            } catch(WebDriverException ex) {
+                log.debug(ex);
+            }
         }
     }
 }
