@@ -64,6 +64,10 @@ import java.awt.Desktop;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.openqa.selenium.WebDriver;
 
 /**
@@ -111,7 +115,7 @@ public class StartMojo extends BasePayaraMojo {
 
     @Parameter(property = "autoDeploy")
     protected Boolean autoDeploy;
-    
+
     @Parameter(property = "keepState")
     protected Boolean keepState;
 
@@ -134,7 +138,7 @@ public class StartMojo extends BasePayaraMojo {
     protected String debug;
 
     @Parameter(property = "contextRoot")
-    private String contextRoot;
+    protected String contextRoot;
 
     @Parameter(property = "hotDeploy")
     protected boolean hotDeploy;
@@ -143,7 +147,7 @@ public class StartMojo extends BasePayaraMojo {
      * The directory where the webapp is built, default value is exploded war.
      */
     @Parameter(defaultValue = "${project.build.directory}/${project.build.finalName}", required = true)
-    private File webappDirectory;
+    protected File webappDirectory;
 
     /**
      * Property passed by Apache NetBeans IDE to set contextRoot of the
@@ -157,7 +161,7 @@ public class StartMojo extends BasePayaraMojo {
     private boolean copySystemProperties;
 
     @Parameter(property = "commandLineOptions")
-    private List<Option> commandLineOptions;
+    protected List<Option> commandLineOptions;
 
     @Parameter(property = "javaCommandLineOptions")
     private List<Option> javaCommandLineOptions;
@@ -174,6 +178,8 @@ public class StartMojo extends BasePayaraMojo {
     private final List<String> rebootOnChange = new ArrayList<>();
     private WebDriver driver;
     private String payaraMicroURL;
+    private String hostIp, hostPort;
+    private final Map<String, String> contextRoots = new HashMap<>();
 
     StartMojo() {
         threadGroup = new ThreadGroup(MICRO_THREAD_NAME);
@@ -181,7 +187,7 @@ public class StartMojo extends BasePayaraMojo {
 
     @Override
     public void execute() throws MojoExecutionException {
-        if(trimLog == null) {
+        if (trimLog == null) {
             trimLog = false;
         }
         if (autoDeploy == null) {
@@ -315,7 +321,7 @@ public class StartMojo extends BasePayaraMojo {
             }
 
             try {
-                getLog().debug("Starting Payara Micro with the these arguments: " + actualArgs);
+                getLog().info("Starting Payara Micro with the these arguments: " + actualArgs);
                 final Runtime re = Runtime.getRuntime();
                 microProcess = re.exec(actualArgs.toArray(new String[0]));
 
@@ -381,10 +387,10 @@ public class StartMojo extends BasePayaraMojo {
             if (driver != null) {
                 try {
                     PropertiesUtils.saveProperties(payaraMicroURL, driver.getCurrentUrl());
-                } catch (Exception ex) {
-                        getLog().debug(ex);
+                } catch (Throwable t) {
+                    getLog().debug(t);
                 } finally {
-                     try {
+                    try {
                         driver.quit();
                     } catch (Throwable t) {
                         getLog().debug(t);
@@ -453,8 +459,12 @@ public class StartMojo extends BasePayaraMojo {
         return payaraMicroArtifact.getFile().getAbsolutePath();
     }
 
+    protected String getBaseDir() {
+        return mavenProject.getBuild().getDirectory();
+    }
+
     private String evaluateProjectArtifactAbsolutePath(String extension) {
-        String projectJarAbsolutePath = mavenProject.getBuild().getDirectory() + File.separator;
+        String projectJarAbsolutePath = getBaseDir() + File.separator;
         projectJarAbsolutePath += evaluateExecutorName(extension);
         return projectJarAbsolutePath;
     }
@@ -519,30 +529,27 @@ public class StartMojo extends BasePayaraMojo {
                     PrintStream printStream = (PrintStream) outputStream;
 
                     while ((line = br.readLine()) != null) {
-                        printStream.println(trimLog? LogUtils.trimLog(line):line);
-                        if (line.contains(PAYARA_MICRO_URLS)) {
-                            line = br.readLine();
-                            if (line != null) {
-                                payaraMicroURL = line.trim();
-                                printStream.println(LogUtils.highlightURL(payaraMicroURL));
-                                if (!payaraMicroURL.isEmpty()) {
-                                    try {
-                                        driver = WebDriverFactory.createWebDriver(browser);
-                                        driver.get(PropertiesUtils.getProperty(payaraMicroURL, payaraMicroURL));
-                                    } catch (Exception ex) {
-                                        getLog().error("Error in running WebDriver" , ex);
-                                        try {
-                                            if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
-                                                Desktop.getDesktop().browse(new URI(payaraMicroURL));
-                                            }
-                                        } catch (IOException | URISyntaxException e) {
-                                            getLog().error("Error in running Desktop browse", e);
-                                        } finally {
-                                            driver = null;
-                                        }
-                                    }
-                                }
+                        printStream.println(trimLog ? LogUtils.trimLog(line) : line);
+                        if (hostIp == null && line.endsWith(INSTANCE_CONFIGURATION)) {
+                            parseInstanceConfig(br, printStream);
+                        } else if (payaraMicroURL == null && line.contains(PAYARA_MICRO_URLS)) {
+                            parseMicroUrl(br, printStream);
+                        } else if (line.contains(APP_DEPLOYMENT_FAILED)) {
+                            WebDriverFactory.updateTitle(APP_DEPLOYMENT_FAILED_MESSAGE, getEnvironment().getMavenProject(), driver, this.getLog());
+                        } else if (payaraMicroURL != null
+                                && payaraMicroURL.isEmpty()
+                                && driver == null
+                                && line.contains(LOADING_APPLICATION)) {
+                            parseContextRoot(line);
+                        } else if (payaraMicroURL != null
+                                && payaraMicroURL.isEmpty()
+                                && driver == null
+                                && line.contains(APP_DEPLOYED)) {
+                            String appName = parseDeployedApp(line);
+                            if (contextRoot == null) {
+                                contextRoot = contextRoots.get(appName);
                             }
+                            openApp();
                         } else if (payaraMicroURL != null
                                 && !payaraMicroURL.isEmpty()
                                 && driver != null
@@ -554,7 +561,7 @@ public class StartMojo extends BasePayaraMojo {
                             }
                         } else if (autoDeploy
                                 && line.contains(INOTIFY_USER_LIMIT_REACHED_MESSAGE)) {
-                                getLog().error(WATCH_SERVICE_ERROR_MESSAGE);
+                            getLog().error(WATCH_SERVICE_ERROR_MESSAGE);
                         }
                     }
                 } else {
@@ -566,6 +573,84 @@ public class StartMojo extends BasePayaraMojo {
         });
         thread.setDaemon(false);
         thread.start();
+    }
+
+    private void openApp() {
+        try {
+            driver = WebDriverFactory.createWebDriver(browser);
+            String url = PropertiesUtils.getProperty(payaraMicroURL, payaraMicroURL);
+            if ((url == null || url.isEmpty()) && hostIp != null && hostPort != null) {
+                url = "http://" + hostIp + ":" + hostPort;
+                if (contextRoot != null) {
+                    url = url + contextRoot;
+                }
+            }
+            driver.get(url);
+        } catch (Exception ex) {
+            getLog().error("Error in running WebDriver", ex);
+            try {
+                if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
+                    Desktop.getDesktop().browse(new URI(payaraMicroURL));
+                }
+            } catch (IOException | URISyntaxException e) {
+                getLog().error("Error in running Desktop browse", e);
+            } finally {
+                driver = null;
+            }
+        }
+    }
+
+    private void parseInstanceConfig(BufferedReader br, PrintStream printStream) throws IOException {
+        String hostIpLine = br.readLine();
+        String hostPortLine = br.readLine();
+        printStream.println(LogUtils.highlight(hostIpLine));
+        printStream.println(LogUtils.highlight(hostPortLine));
+        // Extract IP address
+        Pattern ipRegex = Pattern.compile(HOST_IP_PATTERN);
+        Matcher ipMatcher = ipRegex.matcher(hostIpLine);
+        if (ipMatcher.find()) {
+            hostIp = ipMatcher.group(1);
+        }
+
+        // Extract port
+        Pattern portRegex = Pattern.compile(HOST_PORT_PATTERN);
+        Matcher portMatcher = portRegex.matcher(hostPortLine);
+        if (portMatcher.find()) {
+            hostPort = portMatcher.group(1);
+        }
+    }
+
+    private void parseMicroUrl(BufferedReader br, PrintStream printStream) throws IOException {
+        String line = br.readLine();
+        if (line != null) {
+            payaraMicroURL = line.trim();
+            printStream.println(LogUtils.highlight(payaraMicroURL));
+            if (!payaraMicroURL.isEmpty()) {
+                openApp();
+            }
+        }
+    }
+
+    private void parseContextRoot(String line) {
+        Pattern appLoadingPattern = Pattern.compile(LOADING_APPLICATION_PATTERN);
+        Matcher appLoadingMatcher = appLoadingPattern.matcher(line);
+
+        if (appLoadingMatcher.find()) {
+            String applicationName = appLoadingMatcher.group(1);
+            String appContextRoot = appLoadingMatcher.group(2);
+            contextRoots.put(applicationName, appContextRoot);
+        }
+    }
+
+    private String parseDeployedApp(String line) {
+        Pattern deploymentPatternO = Pattern.compile(APP_DEPLOYED_PATTERN);
+        Matcher deploymentMatcher = deploymentPatternO.matcher(line);
+
+        if (deploymentMatcher.find()) {
+            String applicationName = deploymentMatcher.group(1);
+            return applicationName;
+        }
+        return null;
     }
 
     public WebDriver getDriver() {

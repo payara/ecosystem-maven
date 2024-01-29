@@ -52,6 +52,7 @@ import org.openqa.selenium.safari.SafariDriver;
 import io.github.bonigarcia.wdm.WebDriverManager;
 import java.io.File;
 import org.apache.maven.plugin.logging.Log;
+import org.apache.maven.project.MavenProject;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriverException;
 import org.openqa.selenium.ie.InternetExplorerDriver;
@@ -177,5 +178,16 @@ public class WebDriverFactory {
                 log.debug(ex);
             }
         }
+    }
+public static void updateTitle(String state, MavenProject project, WebDriver driver, Log log) {
+        WebDriverFactory.executeScript(String.format("document.title = '%s %s';", state, project.getName()), driver, log);
+    }
+    public static String getCurrentTitle(WebDriver driver) {
+        if (driver != null) {
+            if (driver instanceof JavascriptExecutor) {
+                return (String) ((JavascriptExecutor) driver).executeScript("return document.title;");
+            }
+        }
+        return null;
     }
 }

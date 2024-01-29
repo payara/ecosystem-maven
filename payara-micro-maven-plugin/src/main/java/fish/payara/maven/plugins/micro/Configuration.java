@@ -64,9 +64,18 @@ public interface Configuration {
     String MICRO_THREAD_NAME = "PayaraMicroThread";
     String MICRO_READY_MESSAGE = "ready in";
     
+    // Log parser
+    String INSTANCE_CONFIGURATION = " \"Instance Configuration\": {";
+    String HOST_IP_PATTERN = "\"Host\": \"([^\"]+)\"";
+    String HOST_PORT_PATTERN = "\"Http Port\\(s\\)\": \"([^\"]+)\"";
     String PAYARA_MICRO_URLS = "Payara Micro URLs:";
+    String LOADING_APPLICATION = "Loading application";
+    String LOADING_APPLICATION_PATTERN = "Loading application \\[([^\\]]+)\\] at \\[([^\\]]+)\\]";
     String APP_DEPLOYED = "was successfully deployed";
+    String APP_DEPLOYED_PATTERN = "([^ ]+) was successfully deployed in ([^ ]+) milliseconds.";
     String INOTIFY_USER_LIMIT_REACHED_MESSAGE = "User limit of inotify instances reached";
     String WATCH_SERVICE_ERROR_MESSAGE = "Error starting WatchService. User limit of inotify instances reached or too many open files. Please increase the max_user_watches configuration.";
+    String APP_DEPLOYMENT_FAILED = "Exception while loading the app";
+    String APP_DEPLOYMENT_FAILED_MESSAGE = "Failed reloading";
 
 }

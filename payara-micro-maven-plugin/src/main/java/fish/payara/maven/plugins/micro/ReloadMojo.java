@@ -74,6 +74,9 @@ public class ReloadMojo extends BasePayaraMojo {
     
     @Parameter(property = "keepState", defaultValue = "false")
     protected boolean keepState;
+    
+    @Parameter(property = "devMode", defaultValue = "false")
+    protected boolean devMode;
 
     public ReloadMojo(MavenProject mavenProject, Log log) {
         this.mavenProject = mavenProject;
@@ -98,8 +101,11 @@ public class ReloadMojo extends BasePayaraMojo {
         }
         File reloadFile = new File(explodedDir, RELOAD_FILE);
         getLog().info("Reloading " + explodedDir);
-        if (hotDeploy || keepState) {
+        if (hotDeploy || keepState || devMode) {
             Properties props = new Properties();
+            if (devMode) {
+                props.setProperty("devMode", Boolean.TRUE.toString());
+            }
             if (keepState) {
                 props.setProperty("keepState", Boolean.TRUE.toString());
             }
@@ -147,6 +153,14 @@ public class ReloadMojo extends BasePayaraMojo {
 
     public void setKeepState(boolean keepState) {
         this.keepState = keepState;
+    }
+
+    public boolean isDevMode() {
+        return devMode;
+    }
+
+    public void setDevMode(boolean devMode) {
+        this.devMode = devMode;
     }
 
     public String getSourcesChanged() {

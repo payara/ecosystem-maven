@@ -98,6 +98,7 @@ public class AutoDeployHandler implements Runnable {
     private final List<Source> sourceUpdatedPending = new CopyOnWriteArrayList<>();
     private final AtomicBoolean stopRequested = new AtomicBoolean(false);
     private final Path buildPath;
+    private final static String RELOADING = "Reloading";
 
     public AutoDeployHandler(StartMojo start, File webappDirectory) {
         this.start = start;
@@ -198,10 +199,10 @@ public class AutoDeployHandler implements Runnable {
 
                         log.debug("sourceUpdatedPending: " + sourceUpdatedPending + " " + log);
                         if (!sourceUpdatedPending.isEmpty()) {
-                            updateTitle("Building");
+                            WebDriverFactory.updateTitle("Building", project, start.getDriver(), log);
                             log.info("Auto-build started for " + project.getName());
                             List<String> goalsList = updateGoalsList(fileDeletedOrRenamed, resourceModified, testClassesModified);
-                            log.debug("goalsList: " + goalsList);
+                            log.info("goalsList: " + goalsList);
                             executeBuildReloadTask(goalsList, rebootRequired);
                         }
                     }
@@ -291,8 +292,8 @@ public class AutoDeployHandler implements Runnable {
             try {
                 InvocationResult result = invoker.execute(request);
                 if (result.getExitCode() != 0) {
-                    log.debug("Auto-build failed with exit code: " + result.getExitCode());
-                    updateTitle("Build failed");
+                    log.info("Auto-build failed with exit code: " + result.getExitCode());
+                     WebDriverFactory.updateTitle("Build failed", project, start.getDriver(), log);
                 } else {
                     log.info("Auto-build successful for " + project.getName());
                     cleanPending.set(false);
@@ -300,12 +301,13 @@ public class AutoDeployHandler implements Runnable {
                     
                     if (rebootRequired) {
                         if (start.getMicroProcess().isAlive()) {
-                            updateTitle("Restarting");
+                            WebDriverFactory.updateTitle("Restarting", project, start.getDriver(), log);
                             start.getMicroProcess().destroy();
                         }
                     } else {
-                        updateTitle("Reloading");
+                        WebDriverFactory.updateTitle(RELOADING, project, start.getDriver(), log);
                         ReloadMojo reloadMojo = new ReloadMojo(project, log);
+                        reloadMojo.setDevMode(true);
                         reloadMojo.setKeepState(start.keepState);
                         if (start.hotDeploy) {
                             Path rootPath = project.getBasedir().toPath();
@@ -328,7 +330,6 @@ public class AutoDeployHandler implements Runnable {
                             log.error("Error invoking Reload", ex);
                         }
                     }
-
                     cleanPending.set(false);
                     sourceUpdatedPending.clear();
                 }
@@ -345,10 +346,6 @@ public class AutoDeployHandler implements Runnable {
         } catch (IOException e) {
             log.error("Error occurred while deleting the file: ", e);
         }
-    }
-
-    private void updateTitle(String state) {
-        WebDriverFactory.executeScript(String.format("document.title = '%s %s';", state, project.getName()), start.getDriver(), log);
     }
 
     class DeleteFileVisitor extends SimpleFileVisitor<Path> {
