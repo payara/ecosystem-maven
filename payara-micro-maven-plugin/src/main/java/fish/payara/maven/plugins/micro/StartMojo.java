@@ -584,6 +584,7 @@ public class StartMojo extends BasePayaraMojo {
                 if (contextRoot != null) {
                     url = url + contextRoot;
                 }
+                payaraMicroURL = url;
             }
             driver.get(url);
         } catch (Exception ex) {
