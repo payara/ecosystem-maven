@@ -577,7 +577,7 @@ public class StartMojo extends BasePayaraMojo {
 
     private void openApp() {
         try {
-            driver = WebDriverFactory.createWebDriver(browser);
+            driver = WebDriverFactory.createWebDriver(browser, getLog());
             String url = PropertiesUtils.getProperty(payaraMicroURL, payaraMicroURL);
             if ((url == null || url.isEmpty()) && hostIp != null && hostPort != null) {
                 url = "http://" + hostIp + ":" + hostPort;
