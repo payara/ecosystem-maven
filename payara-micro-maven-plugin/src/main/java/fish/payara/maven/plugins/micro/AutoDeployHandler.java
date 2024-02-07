@@ -197,7 +197,7 @@ public class AutoDeployHandler implements Runnable {
                             }
                         }
 
-                        log.debug("sourceUpdatedPending: " + sourceUpdatedPending + " " + log);
+                        log.debug("sourceUpdatedPending: " + sourceUpdatedPending);
                         if (!sourceUpdatedPending.isEmpty()) {
                             WebDriverFactory.updateTitle("Building", project, start.getDriver(), log);
                             log.info("Auto-build started for " + project.getName());
@@ -292,8 +292,10 @@ public class AutoDeployHandler implements Runnable {
             try {
                 InvocationResult result = invoker.execute(request);
                 if (result.getExitCode() != 0) {
-                    log.info("Auto-build failed with exit code: " + result.getExitCode());
-                     WebDriverFactory.updateTitle("Build failed", project, start.getDriver(), log);
+                    if (!buildReloadTask.isCancelled()) {
+                        log.info("Auto-build failed with exit code: " + result.getExitCode());
+                        WebDriverFactory.updateTitle("Build failed", project, start.getDriver(), log);
+                    }
                 } else {
                     log.info("Auto-build successful for " + project.getName());
                     cleanPending.set(false);
