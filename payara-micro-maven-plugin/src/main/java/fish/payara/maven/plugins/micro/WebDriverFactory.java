@@ -52,6 +52,7 @@ import org.openqa.selenium.safari.SafariDriver;
 import io.github.bonigarcia.wdm.WebDriverManager;
 import java.io.File;
 import org.apache.maven.plugin.logging.Log;
+import org.apache.maven.project.MavenProject;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriverException;
 import org.openqa.selenium.ie.InternetExplorerDriver;
@@ -59,10 +60,10 @@ import org.openqa.selenium.ie.InternetExplorerOptions;
 
 public class WebDriverFactory {
 
-    public static WebDriver createWebDriver(String browser) {
+    public static WebDriver createWebDriver(String browser, Log log) {
         WebDriver driver = null;
         if (browser == null) {
-            browser = getDefaultBrowser();
+            browser = getDefaultBrowser(log);
         }
 
         switch (browser.toLowerCase()) {
@@ -101,23 +102,29 @@ public class WebDriverFactory {
         return driver;
     }
 
-    public static String getDefaultBrowser() {
+    public static String getDefaultBrowser(Log log) {
         if (isChromeBrowserInstalled()) {
+            log.debug("Chrome browser found");
             return "chrome";
         } else if (isFirefoxBrowserInstalled()) {
+            log.debug("Firefox browser found");
             return "firefox";
         } else {
             String os = System.getProperty("os.name").toLowerCase();
             boolean isWindows = os.contains("win");
             boolean isMac = os.contains("mac");
 
+            String defaultBrowser;
             if (isWindows) {
-                return "edge";
+                defaultBrowser = "edge";
             } else if (isMac) {
-                return "safari";
+                defaultBrowser = "safari";
             } else {
-                return "firefox";
+                defaultBrowser = "firefox";
             }
+
+            log.debug("Setting default browser: " + defaultBrowser);
+            return defaultBrowser;
         }
     }
 
@@ -168,14 +175,27 @@ public class WebDriverFactory {
             return false;
         }
     }
-    
+
     public static void executeScript(String script, WebDriver driver, Log log) {
         if (driver != null && driver instanceof JavascriptExecutor) {
             try {
                 ((JavascriptExecutor) driver).executeScript(script);
-            } catch(WebDriverException ex) {
+            } catch (WebDriverException ex) {
                 log.debug(ex);
             }
         }
+    }
+
+    public static void updateTitle(String state, MavenProject project, WebDriver driver, Log log) {
+        WebDriverFactory.executeScript(String.format("document.title = '%s %s';", state, project.getName()), driver, log);
+    }
+
+    public static String getCurrentTitle(WebDriver driver) {
+        if (driver != null) {
+            if (driver instanceof JavascriptExecutor) {
+                return (String) ((JavascriptExecutor) driver).executeScript("return document.title;");
+            }
+        }
+        return null;
     }
 }

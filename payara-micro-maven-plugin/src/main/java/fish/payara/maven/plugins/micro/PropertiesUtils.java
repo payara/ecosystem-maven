@@ -52,17 +52,16 @@ import java.util.Properties;
  */
 public class PropertiesUtils {
 
+    private static final String TEMP_DIR = System.getProperty("java.io.tmpdir");
+    // File path in the system's default temporary directory to store the properties
+    private static final String FILE_PATH = TEMP_DIR + File.separator + "payara-maven-config.properties";
+
     public static void saveProperties(String key, String value) {
-        String tempDir = System.getProperty("java.io.tmpdir");
-
-        // File path in the system's default temporary directory to store the properties
-        String filePath = tempDir + File.separator + "payara-maven-config.properties";
-
         Properties prop = new Properties();
         OutputStream output = null;
 
         try {
-            output = new FileOutputStream(filePath);
+            output = new FileOutputStream(FILE_PATH);
 
             // Set the key-value pair
             prop.setProperty(key, value);
@@ -84,20 +83,20 @@ public class PropertiesUtils {
 
     public static String getProperty(String key, String defaultValue) {
 
-        String tempDir = System.getProperty("java.io.tmpdir");
+        if (key == null || key.isEmpty()) {
+            return null;
+        }
 
-        // File path in the system's default temporary directory to store the properties
-        String filePath = tempDir + File.separator + "payara-maven-config.properties";
         Properties prop = new Properties();
         InputStream input = null;
         String value = null;
 
         try {
-            File file = new File(filePath);
+            File file = new File(FILE_PATH);
             if (!file.exists()) {
                 saveProperties(key, key);
             }
-            input = new FileInputStream(filePath);
+            input = new FileInputStream(FILE_PATH);
 
             // Load the properties file
             prop.load(input);

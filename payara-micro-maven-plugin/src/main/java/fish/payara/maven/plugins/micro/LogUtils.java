@@ -76,8 +76,13 @@ public class LogUtils {
         }
     }
 
-     public static String highlightURL(String payaraMicroURL) {
-        return "\033[44m\033[97m" + payaraMicroURL + "\033[0m";
+    public static String highlight(String text) {
+        int leadingSpaces = 0;
+        while (leadingSpaces < text.length() && Character.isWhitespace(text.charAt(leadingSpaces))) {
+            leadingSpaces++;
+        }
+        String highlightedText = "\033[44m\033[97m" + text.substring(leadingSpaces) + "\033[0m";
+        return " ".repeat(leadingSpaces) + highlightedText;
     }
 
     private static String warning(String timeStamp, String line) {
