@@ -77,6 +77,9 @@ public class ReloadMojo extends BasePayaraMojo {
     
     @Parameter(property = "devMode", defaultValue = "false")
     protected boolean devMode;
+    
+    @Parameter(property = "contextRoot")
+    protected String contextRoot;
 
     public ReloadMojo(MavenProject mavenProject, Log log) {
         this.mavenProject = mavenProject;
@@ -105,6 +108,9 @@ public class ReloadMojo extends BasePayaraMojo {
             Properties props = new Properties();
             if (devMode) {
                 props.setProperty("devMode", Boolean.TRUE.toString());
+            }
+            if (contextRoot != null) {
+                props.setProperty("contextroot", contextRoot);
             }
             if (keepState) {
                 props.setProperty("keepState", Boolean.TRUE.toString());
@@ -161,6 +167,14 @@ public class ReloadMojo extends BasePayaraMojo {
 
     public void setDevMode(boolean devMode) {
         this.devMode = devMode;
+    }
+
+    public String getContextRoot() {
+        return contextRoot;
+    }
+
+    public void setContextRoot(String contextRoot) {
+        this.contextRoot = contextRoot;
     }
 
     public String getSourcesChanged() {
