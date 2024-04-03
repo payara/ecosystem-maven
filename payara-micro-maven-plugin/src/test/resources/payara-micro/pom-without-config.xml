@@ -19,7 +19,7 @@
         <version.jca>2.1.0</version.jca>
         <version.jbatch>2.1.1</version.jbatch>
         <version.microprofile>5.0</version.microprofile>
-        <version.payara>6.2024.2</version.payara>
+        <version.payara>6.2024.3</version.payara>
     </properties>
     
     <dependencies>

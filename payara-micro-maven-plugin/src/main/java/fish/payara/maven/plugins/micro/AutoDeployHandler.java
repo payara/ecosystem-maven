@@ -310,6 +310,9 @@ public class AutoDeployHandler implements Runnable {
                         WebDriverFactory.updateTitle(RELOADING, project, start.getDriver(), log);
                         ReloadMojo reloadMojo = new ReloadMojo(project, log);
                         reloadMojo.setDevMode(true);
+                        if(start.contextRoot != null) {
+                            reloadMojo.setContextRoot(start.contextRoot);
+                        }
                         reloadMojo.setKeepState(start.keepState);
                         if (start.hotDeploy) {
                             Path rootPath = project.getBasedir().toPath();
