@@ -58,8 +58,10 @@ abstract class BaseDeployerProcessor extends BaseProcessor {
             MojoExecutor.Element element = element(name("artifactItem"),
                     element("groupId", artifactItem.getGroupId()),
                     element("artifactId", artifactItem.getArtifactId()),
+                    element("classifier", artifactItem.getClassifier()),
                     element("version", artifactItem.getVersion()),
-                    element("type", artifactItem.getType())
+                    element("type", artifactItem.getType()),
+                    element("destFileName", artifactItem.getDestFileName())
             );
             elements.add(element);
         }
