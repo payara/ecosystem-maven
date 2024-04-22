@@ -42,6 +42,7 @@ import static fish.payara.maven.plugins.cloud.Configuration.APPLICATION_NAME;
 import fish.payara.tools.cloud.LoginController;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
 
 /**
  * @author Gaurav Gupta
@@ -49,13 +50,16 @@ import org.apache.maven.plugins.annotations.Mojo;
 @Mojo(name = "login")
 public class LoginMojo extends BasePayaraMojo {
 
+    @Parameter(property = "intractive", defaultValue = "true")
+    private boolean intractive;
+
     @Override
     public void execute() throws MojoExecutionException {
         if (skip) {
             getLog().info("Login mojo execution is skipped");
             return;
         }
-        LoginController controller = new LoginController(APPLICATION_ID, APPLICATION_NAME, true);
+        LoginController controller = new LoginController(APPLICATION_ID, APPLICATION_NAME, intractive);
         controller.login();
     }
 
