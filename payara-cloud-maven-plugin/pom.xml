@@ -1,6 +1,6 @@
 <!--
 
-  Copyright (c) 2017-2021 Payara Foundation and/or its affiliates. All rights reserved.
+  Copyright (c) 2024 Payara Foundation and/or its affiliates. All rights reserved.
 
   The contents of this file are subject to the terms of either the GNU
   General Public License Version 2 only ("GPL") or the Common Development
@@ -39,17 +39,16 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>fish.payara.maven.plugins</groupId>
-    <artifactId>payara-micro-maven-plugin</artifactId>
-    <version>2.4-SNAPSHOT</version>
+    <artifactId>payara-cloud-maven-plugin</artifactId>
+    <version>1.0-SNAPSHOT</version>
     <packaging>maven-plugin</packaging>
-    <name>Payara Micro Maven Plugin</name>
-    <description>Payara Micro Maven Plugin that incorporates payara-micro with the produced artifact</description>
-    <url>https://github.com/payara/ecosystem-maven/tree/master/payara-micro-maven-plugin</url>
+    <name>Payara Cloud Maven Plugin</name>
+    <description>Payara Cloud Maven Plugin that deploys Jakarta EE (formerly Java EE) and MicroProfile applications to Payara Cloud, an all-in-one platform as a service (PaaS) solution</description>
+    <url>https://github.com/payara/ecosystem-maven/tree/master/payara-cloud-maven-plugin</url>
     <properties>
         <java.compiler.source.version>1.8</java.compiler.source.version>
         <java.compiler.target.version>1.8</java.compiler.target.version>
-        <maven-api.version>3.9.5</maven-api.version>
-        <payara.version>6.2024.4</payara.version>
+        <maven-api.version>3.9.6</maven-api.version>
     </properties>
     <scm>
         <connection>scm:git:https://github.com/payara/ecosystem-maven/</connection>
@@ -146,16 +145,6 @@
     </build>
     <dependencies>
         <dependency>
-            <groupId>org.seleniumhq.selenium</groupId>
-            <artifactId>selenium-java</artifactId>
-            <version>4.19.1</version>
-        </dependency>
-        <dependency>
-            <groupId>io.github.bonigarcia</groupId>
-            <artifactId>webdrivermanager</artifactId>
-            <version>5.8.0</version>
-        </dependency>
-        <dependency>
             <groupId>org.apache.maven.plugin-tools</groupId>
             <artifactId>maven-plugin-annotations</artifactId>
             <version>3.12.0</version>
@@ -181,31 +170,6 @@
             <artifactId>mojo-executor</artifactId>
             <version>2.4.0</version>
         </dependency>
-
-        <dependency>
-            <groupId>org.apache.maven.plugin-testing</groupId>
-            <artifactId>maven-plugin-testing-harness</artifactId>
-            <version>3.3.0</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.maven</groupId>
-            <artifactId>maven-compat</artifactId>
-            <version>${maven-api.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>4.13.2</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>fish.payara.extras</groupId>
-            <artifactId>payara-micro</artifactId>
-            <version>${payara.version}</version>
-            <scope>test</scope>
-        </dependency>
         <dependency>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-dependency-plugin</artifactId>
@@ -216,29 +180,12 @@
             <artifactId>maven-invoker</artifactId>
             <version>3.2.0</version>
         </dependency>
+        <dependency>
+            <groupId>fish.payara.tools</groupId>
+            <artifactId>payara-cloud</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
     </dependencies>
-
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>org.codehaus.plexus</groupId>
-                <artifactId>plexus-utils</artifactId>
-                <version>3.4.2</version>
-            </dependency>
-            <dependency>
-                <groupId>com.google.guava</groupId>
-                <artifactId>guava</artifactId>
-                <version>33.1.0-jre</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson</groupId>
-                <artifactId>jackson-bom</artifactId>
-                <version>2.17.0</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
 
     <profiles>
         <profile>
@@ -248,7 +195,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-gpg-plugin</artifactId>
-                        <version>3.2.4</version>
+                        <version>3.2.2</version>
                         <executions>
                             <execution>
                                 <id>sign-artifacts</id>

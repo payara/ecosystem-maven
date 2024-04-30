@@ -1,6 +1,14 @@
 version: 2
 updates:
 - package-ecosystem: maven
+  directory: "/payara-cloud-maven-plugin"
+  schedule:
+    interval: weekly
+    time: "03:00"
+  open-pull-requests-limit: 10
+  labels:
+  - dependencies
+- package-ecosystem: maven
   directory: "/payara-micro-maven-archetype"
   schedule:
     interval: weekly
