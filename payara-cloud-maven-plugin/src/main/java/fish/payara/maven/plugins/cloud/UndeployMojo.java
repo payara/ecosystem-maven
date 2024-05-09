@@ -37,54 +37,41 @@
  */
 package fish.payara.maven.plugins.cloud;
 
-import org.apache.maven.execution.MavenSession;
-import org.apache.maven.plugin.AbstractMojo;
-import org.apache.maven.plugin.BuildPluginManager;
-import org.apache.maven.plugins.annotations.Component;
+import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
-import org.apache.maven.project.MavenProject;
-import org.apache.maven.toolchain.Toolchain;
-import org.apache.maven.toolchain.ToolchainManager;
-import static org.twdata.maven.mojoexecutor.MojoExecutor.ExecutionEnvironment;
-import static org.twdata.maven.mojoexecutor.MojoExecutor.executionEnvironment;
+import static fish.payara.maven.plugins.cloud.Configuration.CLIENT_ID;
+import static fish.payara.maven.plugins.cloud.Configuration.CLIENT_NAME;
+import fish.payara.tools.cloud.ApplicationContext;
+import fish.payara.tools.cloud.DeleteApplication;
 
 /**
  * @author Gaurav Gupta
  */
-abstract class BasePayaraMojo extends AbstractMojo {
+@Mojo(name = "undeploy")
+public class UndeployMojo extends BasePayaraMojo {
 
-    @Component
-    MavenProject mavenProject;
+    @Parameter(property = "intractive", defaultValue = "true")
+    private boolean intractive;
 
-    @Component
-    MavenSession mavenSession;
+    @Parameter(defaultValue = "${project.artifactId}", property = "applicationName", required = true)
+    protected String applicationName;
 
-    @Component
-    private BuildPluginManager pluginManager;
-
-    @Component
-    private ToolchainManager toolchainManager;
-
-    @Parameter(property = "skip", defaultValue = "false")
-    protected boolean skip;
-
-    private ExecutionEnvironment environment;
-
-    protected ExecutionEnvironment getEnvironment() {
-        if (environment == null) {
-            environment = executionEnvironment(mavenProject, mavenSession, pluginManager);
+    @Override
+    public void execute() throws MojoExecutionException {
+        ApplicationContext context = ApplicationContext.builder(CLIENT_ID, CLIENT_NAME, intractive)
+                    .applicationName(applicationName)
+                    .build();
+        try {
+            if (skip) {
+                getLog().info("Undeploy mojo execution is skipped");
+                return;
+            }
+            DeleteApplication controller = new DeleteApplication(context);
+            controller.call();
+        }catch (Exception ex) {
+            context.getOutput().error(ex.toString(), ex);
         }
-        return environment;
-    }
-    
-    protected String getProjectGAV(){
-        return mavenProject.getGroupId() + ":" + mavenProject.getArtifactId() + ":" + mavenProject.getVersion();
     }
 
-    protected Toolchain getToolchain() {
-        if ( toolchainManager != null ) {
-            return toolchainManager.getToolchainFromBuildContext("jdk", mavenSession);
-        }
-        return null;
-    }
 }

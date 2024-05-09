@@ -37,12 +37,13 @@
  */
 package fish.payara.maven.plugins.cloud;
 
-import static fish.payara.maven.plugins.cloud.Configuration.APPLICATION_ID;
-import static fish.payara.maven.plugins.cloud.Configuration.APPLICATION_NAME;
 import fish.payara.tools.cloud.LoginController;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
+import static fish.payara.maven.plugins.cloud.Configuration.CLIENT_ID;
+import static fish.payara.maven.plugins.cloud.Configuration.CLIENT_NAME;
+import fish.payara.tools.cloud.ApplicationContext;
 
 /**
  * @author Gaurav Gupta
@@ -59,8 +60,9 @@ public class LoginMojo extends BasePayaraMojo {
             getLog().info("Login mojo execution is skipped");
             return;
         }
-        LoginController controller = new LoginController(APPLICATION_ID, APPLICATION_NAME, intractive);
-        controller.login();
+        ApplicationContext context = ApplicationContext.builder(CLIENT_ID, CLIENT_NAME, intractive).build();
+        LoginController controller = new LoginController(context);
+        controller.call();
     }
 
 }
