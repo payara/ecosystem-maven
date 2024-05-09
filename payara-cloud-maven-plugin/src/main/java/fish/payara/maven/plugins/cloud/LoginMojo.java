@@ -51,9 +51,6 @@ import fish.payara.tools.cloud.ApplicationContext;
 @Mojo(name = "login")
 public class LoginMojo extends BasePayaraMojo {
 
-    @Parameter(property = "intractive", defaultValue = "true")
-    private boolean intractive;
-
     @Override
     public void execute() throws MojoExecutionException {
         if (skip) {

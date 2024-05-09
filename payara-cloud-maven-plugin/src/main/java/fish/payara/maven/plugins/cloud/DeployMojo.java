@@ -43,6 +43,7 @@ import org.apache.maven.plugins.annotations.Parameter;
 import static fish.payara.maven.plugins.cloud.Configuration.CLIENT_ID;
 import static fish.payara.maven.plugins.cloud.Configuration.CLIENT_NAME;
 import fish.payara.tools.cloud.ApplicationContext;
+import fish.payara.tools.cloud.ApplicationContext.Builder;
 import fish.payara.tools.cloud.DeployApplication;
 import java.io.File;
 
@@ -52,21 +53,13 @@ import java.io.File;
 @Mojo(name = "deploy")
 public class DeployMojo extends BasePayaraMojo {
 
-    @Parameter(property = "intractive", defaultValue = "true")
-    private boolean intractive;
 
     @Parameter(defaultValue = "${project.build.directory}/${project.build.finalName}.war", property = "applicationPath", required = true)
     protected File applicationPath;
     
-    
-    @Parameter(defaultValue = "${project.artifactId}", property = "applicationName", required = true)
-    protected String applicationName;
-
     @Override
     public void execute() throws MojoExecutionException {
-        ApplicationContext context = ApplicationContext.builder(CLIENT_ID, CLIENT_NAME, intractive)
-                    .applicationName(applicationName)
-                    .build();
+        ApplicationContext context = getApplicationContextBuilder().build();
         try {
             if (skip) {
                 getLog().info("Deploy mojo execution is skipped");

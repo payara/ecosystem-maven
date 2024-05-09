@@ -37,11 +37,11 @@
  */
 package fish.payara.maven.plugins.cloud;
 
+import static fish.payara.maven.plugins.cloud.Configuration.CLIENT_ID;
+import static fish.payara.maven.plugins.cloud.Configuration.CLIENT_NAME;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
-import static fish.payara.maven.plugins.cloud.Configuration.CLIENT_ID;
-import static fish.payara.maven.plugins.cloud.Configuration.CLIENT_NAME;
 import fish.payara.tools.cloud.ApplicationContext;
 import fish.payara.tools.cloud.DeleteApplication;
 
@@ -51,17 +51,9 @@ import fish.payara.tools.cloud.DeleteApplication;
 @Mojo(name = "undeploy")
 public class UndeployMojo extends BasePayaraMojo {
 
-    @Parameter(property = "intractive", defaultValue = "true")
-    private boolean intractive;
-
-    @Parameter(defaultValue = "${project.artifactId}", property = "applicationName", required = true)
-    protected String applicationName;
-
     @Override
     public void execute() throws MojoExecutionException {
-        ApplicationContext context = ApplicationContext.builder(CLIENT_ID, CLIENT_NAME, intractive)
-                    .applicationName(applicationName)
-                    .build();
+        ApplicationContext context = getApplicationContextBuilder().build();
         try {
             if (skip) {
                 getLog().info("Undeploy mojo execution is skipped");
