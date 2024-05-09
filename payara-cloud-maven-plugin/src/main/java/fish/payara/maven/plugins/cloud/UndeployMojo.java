@@ -68,7 +68,9 @@ public class UndeployMojo extends BasePayaraMojo {
                 return;
             }
             DeleteApplication controller = new DeleteApplication(context);
-            controller.call();
+            if(controller.call() == 0) {
+                getLog().info("Application undeployed successfully.");
+            }
         }catch (Exception ex) {
             context.getOutput().error(ex.toString(), ex);
         }
