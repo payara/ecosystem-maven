@@ -40,7 +40,7 @@ package fish.payara.maven.plugins.cloud;
 
 public interface Configuration {
 
-    String APPLICATION_ID = "OPWL6h4SUxPHa1rMZ9flPStKkxnMQj8H";
-    String APPLICATION_NAME = "Payara Cloud Maven Plugin";
+    String CLIENT_ID = "qeqSpqVZtHGbr0YU75Z9p87HMle0RA5a";
+    String CLIENT_NAME = "Payara Cloud Maven Plugin";
 
 }

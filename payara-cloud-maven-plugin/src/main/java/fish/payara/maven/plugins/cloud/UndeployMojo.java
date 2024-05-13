@@ -37,29 +37,35 @@
  */
 package fish.payara.maven.plugins.cloud;
 
-import fish.payara.tools.cloud.LoginController;
+import static fish.payara.maven.plugins.cloud.Configuration.CLIENT_ID;
+import static fish.payara.maven.plugins.cloud.Configuration.CLIENT_NAME;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
-import static fish.payara.maven.plugins.cloud.Configuration.CLIENT_ID;
-import static fish.payara.maven.plugins.cloud.Configuration.CLIENT_NAME;
 import fish.payara.tools.cloud.ApplicationContext;
+import fish.payara.tools.cloud.DeleteApplication;
 
 /**
  * @author Gaurav Gupta
  */
-@Mojo(name = "login")
-public class LoginMojo extends BasePayaraMojo {
+@Mojo(name = "undeploy")
+public class UndeployMojo extends BasePayaraMojo {
 
     @Override
     public void execute() throws MojoExecutionException {
-        if (skip) {
-            getLog().info("Login mojo execution is skipped");
-            return;
+        ApplicationContext context = getApplicationContextBuilder().build();
+        try {
+            if (skip) {
+                getLog().info("Undeploy mojo execution is skipped");
+                return;
+            }
+            DeleteApplication controller = new DeleteApplication(context);
+            if(controller.call() == 0) {
+                getLog().info("Application undeployed successfully.");
+            }
+        }catch (Exception ex) {
+            context.getOutput().error(ex.toString(), ex);
         }
-        ApplicationContext context = ApplicationContext.builder(CLIENT_ID, CLIENT_NAME, intractive).build();
-        LoginController controller = new LoginController(context);
-        controller.call();
     }
 
 }

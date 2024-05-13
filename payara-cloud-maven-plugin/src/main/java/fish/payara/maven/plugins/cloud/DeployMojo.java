@@ -37,29 +37,39 @@
  */
 package fish.payara.maven.plugins.cloud;
 
-import fish.payara.tools.cloud.LoginController;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import static fish.payara.maven.plugins.cloud.Configuration.CLIENT_ID;
 import static fish.payara.maven.plugins.cloud.Configuration.CLIENT_NAME;
 import fish.payara.tools.cloud.ApplicationContext;
+import fish.payara.tools.cloud.ApplicationContext.Builder;
+import fish.payara.tools.cloud.DeployApplication;
+import java.io.File;
 
 /**
  * @author Gaurav Gupta
  */
-@Mojo(name = "login")
-public class LoginMojo extends BasePayaraMojo {
+@Mojo(name = "deploy")
+public class DeployMojo extends BasePayaraMojo {
 
+
+    @Parameter(defaultValue = "${project.build.directory}/${project.build.finalName}.war", property = "applicationPath", required = true)
+    protected File applicationPath;
+    
     @Override
     public void execute() throws MojoExecutionException {
-        if (skip) {
-            getLog().info("Login mojo execution is skipped");
-            return;
+        ApplicationContext context = getApplicationContextBuilder().build();
+        try {
+            if (skip) {
+                getLog().info("Deploy mojo execution is skipped");
+                return;
+            }
+            DeployApplication controller = new DeployApplication(context, applicationPath);
+            controller.call();
+        }catch (Exception ex) {
+            context.getOutput().error(ex.toString(), ex);
         }
-        ApplicationContext context = ApplicationContext.builder(CLIENT_ID, CLIENT_NAME, intractive).build();
-        LoginController controller = new LoginController(context);
-        controller.call();
     }
 
 }

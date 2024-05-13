@@ -37,6 +37,9 @@
  */
 package fish.payara.maven.plugins.cloud;
 
+import static fish.payara.maven.plugins.cloud.Configuration.CLIENT_ID;
+import static fish.payara.maven.plugins.cloud.Configuration.CLIENT_NAME;
+import fish.payara.tools.cloud.ApplicationContext;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.BuildPluginManager;
@@ -68,9 +71,33 @@ abstract class BasePayaraMojo extends AbstractMojo {
     @Parameter(property = "skip", defaultValue = "false")
     protected boolean skip;
 
-    private ExecutionEnvironment environment;
+    @Parameter(property = "subscriptionId")
+    protected String subscriptionId;
 
-    ExecutionEnvironment getEnvironment() {
+    @Parameter(property = "namespaceId")
+    protected String namespaceId;
+
+    @Parameter(defaultValue = "${project.artifactId}", property = "applicationName", required = true)
+    protected String applicationName;
+    
+    @Parameter(property = "intractive", defaultValue = "true")
+    protected boolean intractive;
+
+    private ExecutionEnvironment environment;
+    
+    protected ApplicationContext.Builder getApplicationContextBuilder() {
+        ApplicationContext.Builder builder = ApplicationContext.builder(CLIENT_ID, CLIENT_NAME, intractive)
+                .applicationName(applicationName);
+        if (subscriptionId != null) {
+            builder.subscriptionId(subscriptionId);
+        }
+        if (namespaceId != null) {
+            builder.subscriptionId(namespaceId);
+        }
+        return builder;
+    }
+
+    protected ExecutionEnvironment getEnvironment() {
         if (environment == null) {
             environment = executionEnvironment(mavenProject, mavenSession, pluginManager);
         }

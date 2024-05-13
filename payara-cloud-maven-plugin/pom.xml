@@ -185,6 +185,16 @@
             <artifactId>payara-cloud</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
+        <dependency>
+            <groupId>fish.payara.cloud</groupId>
+            <artifactId>cloud-api</artifactId>
+            <version>1.0.1</version>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.platform</groupId>
+            <artifactId>jakarta.jakartaee-web-api</artifactId>
+            <version>8.0.0</version>
+        </dependency>
     </dependencies>
 
     <profiles>
@@ -277,4 +287,10 @@
             </build>
         </profile>
     </profiles>
+    <repositories>
+        <repository>
+            <id>payara-nexus-releases</id>
+            <url>https://nexus.dev.payara.fish/repository/payara-artifacts/</url>
+        </repository>
+    </repositories>
 </project>
