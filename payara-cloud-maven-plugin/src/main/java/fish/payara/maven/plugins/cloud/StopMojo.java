@@ -40,25 +40,25 @@ package fish.payara.maven.plugins.cloud;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
 import fish.payara.tools.cloud.ApplicationContext;
-import fish.payara.tools.cloud.DeleteApplication;
+import fish.payara.tools.cloud.StopApplication;
 
 /**
  * @author Gaurav Gupta
  */
-@Mojo(name = "undeploy")
-public class UndeployMojo extends BasePayaraMojo {
+@Mojo(name = "stop")
+public class StopMojo extends BasePayaraMojo {
 
     @Override
     public void execute() throws MojoExecutionException {
         ApplicationContext context = getApplicationContextBuilder().build();
         try {
             if (skip) {
-                getLog().info("Undeploy mojo execution is skipped");
+                getLog().info("Stop mojo execution is skipped");
                 return;
             }
-            DeleteApplication controller = new DeleteApplication(context);
+            StopApplication controller = new StopApplication(context);
             if(controller.call() == 0) {
-                getLog().info("Application undeployed successfully.");
+                getLog().info("Application stopped successfully.");
             }
         }catch (Exception ex) {
             context.getOutput().error(ex.toString(), ex);
