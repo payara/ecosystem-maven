@@ -47,25 +47,27 @@ import fish.payara.maven.plugins.micro.StartTask;
 import fish.payara.maven.plugins.micro.WebDriverFactory;
 import fish.payara.tools.cloud.ApplicationContext;
 import fish.payara.tools.cloud.DeployApplication;
+import fish.payara.tools.cloud.ListApplications;
+import fish.payara.tools.cloud.StopApplication;
 import java.awt.Desktop;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.ws.rs.core.Link;
 import org.apache.maven.project.MavenProject;
 import org.openqa.selenium.WebDriver;
 
 /**
- * DevMojo is a Maven Mojo for running the Payara application in development mode.
- * It allows for automatic deployment to Payara Cloud and live reloading of applications.
- * 
+ * DevMojo is a Maven Mojo for running the Payara application in development
+ * mode. It allows for automatic deployment to Payara Cloud and live reloading
+ * of applications.
+ *
  * @autor Gaurav Gupta
  */
 @Mojo(name = "dev")
@@ -88,42 +90,23 @@ public class DevMojo extends BasePayaraMojo implements StartTask {
     private WebDriver driver;
     private DeployApplication controller;
     private ApplicationContext context;
+    private boolean appAlreadyRunning;
 
-    @Override
-    public void execute() throws MojoExecutionException {
-        try {
-            context = getApplicationContextBuilder().build();
-            if (autoDeploy == null) {
-                autoDeploy = true;
-            }
-            if (liveReload == null) {
-                liveReload = true;
-            }
-            if (autoDeploy && autoDeployHandler == null) {
-                autoDeployHandler = new CloudAutoDeployHandler(this, applicationPath);
-                Thread devModeThread = new Thread(autoDeployHandler);
-                devModeThread.setDaemon(true);
-                devModeThread.start();
-            } else {
-                autoDeployHandler = null;
-            }
-            controller = new DeployApplication(context, applicationPath);
-            try {
-                deploy();
-            } catch (Exception ex) {
-                context.getOutput().error("Deployment failed with an exception.", ex);
-            }
-            if (autoDeploy) {
-                while (autoDeployHandler.isAlive()) {
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException ex) {
-                        context.getOutput().error("Thread interrupted while waiting for auto-deployment.", ex);
-                    }
+    private static final String RUNNING_STATUS = "RUNNING";
+    private static final String APPLICATION_ENDPOINT_PARAM = "applicationEndpoint";
+    private static final String NAME_PARAM = "name";
+    private static final String STATUS_PARAM = "status";
+
+    public DevMojo() {
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            if (!appAlreadyRunning) {
+                try {
+                    context.getOutput().info("Stopping the application " + context.getApplicationName());
+                    new StopApplication(context).call();
+                } catch (Exception ex) {
+                    context.getOutput().error("Failed to stop application.", ex);
                 }
             }
-
-        } finally {
             if (autoDeployHandler != null) {
                 autoDeployHandler.stop();
             }
@@ -140,7 +123,57 @@ public class DevMojo extends BasePayaraMojo implements StartTask {
                     }
                 }
             }
+        }));
+    }
+
+    @Override
+    public void execute() throws MojoExecutionException {
+
+        context = getApplicationContextBuilder().build();
+        if (autoDeploy == null) {
+            autoDeploy = true;
         }
+        if (liveReload == null) {
+            liveReload = true;
+        }
+        if (autoDeploy && autoDeployHandler == null) {
+            autoDeployHandler = new CloudAutoDeployHandler(this, applicationPath);
+            Thread devModeThread = new Thread(autoDeployHandler);
+            devModeThread.setDaemon(true);
+            devModeThread.start();
+        } else {
+            autoDeployHandler = null;
+        }
+        try {
+            for (Link link : new ListApplications(context).call()) {
+                if (link.getParams().get(NAME_PARAM).equals(applicationName)
+                        && link.getParams().get(STATUS_PARAM).equals(RUNNING_STATUS)) {
+                    appUrl = link.getParams().get(APPLICATION_ENDPOINT_PARAM);
+                    openBrowser();
+                    appAlreadyRunning = true;
+                    break;
+                }
+            }
+        } catch (Exception ex) {
+            context.getOutput().error("Failed to list applications and open in browser.", ex);
+        }
+
+        controller = new DeployApplication(context, applicationPath);
+        try {
+            deploy();
+        } catch (Exception ex) {
+            context.getOutput().error("Deployment failed with an exception.", ex);
+        }
+        if (autoDeploy) {
+            while (autoDeployHandler.isAlive()) {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException ex) {
+                    context.getOutput().error("Thread interrupted while waiting for auto-deployment.", ex);
+                }
+            }
+        }
+
     }
 
     public void deploy() {
@@ -148,26 +181,11 @@ public class DevMojo extends BasePayaraMojo implements StartTask {
             Optional<ApplicationResource> res = controller.call();
             if (res.isPresent()
                     && res.get().representation() != null
-                    && (appUrl = res.get().representation().getString("applicationEndpoint")) != null) {
+                    && (appUrl = res.get().representation().getString(APPLICATION_ENDPOINT_PARAM)) != null) {
                 if (driver == null) {
-                    String url = PropertiesUtils.getProperty(appUrl, appUrl);
-                    try {
-                        driver = WebDriverFactory.createWebDriver(browser, getLog());
-                        driver.get(url);
-                    } catch (Exception ex) {
-                        context.getOutput().error("Error in running WebDriver", ex);
-                        try {
-                            if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
-                                Desktop.getDesktop().browse(new URI(appUrl));
-                            }
-                        } catch (IOException | URISyntaxException e) {
-                            context.getOutput().error("Error in running Desktop browse", e);
-                        } finally {
-                            driver = null;
-                        }
-                    }
+                    openBrowser();
                 } else {
-                    if (res.get().representation().getString("status").equals("RUNNING")) {
+                    if (res.get().representation().getString("status").equals(RUNNING_STATUS)) {
                         driver.navigate().refresh();
                     } else if (res.isPresent()) {
                         if (res.get().representation() != null) {
@@ -190,6 +208,25 @@ public class DevMojo extends BasePayaraMojo implements StartTask {
             }
         } catch (Exception ex) {
             context.getOutput().error("Deployment failed due to an unexpected exception.", ex);
+        }
+    }
+
+    private void openBrowser() {
+        String url = PropertiesUtils.getProperty(appUrl, appUrl);
+        try {
+            driver = WebDriverFactory.createWebDriver(browser, getLog());
+            driver.get(url);
+        } catch (Exception ex) {
+            context.getOutput().error("Error in running WebDriver", ex);
+            try {
+                if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
+                    Desktop.getDesktop().browse(new URI(appUrl));
+                }
+            } catch (IOException | URISyntaxException e) {
+                context.getOutput().error("Error in running Desktop browse", e);
+            } finally {
+                driver = null;
+            }
         }
     }
 
