@@ -85,24 +85,24 @@ import org.openqa.selenium.JavascriptExecutor;
  *
  * @author Gaurav Gupta
  */
-public class AutoDeployHandler implements Runnable {
+public abstract class AutoDeployHandler implements Runnable {
 
-    private final StartMojo start;
-    private final MavenProject project;
+    private final StartTask start;
+    protected final MavenProject project;
     private final File webappDirectory;
-    private final Log log;
+    protected final Log log;
     private final ExecutorService executorService;
     private WatchService watchService;
     private Future<?> buildReloadTask;
     private final AtomicBoolean cleanPending = new AtomicBoolean(false);
-    private final List<Source> sourceUpdatedPending = new CopyOnWriteArrayList<>();
+    protected final List<Source> sourceUpdatedPending = new CopyOnWriteArrayList<>();
     private final AtomicBoolean stopRequested = new AtomicBoolean(false);
     private final Path buildPath;
-    private final static String RELOADING = "Reloading";
+    protected final static String RELOADING = "Reloading";
 
-    public AutoDeployHandler(StartMojo start, File webappDirectory) {
+    public AutoDeployHandler(StartTask start, File webappDirectory) {
         this.start = start;
-        this.project = start.getEnvironment().getMavenProject();
+        this.project = start.getProject();
         this.webappDirectory = webappDirectory;
         this.log = start.getLog();
         this.executorService = Executors.newSingleThreadExecutor();
@@ -261,7 +261,7 @@ public class AutoDeployHandler implements Runnable {
             goalsList.add("-Dmaven.compiler.useIncrementalCompilation=false");
         }
         if (resourceModified || !onlyJavaFilesUpdated) {
-            goalsList.add("war:exploded");
+            goalsList.add("war:" + (start.isLocal()?"exploded":"war"));
         } else {
             Path outputDirectory = Paths.get(webappDirectory.toPath().toString(), "WEB-INF", "classes");
             goalsList.add("-Dmaven.compiler.outputDirectory=\"" + outputDirectory.toString() + "\"");
@@ -300,41 +300,8 @@ public class AutoDeployHandler implements Runnable {
                     log.info("Auto-build successful for " + project.getName());
                     cleanPending.set(false);
                     sourceUpdatedPending.clear();
-                    
-                    if (rebootRequired) {
-                        if (start.getMicroProcess().isAlive()) {
-                            WebDriverFactory.updateTitle("Restarting", project, start.getDriver(), log);
-                            start.getMicroProcess().destroy();
-                        }
-                    } else {
-                        WebDriverFactory.updateTitle(RELOADING, project, start.getDriver(), log);
-                        ReloadMojo reloadMojo = new ReloadMojo(project, log);
-                        reloadMojo.setDevMode(true);
-                        if(start.contextRoot != null) {
-                            reloadMojo.setContextRoot(start.contextRoot);
-                        }
-                        reloadMojo.setKeepState(start.keepState);
-                        if (start.hotDeploy) {
-                            Path rootPath = project.getBasedir().toPath();
-                            List<String> sourcesChanged = new ArrayList<>();
-                            reloadMojo.setHotDeploy(start.hotDeploy);
-                            for (Source source : sourceUpdatedPending) {
-                                String extension = source.path.toString().substring(source.path.toString().lastIndexOf('.') + 1);
-                                if (extension.equals("xml") || extension.equals("properties")) {
-                                    reloadMojo.setMetadataChanged(true);
-                                }
-                                Path relativePath = rootPath.relativize(source.path);
-                                sourcesChanged.add(relativePath.toString().replace(File.separator, "/"));
-                            }
-                            log.debug("SourcesChanged: " + sourcesChanged);
-                            reloadMojo.setSourcesChanged(String.join(", ", sourcesChanged));
-                        }
-                        try {
-                            reloadMojo.execute();
-                        } catch (MojoExecutionException ex) {
-                            log.error("Error invoking Reload", ex);
-                        }
-                    }
+
+                    reload(rebootRequired);
                     cleanPending.set(false);
                     sourceUpdatedPending.clear();
                 }
@@ -343,6 +310,8 @@ public class AutoDeployHandler implements Runnable {
             }
         });
     }
+
+    public abstract void reload(boolean rebootRequired);
 
     public void deleteBuildDir(String filePath) {
         try {

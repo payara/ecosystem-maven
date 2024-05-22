@@ -40,10 +40,7 @@ package fish.payara.maven.plugins.cloud;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
-import static fish.payara.maven.plugins.cloud.Configuration.CLIENT_ID;
-import static fish.payara.maven.plugins.cloud.Configuration.CLIENT_NAME;
 import fish.payara.tools.cloud.ApplicationContext;
-import fish.payara.tools.cloud.ApplicationContext.Builder;
 import fish.payara.tools.cloud.DeployApplication;
 import java.io.File;
 
@@ -57,9 +54,13 @@ public class DeployMojo extends BasePayaraMojo {
     @Parameter(defaultValue = "${project.build.directory}/${project.build.finalName}.war", property = "applicationPath", required = true)
     protected File applicationPath;
     
+    protected ApplicationContext context;
+    
     @Override
     public void execute() throws MojoExecutionException {
-        ApplicationContext context = getApplicationContextBuilder().build();
+        if (context == null) {
+            context = getApplicationContextBuilder().build();
+        }
         try {
             if (skip) {
                 getLog().info("Deploy mojo execution is skipped");
