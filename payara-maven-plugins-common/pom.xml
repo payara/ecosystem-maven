@@ -40,7 +40,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>fish.payara.maven.plugins</groupId>
     <artifactId>payara-maven-plugins-common</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0-Alpha1</version>
     <packaging>jar</packaging>
     <name>Payara Maven Plugins Common</name>
     <url>https://github.com/payara/ecosystem-maven/tree/master/payara-micro-maven-plugin</url>
