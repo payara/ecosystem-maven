@@ -92,7 +92,7 @@ abstract class BasePayaraMojo extends AbstractMojo {
             builder.subscriptionId(subscriptionId);
         }
         if (namespaceId != null) {
-            builder.subscriptionId(namespaceId);
+            builder.namespaceId(namespaceId);
         }
         return builder;
     }

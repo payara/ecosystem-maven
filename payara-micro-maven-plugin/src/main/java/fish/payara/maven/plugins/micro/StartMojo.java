@@ -68,6 +68,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.apache.maven.project.MavenProject;
 import org.openqa.selenium.WebDriver;
 
 /**
@@ -76,7 +77,7 @@ import org.openqa.selenium.WebDriver;
  * @author mertcaliskan, Gaurav Gupta
  */
 @Mojo(name = "start")
-public class StartMojo extends BasePayaraMojo {
+public class StartMojo extends BasePayaraMojo implements StartTask {
 
     private static final String ERROR_MESSAGE = "Errors occurred while executing payara-micro.";
     private static final String PRE_BOOT = "--prebootcommandfile";
@@ -184,7 +185,7 @@ public class StartMojo extends BasePayaraMojo {
     StartMojo() {
         threadGroup = new ThreadGroup(MICRO_THREAD_NAME);
     }
-
+            
     @Override
     public void execute() throws MojoExecutionException {
         if (trimLog == null) {
@@ -200,7 +201,7 @@ public class StartMojo extends BasePayaraMojo {
             keepState = false;
         }
         if (autoDeploy && autoDeployHandler == null) {
-            autoDeployHandler = new AutoDeployHandler(this, webappDirectory);
+            autoDeployHandler = new MicroAutoDeployHandler(this, webappDirectory);
             Thread devModeThread = new Thread(autoDeployHandler);
             devModeThread.setDaemon(true);
             devModeThread.start();
@@ -491,9 +492,6 @@ public class StartMojo extends BasePayaraMojo {
         return this.microProcess;
     }
 
-    List<String> getRebootOnChange() {
-        return rebootOnChange;
-    }
 
     private void redirectStream(final InputStream inputStream, final PrintStream printStream) {
         final Thread thread = new Thread(threadGroup, () -> {
@@ -654,8 +652,24 @@ public class StartMojo extends BasePayaraMojo {
         return null;
     }
 
+    @Override
     public WebDriver getDriver() {
         return driver;
+    }
+
+    @Override
+    public MavenProject getProject() {
+        return this.getEnvironment().getMavenProject();
+    }
+    
+        @Override
+    public List<String> getRebootOnChange() {
+        return rebootOnChange;
+    }
+
+    @Override
+    public boolean isLocal() {
+        return exploded;
     }
 
 }

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<actions>
+        <action>
+            <actionName>CUSTOM-install</actionName>
+            <displayName>install</displayName>
+            <goals>
+                <goal>install</goal>
+            </goals>
+            <properties>
+                <skiptests></skiptests>
+            </properties>
+        </action>
+        <action>
+            <actionName>CUSTOM-install wo test</actionName>
+            <displayName>install wo test</displayName>
+            <goals>
+                <goal>install:install</goal>
+            </goals>
+            <properties>
+                <skipTests></skipTests>
+            </properties>
+        </action>
+        <action>
+            <actionName>CUSTOM-i2</actionName>
+            <displayName>i2</displayName>
+            <goals>
+                <goal>install</goal>
+            </goals>
+            <properties>
+                <skipTests></skipTests>
+            </properties>
+        </action>
+    </actions>
