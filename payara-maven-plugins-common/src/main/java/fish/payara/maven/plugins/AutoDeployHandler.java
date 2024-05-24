@@ -36,10 +36,10 @@
  * only if the new code is made subject to such option by the copyright
  * holder.
  */
-package fish.payara.maven.plugins.micro;
+package fish.payara.maven.plugins;
 
-import static fish.payara.maven.plugins.micro.Configuration.INOTIFY_USER_LIMIT_REACHED_MESSAGE;
-import static fish.payara.maven.plugins.micro.Configuration.WATCH_SERVICE_ERROR_MESSAGE;
+import static fish.payara.maven.plugins.Configuration.INOTIFY_USER_LIMIT_REACHED_MESSAGE;
+import static fish.payara.maven.plugins.Configuration.WATCH_SERVICE_ERROR_MESSAGE;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;

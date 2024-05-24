@@ -57,7 +57,7 @@ public class StartMojo extends BasePayaraMojo {
                 return;
             }
             StartApplication controller = new StartApplication(context);
-            if(controller.call() == 0) {
+            if(controller.call().isPresent()) {
                 getLog().info("Application started successfully.");
             }
         }catch (Exception ex) {

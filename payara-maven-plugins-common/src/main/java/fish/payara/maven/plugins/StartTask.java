@@ -2,7 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Interface.java to edit this template
  */
-package fish.payara.maven.plugins.micro;
+package fish.payara.maven.plugins;
 
 import java.util.List;
 import org.apache.maven.project.MavenProject;

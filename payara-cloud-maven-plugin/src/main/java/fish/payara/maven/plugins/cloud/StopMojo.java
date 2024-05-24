@@ -57,7 +57,7 @@ public class StopMojo extends BasePayaraMojo {
                 return;
             }
             StopApplication controller = new StopApplication(context);
-            if(controller.call() == 0) {
+            if(controller.call().isPresent()) {
                 getLog().info("Application stopped successfully.");
             }
         }catch (Exception ex) {

@@ -4,8 +4,8 @@
  */
 package fish.payara.maven.plugins.cloud;
 
-import fish.payara.maven.plugins.micro.AutoDeployHandler;
-import fish.payara.maven.plugins.micro.WebDriverFactory;
+import fish.payara.maven.plugins.AutoDeployHandler;
+import fish.payara.maven.plugins.WebDriverFactory;
 import java.io.File;
 
 /**
