@@ -36,11 +36,57 @@
  * only if the new code is made subject to such option by the copyright
  * holder.
  */
-package fish.payara.maven.plugins.micro;
+package fish.payara.maven.plugins;
 
-public interface Configuration {
+import java.nio.file.Path;
+import java.nio.file.WatchEvent;
+import java.util.Objects;
 
-    String INOTIFY_USER_LIMIT_REACHED_MESSAGE = "User limit of inotify instances reached";
-    String WATCH_SERVICE_ERROR_MESSAGE = "Error starting WatchService. User limit of inotify instances reached or too many open files. Please increase the max_user_watches configuration.";
+/**
+ *
+ * @author Gaurav Gupta
+ */
+public class Source {
+
+    Path path;
+    WatchEvent.Kind<?> kind;
+    boolean javaClass;
+
+    public Source(Path clazz, WatchEvent.Kind<?> kind, boolean javaClass) {
+        this.path = clazz;
+        this.kind = kind;
+        this.javaClass = javaClass;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 5;
+        hash = 97 * hash + Objects.hashCode(this.path);
+        hash = 97 * hash + Objects.hashCode(this.kind);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final Source other = (Source) obj;
+        if (!Objects.equals(this.path, other.path)) {
+            return false;
+        }
+        return Objects.equals(this.kind, other.kind);
+    }
+
+    @Override
+    public String toString() {
+        return "Source{" + "path=" + path + ", kind=" + kind + ", javaClass=" + javaClass + '}';
+    }
 
 }

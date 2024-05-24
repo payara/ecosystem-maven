@@ -36,7 +36,7 @@
  * only if the new code is made subject to such option by the copyright
  * holder.
  */
-package fish.payara.maven.plugins.micro;
+package fish.payara.maven.plugins;
 
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.shared.invoker.InvokerLogger;
