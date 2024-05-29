@@ -88,7 +88,7 @@ public class CloudMavenOutput implements ClientOutput {
 
     @Override
     public void finished(Object processId) {
-       LOG.debug("Started: " + processId);
+       LOG.debug("Finished: " + processId);
     }
 
     @Override
@@ -111,39 +111,5 @@ public class CloudMavenOutput implements ClientOutput {
     public void failure(String message, Throwable cause) {
         LOG.error("Failure: " + message, cause);
     }
-//    
-//    public void success(String message, List<Link> result) {
-//        LOG.log(Level.INFO, "SUCCESS", message);
-//        for (Link link : result) {
-//            if (link.getTitle() != null) {
-//                LOG.log(Level.INFO, link.getTitle());
-//            } else {
-//                LOG.log(Level.INFO, "(untitled)");
-//            }
-//            for (Map.Entry<String, String> entry : link.getParams().entrySet()) {
-//                switch (entry.getKey()) {
-//                    case "type":
-//                    case "rel":
-//                    case "title":
-//                        break;
-//                    default:
-//                        LOG.log(Level.INFO, "    ");
-//                        LOG.log(Level.INFO, entry.getKey());
-//                        LOG.log(Level.INFO, ": ");
-//                        LOG.log(Level.INFO, entry.getValue());
-//                }
-//            }
-//        }
-//    }
-//    
-//    public void success(String message, JsonValue result) {
-//        Map<String, Object> properties = new HashMap<>(1);
-//        properties.put(JsonGenerator.PRETTY_PRINTING, true);
-//        StringWriter stringWriter = new StringWriter();
-//        try (JsonWriter jsonWriter = Json.createWriterFactory(properties).createWriter(stringWriter)) {
-//            jsonWriter.write(result);
-//        }
-//        LOG.log(Level.INFO, "SUCCESS: {0}", message);
-//        LOG.log(Level.INFO, stringWriter.toString());
-//    }
+
 }
