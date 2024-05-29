@@ -86,7 +86,9 @@ abstract class BasePayaraMojo extends AbstractMojo {
     private ExecutionEnvironment environment;
     
     protected ApplicationContext.Builder getApplicationContextBuilder() {
-        ApplicationContext.Builder builder = ApplicationContext.builder(CLIENT_ID, CLIENT_NAME, intractive)
+        ApplicationContext.Builder builder = ApplicationContext.builder(CLIENT_ID, CLIENT_NAME)
+                .clientOutput(new CloudMavenOutput(getLog(), intractive))
+                .interactive(intractive)
                 .applicationName(applicationName);
         if (subscriptionId != null) {
             builder.subscriptionId(subscriptionId);

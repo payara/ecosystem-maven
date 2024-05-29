@@ -40,7 +40,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>fish.payara.maven.plugins</groupId>
     <artifactId>payara-cloud-maven-plugin</artifactId>
-    <version>1.0-Alpha2-SNAPSHOT</version>
+    <version>1.0-Alpha2</version>
     <packaging>maven-plugin</packaging>
     <name>Payara Cloud Maven Plugin</name>
     <description>Payara Cloud Maven Plugin that deploys Jakarta EE (formerly Java EE) and MicroProfile applications to Payara Cloud, an all-in-one platform as a service (PaaS) solution</description>
@@ -134,6 +134,11 @@
     </build>
     <dependencies>
         <dependency>
+            <groupId>javax.activation</groupId>
+            <artifactId>activation</artifactId>
+            <version>1.1.1</version>
+        </dependency>
+        <dependency>
             <groupId>org.apache.maven.plugin-tools</groupId>
             <artifactId>maven-plugin-annotations</artifactId>
             <version>3.13.0</version>
@@ -172,7 +177,7 @@
         <dependency>
             <groupId>fish.payara.tools</groupId>
             <artifactId>payara-cloud</artifactId>
-            <version>1.0-Alpha2</version>
+            <version>1.0-Alpha3</version>
         </dependency>
         <dependency>
             <groupId>fish.payara.cloud</groupId>
@@ -187,7 +192,7 @@
         <dependency>
             <groupId>fish.payara.maven.plugins</groupId>
             <artifactId>payara-maven-plugins-common</artifactId>
-            <version>1.0-Alpha2-SNAPSHOT</version>
+            <version>1.0-Alpha2</version>
         </dependency>
     </dependencies>
 
