@@ -57,7 +57,10 @@ public class LoginMojo extends BasePayaraMojo {
             getLog().info("Login mojo execution is skipped");
             return;
         }
-        ApplicationContext context = ApplicationContext.builder(CLIENT_ID, CLIENT_NAME, intractive).build();
+        ApplicationContext context = ApplicationContext.builder(CLIENT_ID, CLIENT_NAME)
+                .clientOutput(new CloudMavenOutput(getLog(), intractive))
+                .interactive(intractive)
+                .build();
         LoginController controller = new LoginController(context);
         controller.call();
     }
