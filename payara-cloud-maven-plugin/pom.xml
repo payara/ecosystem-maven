@@ -177,7 +177,7 @@
         <dependency>
             <groupId>fish.payara.tools</groupId>
             <artifactId>payara-cloud</artifactId>
-            <version>1.0-Alpha2</version>
+            <version>1.0-Alpha3</version>
         </dependency>
         <dependency>
             <groupId>fish.payara.cloud</groupId>
@@ -192,7 +192,7 @@
         <dependency>
             <groupId>fish.payara.maven.plugins</groupId>
             <artifactId>payara-maven-plugins-common</artifactId>
-            <version>1.0-Alpha3</version>
+            <version>1.0-Alpha2</version>
         </dependency>
     </dependencies>
 
