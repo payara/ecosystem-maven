@@ -39,6 +39,7 @@ package fish.payara.maven.plugins.cloud;
 
 import fish.payara.tools.cloud.ApplicationContext;
 import fish.payara.tools.cloud.DeployApplication;
+import fish.payara.tools.cloud.UploadApplication;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
@@ -68,7 +69,7 @@ public class UploadMojo extends BasePayaraMojo {
                 getLog().info("Upload mojo execution is skipped");
                 return;
             }
-            DeployApplication controller = new DeployApplication(context, applicationPath, false);
+            UploadApplication controller = new UploadApplication(context, applicationPath, false);
             controller.call();
         }catch (Exception ex) {
             context.getOutput().error(ex.toString(), ex);
