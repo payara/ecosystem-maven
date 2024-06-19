@@ -56,6 +56,8 @@ public class UploadMojo extends BasePayaraMojo {
     @Parameter(defaultValue = "${project.build.directory}/${project.build.finalName}.war", property = "applicationPath", required = true)
     protected File applicationPath;
 
+    @Parameter(property = "deploy", defaultValue = "false")
+    protected Boolean deploy;
 
     protected ApplicationContext context;
     
@@ -69,7 +71,7 @@ public class UploadMojo extends BasePayaraMojo {
                 getLog().info("Upload mojo execution is skipped");
                 return;
             }
-            UploadApplication controller = new UploadApplication(context, applicationPath, false);
+            UploadApplication controller = new UploadApplication(context, applicationPath, deploy == null || deploy);
             controller.call();
         }catch (Exception ex) {
             context.getOutput().error(ex.toString(), ex);
