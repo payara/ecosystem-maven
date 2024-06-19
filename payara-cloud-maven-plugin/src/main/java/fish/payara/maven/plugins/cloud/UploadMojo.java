@@ -71,7 +71,7 @@ public class UploadMojo extends BasePayaraMojo {
                 getLog().info("Upload mojo execution is skipped");
                 return;
             }
-            UploadApplication controller = new UploadApplication(context, applicationPath, deploy == null || deploy);
+            UploadApplication controller = new UploadApplication(context, applicationPath, deploy);
             controller.call();
         }catch (Exception ex) {
             context.getOutput().error(ex.toString(), ex);
