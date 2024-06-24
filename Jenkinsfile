@@ -24,7 +24,7 @@ pipeline {
         }
         stage('Build') {
             environment {
-                JAVA_HOME = tool("zulu-11")
+                JAVA_HOME = tool("zulu-8")
                 PATH = "${env.JAVA_HOME}/bin:${env.PATH}"
                 MAVEN_OPTS = '-Xmx2G -Djavax.net.ssl.trustStore=${JAVA_HOME}/jre/lib/security/cacerts'
                 payaraBuildNumber = "${BUILD_NUMBER}"
@@ -44,7 +44,7 @@ pipeline {
         }
         stage('Build payara-maven-plugins-common') {
             environment {
-                JAVA_HOME = tool("zulu-11")
+                JAVA_HOME = tool("zulu-8")
                 PATH = "${env.JAVA_HOME}/bin:${env.PATH}"
                 MAVEN_OPTS = '-Xmx2G -Djavax.net.ssl.trustStore=${JAVA_HOME}/jre/lib/security/cacerts'
                 payaraBuildNumber = "${BUILD_NUMBER}"
@@ -64,7 +64,7 @@ pipeline {
         }
         stage('Build payara-cloud-maven-plugin') {
             environment {
-                JAVA_HOME = tool("zulu-11")
+                JAVA_HOME = tool("zulu-8")
                 PATH = "${env.JAVA_HOME}/bin:${env.PATH}"
                 MAVEN_OPTS = '-Xmx2G -Djavax.net.ssl.trustStore=${JAVA_HOME}/jre/lib/security/cacerts'
                 payaraBuildNumber = "${BUILD_NUMBER}"
@@ -84,7 +84,7 @@ pipeline {
         }
         stage('Build payara-micro-maven-archetype') {
             environment {
-                JAVA_HOME = tool("zulu-11")
+                JAVA_HOME = tool("zulu-8")
                 PATH = "${env.JAVA_HOME}/bin:${env.PATH}"
                 MAVEN_OPTS = '-Xmx2G -Djavax.net.ssl.trustStore=${JAVA_HOME}/jre/lib/security/cacerts'
                 payaraBuildNumber = "${BUILD_NUMBER}"
@@ -104,7 +104,7 @@ pipeline {
         }
         stage('Build payara-micro-maven-plugin') {
             environment {
-                JAVA_HOME = tool("zulu-11")
+                JAVA_HOME = tool("zulu-8")
                 PATH = "${env.JAVA_HOME}/bin:${env.PATH}"
                 MAVEN_OPTS = '-Xmx2G -Djavax.net.ssl.trustStore=${JAVA_HOME}/jre/lib/security/cacerts'
                 payaraBuildNumber = "${BUILD_NUMBER}"
