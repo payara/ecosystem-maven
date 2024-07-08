@@ -89,7 +89,7 @@ abstract class BasePayaraMojo extends AbstractMojo {
         ApplicationContext.Builder builder = ApplicationContext.builder(CLIENT_ID, CLIENT_NAME)
                 .clientOutput(new CloudMavenOutput(getLog(), intractive))
                 .interactive(intractive)
-                .applicationName(applicationName);
+                .applicationName(applicationName.toLowerCase());
         if (subscriptionId != null) {
             builder.subscriptionId(subscriptionId);
         }
