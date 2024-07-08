@@ -40,15 +40,14 @@ package fish.payara.maven.plugins.cloud;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
 import fish.payara.tools.cloud.ApplicationContext;
-import fish.payara.tools.cloud.ListNamespaces;
 import fish.payara.tools.cloud.ListSubscriptions;
+import javax.ws.rs.core.Link;
 
 /**
  * @author Gaurav Gupta
  */
 @Mojo(name = "subscription")
 public class SubscriptionMojo extends BasePayaraMojo {
-
 
     protected ApplicationContext context;
     
@@ -63,7 +62,10 @@ public class SubscriptionMojo extends BasePayaraMojo {
                 return;
             }
             ListSubscriptions controller = new ListSubscriptions(context);
-            controller.call();
+            context.getOutput().info("Subscriptions:");
+            for (Link link : controller.call()) {
+                context.getOutput().info(link.getTitle());
+            }
         }catch (Exception ex) {
             context.getOutput().error(ex.toString(), ex);
         }

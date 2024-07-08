@@ -41,6 +41,7 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
 import fish.payara.tools.cloud.ApplicationContext;
 import fish.payara.tools.cloud.ListApplications;
+import javax.ws.rs.core.Link;
 
 /**
  * @author Gaurav Gupta
@@ -49,7 +50,7 @@ import fish.payara.tools.cloud.ListApplications;
 public class ApplicationMojo extends BasePayaraMojo {
 
     protected ApplicationContext context;
-    
+
     @Override
     public void execute() throws MojoExecutionException {
         if (context == null) {
@@ -61,8 +62,11 @@ public class ApplicationMojo extends BasePayaraMojo {
                 return;
             }
             ListApplications controller = new ListApplications(context);
-            controller.call();
-        }catch (Exception ex) {
+            context.getOutput().info("Applications:");
+            for (Link link : controller.call()) {
+                context.getOutput().info(link.getTitle());
+            }
+        } catch (Exception ex) {
             context.getOutput().error(ex.toString(), ex);
         }
     }
