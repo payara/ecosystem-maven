@@ -46,7 +46,7 @@ import javax.ws.rs.core.Link;
 /**
  * @author Gaurav Gupta
  */
-@Mojo(name = "namespace")
+@Mojo(name = "list-namespaces")
 public class NamespaceMojo extends BasePayaraMojo {
 
     protected ApplicationContext context;

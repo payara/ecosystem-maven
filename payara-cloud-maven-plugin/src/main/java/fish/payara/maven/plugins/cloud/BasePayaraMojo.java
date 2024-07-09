@@ -71,11 +71,11 @@ abstract class BasePayaraMojo extends AbstractMojo {
     @Parameter(property = "skip", defaultValue = "false")
     protected boolean skip;
 
-    @Parameter(property = "subscriptionId")
-    protected String subscriptionId;
+    @Parameter(property = "subscriptionName")
+    protected String subscriptionName;
 
-    @Parameter(property = "namespaceId")
-    protected String namespaceId;
+    @Parameter(property = "namespaceName")
+    protected String namespaceName;
 
     @Parameter(defaultValue = "${project.artifactId}", property = "applicationName", required = true)
     protected String applicationName;
@@ -90,11 +90,11 @@ abstract class BasePayaraMojo extends AbstractMojo {
                 .clientOutput(new CloudMavenOutput(getLog(), intractive))
                 .interactive(intractive)
                 .applicationName(applicationName.toLowerCase());
-        if (subscriptionId != null) {
-            builder.subscriptionId(subscriptionId);
+        if (subscriptionName != null) {
+            builder.subscriptionName(subscriptionName);
         }
-        if (namespaceId != null) {
-            builder.namespaceId(namespaceId);
+        if (namespaceName != null) {
+            builder.namespaceName(namespaceName);
         }
         return builder;
     }

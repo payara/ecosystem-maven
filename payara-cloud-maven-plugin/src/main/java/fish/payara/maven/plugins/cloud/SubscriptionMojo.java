@@ -46,7 +46,7 @@ import javax.ws.rs.core.Link;
 /**
  * @author Gaurav Gupta
  */
-@Mojo(name = "subscription")
+@Mojo(name = "list-subscriptions")
 public class SubscriptionMojo extends BasePayaraMojo {
 
     protected ApplicationContext context;
