@@ -90,6 +90,9 @@ abstract class BasePayaraMojo extends AbstractMojo {
                 .clientOutput(new CloudMavenOutput(getLog(), intractive))
                 .interactive(intractive)
                 .applicationName(applicationName.toLowerCase());
+        namespaceName = getPropertyValue("namespaceName", namespaceName);
+        subscriptionName = getPropertyValue("subscriptionName", subscriptionName);
+        applicationName = getPropertyValue("applicationName", applicationName);
         if (subscriptionName != null) {
             builder.subscriptionName(subscriptionName);
         }
@@ -97,6 +100,15 @@ abstract class BasePayaraMojo extends AbstractMojo {
             builder.namespaceName(namespaceName);
         }
         return builder;
+    }
+
+    private String getPropertyValue(String propertyName, String defaultValue) {
+        String propertyValue = System.getProperty(propertyName, defaultValue);
+        if (propertyValue != null) {
+            // Remove surrounding quotes if present
+            propertyValue = propertyValue.replaceAll("^['\"]|['\"]$", "");
+        }
+        return propertyValue;
     }
 
     protected ExecutionEnvironment getEnvironment() {
