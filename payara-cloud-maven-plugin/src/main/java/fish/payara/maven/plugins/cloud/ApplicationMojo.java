@@ -46,7 +46,7 @@ import javax.ws.rs.core.Link;
 /**
  * @author Gaurav Gupta
  */
-@Mojo(name = "application")
+@Mojo(name = "list-applications")
 public class ApplicationMojo extends BasePayaraMojo {
 
     protected ApplicationContext context;
