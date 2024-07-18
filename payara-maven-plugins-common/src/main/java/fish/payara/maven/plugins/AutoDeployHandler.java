@@ -63,14 +63,12 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.shared.invoker.DefaultInvocationRequest;
@@ -79,7 +77,6 @@ import org.apache.maven.shared.invoker.InvocationRequest;
 import org.apache.maven.shared.invoker.InvocationResult;
 import org.apache.maven.shared.invoker.Invoker;
 import org.apache.maven.shared.invoker.MavenInvocationException;
-import org.openqa.selenium.JavascriptExecutor;
 
 /**
  *
@@ -247,7 +244,7 @@ public abstract class AutoDeployHandler implements Runnable {
 
     private List<String> updateGoalsList(boolean fileDeletedOrRenamed, boolean resourceModified,
             boolean testClassesModified) {
-        boolean onlyJavaFilesUpdated = sourceUpdatedPending.stream().allMatch(k -> k.path.toString().endsWith(".java") && k.kind == ENTRY_MODIFY && k.javaClass);
+        boolean onlyJavaFilesUpdated = sourceUpdatedPending.stream().allMatch(k -> k.getPath().toString().endsWith(".java") && k.getPath() == ENTRY_MODIFY && k.isJavaClass());
         List<String> goalsList = new ArrayList<>();
         if (fileDeletedOrRenamed || cleanPending.get() || sourceUpdatedPending.size() > 1) {
             goalsList.add(0, "clean");

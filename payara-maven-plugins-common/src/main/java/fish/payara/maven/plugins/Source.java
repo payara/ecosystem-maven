@@ -48,14 +48,26 @@ import java.util.Objects;
  */
 public class Source {
 
-    Path path;
-    WatchEvent.Kind<?> kind;
-    boolean javaClass;
+    private final Path path;
+    private final WatchEvent.Kind<?> kind;
+    private final boolean javaClass;
 
     public Source(Path clazz, WatchEvent.Kind<?> kind, boolean javaClass) {
         this.path = clazz;
         this.kind = kind;
         this.javaClass = javaClass;
+    }
+
+    public Path getPath() {
+        return path;
+    }
+
+    public WatchEvent.Kind<?> getKind() {
+        return kind;
+    }
+
+    public boolean isJavaClass() {
+        return javaClass;
     }
 
     @Override
