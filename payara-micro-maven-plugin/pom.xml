@@ -219,7 +219,7 @@
         <dependency>
             <groupId>fish.payara.maven.plugins</groupId>
             <artifactId>payara-maven-plugins-common</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>1.0-Alpha4-SNAPSHOT</version>
         </dependency>
     </dependencies>
 
