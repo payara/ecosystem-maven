@@ -57,7 +57,6 @@ pipeline {
                     echo *#*#*#*#*#*#*#*#*#*#*#*#  Building SRC  *#*#*#*#*#*#*#*#*#*#*#*#*#*#*#
                     mvn -B -V -ff -e clean install -DskipTests --strict-checksums \
                         -Djavadoc.skip -Dsource.skip
-                        -Dmaven.repo.local=/home/ubuntu/.m2/repository
                     echo *#*#*#*#*#*#*#*#*#*#*#*#    Built SRC   *#*#*#*#*#*#*#*#*#*#*#*#*#*#*#
                     '''
                 }
