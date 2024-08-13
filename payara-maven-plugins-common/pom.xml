@@ -40,7 +40,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>fish.payara.maven.plugins</groupId>
     <artifactId>payara-maven-plugins-common</artifactId>
-    <version>1.0-Alpha4-SNAPSHOT</version>
+    <version>1.0-Alpha4</version>
     <packaging>jar</packaging>
     <name>Payara Maven Plugins Common</name>
     <description>The Payara Maven Plugins Common project provides shared utilities and components used across the Payara Micro and Payara Cloud Maven plugins.</description>
