@@ -37,31 +37,37 @@
  */
 package fish.payara.maven.plugins.cloud;
 
-import fish.payara.maven.plugins.AutoDeployHandler;
-import fish.payara.maven.plugins.WebDriverFactory;
-import java.io.File;
+import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugins.annotations.Mojo;
+import fish.payara.tools.cloud.ApplicationContext;
+import fish.payara.tools.cloud.ListSubscriptions;
+import javax.ws.rs.core.Link;
 
 /**
- *
  * @author Gaurav Gupta
  */
-public class CloudAutoDeployHandler extends AutoDeployHandler {
+@Mojo(name = "list-subscriptions")
+public class SubscriptionMojo extends BasePayaraMojo {
 
-    private final DevMojo start;
-
-    public CloudAutoDeployHandler(DevMojo start, File webappDirectory) {
-        super(start, webappDirectory);
-        this.start = start;
-
-    }
-
+    protected ApplicationContext context;
+    
     @Override
-    public void reload(boolean rebootRequired) {
+    public void execute() throws MojoExecutionException {
+        if (context == null) {
+            context = getApplicationContextBuilder().build();
+        }
         try {
-            WebDriverFactory.updateTitle(RELOADING, project, start.getDriver(), log);
-            start.deploy();
-        } catch (Exception ex) {
-            log.error("Error invoking Reload", ex);
+            if (skip) {
+                getLog().info("List Subscriptions mojo execution is skipped");
+                return;
+            }
+            ListSubscriptions controller = new ListSubscriptions(context);
+            context.getOutput().info("Subscriptions:");
+            for (Link link : controller.call()) {
+                context.getOutput().info(link.getTitle());
+            }
+        }catch (Exception ex) {
+            context.getOutput().error(ex.toString(), ex);
         }
     }
 
