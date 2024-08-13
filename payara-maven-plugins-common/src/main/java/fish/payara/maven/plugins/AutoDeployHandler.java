@@ -38,8 +38,28 @@
  */
 package fish.payara.maven.plugins;
 
+import static fish.payara.maven.plugins.Configuration.CLASSES_DIRECTORY;
+import static fish.payara.maven.plugins.Configuration.GOAL_CLEAN;
+import static fish.payara.maven.plugins.Configuration.GOAL_COMPILE;
+import static fish.payara.maven.plugins.Configuration.GOAL_PROCESS_RESOURCES;
+import static fish.payara.maven.plugins.Configuration.GOAL_WAR;
+import static fish.payara.maven.plugins.Configuration.GOAL_WAR_EXPLODED;
 import static fish.payara.maven.plugins.Configuration.INOTIFY_USER_LIMIT_REACHED_MESSAGE;
+import static fish.payara.maven.plugins.Configuration.JAVA_DIR;
+import static fish.payara.maven.plugins.Configuration.JAVA_FILE_EXTENSION;
+import static fish.payara.maven.plugins.Configuration.MAIN_DIR;
+import static fish.payara.maven.plugins.Configuration.MAVEN_MULTI_MODULE_PROJECT_DIRECTORY;
+import static fish.payara.maven.plugins.Configuration.OPTION_DISABLE_INCREMENTAL_COMPILATION;
+import static fish.payara.maven.plugins.Configuration.OPTION_OUTPUT_DIRECTORY;
+import static fish.payara.maven.plugins.Configuration.POM;
+import static fish.payara.maven.plugins.Configuration.POM_XML;
+import static fish.payara.maven.plugins.Configuration.RESOURCES_DIR;
+import static fish.payara.maven.plugins.Configuration.SKIP_TESTS_FLAG;
+import static fish.payara.maven.plugins.Configuration.SKIP_TESTS_OPTION;
+import static fish.payara.maven.plugins.Configuration.SRC_DIR;
+import static fish.payara.maven.plugins.Configuration.TEST_DIR;
 import static fish.payara.maven.plugins.Configuration.WATCH_SERVICE_ERROR_MESSAGE;
+import static fish.payara.maven.plugins.Configuration.WEB_INF_DIRECTORY;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -64,13 +84,13 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.model.Profile;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.shared.invoker.DefaultInvocationRequest;
@@ -79,7 +99,6 @@ import org.apache.maven.shared.invoker.InvocationRequest;
 import org.apache.maven.shared.invoker.InvocationResult;
 import org.apache.maven.shared.invoker.Invoker;
 import org.apache.maven.shared.invoker.MavenInvocationException;
-import org.openqa.selenium.JavascriptExecutor;
 
 /**
  *
@@ -94,10 +113,13 @@ public abstract class AutoDeployHandler implements Runnable {
     private final ExecutorService executorService;
     private WatchService watchService;
     private Future<?> buildReloadTask;
+    private long buildReloadTaskStartTime;
     private final AtomicBoolean cleanPending = new AtomicBoolean(false);
-    protected final List<Source> sourceUpdatedPending = new CopyOnWriteArrayList<>();
+    protected final ConcurrentSkipListSet<Source> sourceUpdatedPending = new ConcurrentSkipListSet<>();
     private final AtomicBoolean stopRequested = new AtomicBoolean(false);
-    private final Path buildPath;
+    private final Path buildPath, ideaPath,
+            eclipsePath, eclipseClasspathPath, eclipseProjectPath,
+            vscodePath, nbPath;
     protected final static String RELOADING = "Reloading";
 
     public AutoDeployHandler(StartTask start, File webappDirectory) {
@@ -107,6 +129,12 @@ public abstract class AutoDeployHandler implements Runnable {
         this.log = start.getLog();
         this.executorService = Executors.newSingleThreadExecutor();
         this.buildPath = project.getBasedir().toPath().resolve("target");
+        this.ideaPath = project.getBasedir().toPath().resolve(".idea");
+        this.eclipsePath = project.getBasedir().toPath().resolve(".settings");
+        this.vscodePath = project.getBasedir().toPath().resolve(".vscode");
+        this.eclipseClasspathPath = project.getBasedir().toPath().resolve(".classpath");
+        this.eclipseProjectPath = project.getBasedir().toPath().resolve(".project");
+        this.nbPath = project.getBasedir().toPath().resolve("nb-configuration.xml");
     }
 
     public void stop() {
@@ -139,6 +167,15 @@ public abstract class AutoDeployHandler implements Runnable {
                     log.error(ex);
                 }
             }));
+            // Create a set of paths to ignore that are directories
+            Set<Path> ignoredDirectories = Set.of(
+                    buildPath, ideaPath, eclipsePath, vscodePath
+            );
+
+            // Create a set of specific files to ignore
+            Set<Path> ignoredFiles = Set.of(
+                    eclipseClasspathPath, eclipseProjectPath, nbPath
+            );
 
             while (isAlive()) {
                 WatchKey key = watchService.poll(60, TimeUnit.SECONDS);
@@ -147,63 +184,86 @@ public abstract class AutoDeployHandler implements Runnable {
                     for (WatchEvent<?> event : key.pollEvents()) {
                         Path changed = (Path) event.context();
                         Path fullPath = ((Path) key.watchable()).resolve(changed);
-                        if (fullPath.startsWith(buildPath)) {
+
+                        // Check if the fullPath is in an ignored directory
+                        boolean isInIgnoredDirectory = ignoredDirectories.stream().anyMatch(fullPath::startsWith);
+                        boolean isIgnoredFile = ignoredFiles.contains(fullPath);
+                        boolean isTemporaryFile = fullPath.toString().endsWith("~");
+                        boolean isDirectory = Files.isDirectory(fullPath);
+
+                        // Skip the event if it's in an ignored directory, an ignored file, a temp file, or a directory
+                        if (isInIgnoredDirectory || isIgnoredFile || isTemporaryFile || isDirectory) {
                             continue;
                         }
                         filteredEvents.add(event);
                     }
                     if (!filteredEvents.isEmpty()) {
+                        boolean skip = false;
                         if (buildReloadTask != null && !buildReloadTask.isDone()) {
-                            buildReloadTask.cancel(true);
+                            long duration = (System.currentTimeMillis() - buildReloadTaskStartTime);
+                            if (duration < 1000 && sourceUpdatedPending.size() == filteredEvents.size()) {
+                                skip = true;
+                            }
+                            log.debug("Duration : " + duration + ", skip : " + skip);
+                            if (!skip) {
+                                buildReloadTask.cancel(true);
+                            }
                         }
-                        boolean fileDeletedOrRenamed = false;
-                        boolean resourceModified = false;
-                        boolean testClassesModified = false;
-                        boolean rebootRequired = false;
-                        for (WatchEvent<?> event : filteredEvents) {
-                            WatchEvent.Kind<?> kind = event.kind();
-                            Path changed = (Path) event.context();
-                            Path fullPath = ((Path) key.watchable()).resolve(changed);
-                            log.debug("Source modified: " + changed + " - " + kind);
+                        if (!skip) {
+                            boolean resourceModified = false;
+                            boolean testClassesModified = false;
+                            boolean testResourcesModified = false;
+                            boolean classesModified = false;
+                            boolean rebootRequired = false;
+                            for (WatchEvent<?> event : filteredEvents) {
+                                WatchEvent.Kind<?> kind = event.kind();
+                                Path changed = (Path) event.context();
+                                Path fullPath = ((Path) key.watchable()).resolve(changed);
+                                log.debug("Source modified: " + changed + " - " + kind);
 
-                            Path projectRoot = Paths.get(project.getBasedir().toURI());
-                            Path sourceRoot = projectRoot.resolve("src");
-                            Path mainDirectory = sourceRoot.resolve("main");
-                            Path javaDirectory = mainDirectory.resolve("java");
-                            Path resourcesDirectory = mainDirectory.resolve("resources");
-                            Path testDirectory = sourceRoot.resolve("test");
+                                Path projectRoot = Paths.get(project.getBasedir().toURI());
+                                Path sourceRoot = projectRoot.resolve(SRC_DIR);
+                                Path mainDirectory = sourceRoot.resolve(MAIN_DIR);
+                                Path javaDirectory = mainDirectory.resolve(JAVA_DIR);
+                                Path resourcesDirectory = mainDirectory.resolve(RESOURCES_DIR);
+                                Path testDirectory = sourceRoot.resolve(TEST_DIR);
+                                Path javaTestDirectory = testDirectory.resolve(JAVA_DIR);
+                                Path resourcesTestDirectory = testDirectory.resolve(RESOURCES_DIR);
 
-                            sourceUpdatedPending.add(new Source(fullPath, kind, fullPath.startsWith(javaDirectory)));
-                            if (fullPath.startsWith(resourcesDirectory)) {
-                                resourceModified = true;
-                            }
-                            if (fullPath.startsWith(testDirectory)) {
-                                testClassesModified = true;
-                            }
-                            if (kind == StandardWatchEventKinds.ENTRY_CREATE) {
-                                if (Files.isDirectory(fullPath, LinkOption.NOFOLLOW_LINKS)) {
-                                    register(fullPath); // register watch service for newly created dir
+                                sourceUpdatedPending.add(new Source(fullPath, kind, fullPath.startsWith(javaDirectory)));
+                                if (fullPath.startsWith(resourcesDirectory)) {
+                                    resourceModified = true;
+                                }
+                                if (fullPath.startsWith(resourcesTestDirectory)) {
+                                    testResourcesModified = true;
+                                }
+                                if (fullPath.startsWith(javaTestDirectory)) {
+                                    testClassesModified = true;
+                                }
+                                if (fullPath.startsWith(javaDirectory)) {
+                                    classesModified = true;
+                                }
+                                if (kind == StandardWatchEventKinds.ENTRY_CREATE) {
+                                    if (Files.isDirectory(fullPath, LinkOption.NOFOLLOW_LINKS)) {
+                                        register(fullPath); // register watch service for newly created dir
+                                    }
+                                }
+                                if (kind == StandardWatchEventKinds.ENTRY_DELETE) {
+                                    cleanPending.set(true);
+                                }
+                                if (start.getRebootOnChange().contains(changed.toString())) {
+                                    rebootRequired = true;
+                                    cleanPending.set(true);
+                                    break;
                                 }
                             }
-                            if (kind == StandardWatchEventKinds.ENTRY_DELETE) {
-                                fileDeletedOrRenamed = true;
-                                cleanPending.set(true);
-                            }
-                            if (start.getRebootOnChange().contains(changed.toString())) {
-                                rebootRequired = true;
-                                fileDeletedOrRenamed = true;
-                                cleanPending.set(true);
-                                break;
-                            }
-                        }
 
-                        log.debug("sourceUpdatedPending: " + sourceUpdatedPending);
-                        if (!sourceUpdatedPending.isEmpty()) {
-                            WebDriverFactory.updateTitle("Building", project, start.getDriver(), log);
-                            log.info("Auto-build started for " + project.getName());
-                            List<String> goalsList = updateGoalsList(fileDeletedOrRenamed, resourceModified, testClassesModified);
-                            log.info("goalsList: " + goalsList);
-                            executeBuildReloadTask(goalsList, rebootRequired);
+                            log.debug("sourceUpdatedPending: " + sourceUpdatedPending);
+                            if (!sourceUpdatedPending.isEmpty()) {
+                                WebDriverFactory.updateTitle("Building", project, start.getDriver(), log);
+                                List<String> goalsList = updateGoalsList(classesModified, resourceModified, testClassesModified, testResourcesModified);
+                                executeBuildReloadTask(goalsList, rebootRequired);
+                            }
                         }
                     }
                     key.reset();
@@ -245,50 +305,67 @@ public abstract class AutoDeployHandler implements Runnable {
         }
     }
 
-    private List<String> updateGoalsList(boolean fileDeletedOrRenamed, boolean resourceModified,
-            boolean testClassesModified) {
-        boolean onlyJavaFilesUpdated = sourceUpdatedPending.stream().allMatch(k -> k.path.toString().endsWith(".java") && k.kind == ENTRY_MODIFY && k.javaClass);
+    private List<String> updateGoalsList(boolean classesModified, boolean resourceModified,
+            boolean testClassesModified, boolean testResourcesModified) {
+        boolean onlyJavaFilesUpdated = sourceUpdatedPending.stream()
+                .allMatch(k -> k.getPath().toString().endsWith(JAVA_FILE_EXTENSION) && k.getKind() == ENTRY_MODIFY && k.isJavaClass());
         List<String> goalsList = new ArrayList<>();
-        if (fileDeletedOrRenamed || cleanPending.get() || sourceUpdatedPending.size() > 1) {
-            goalsList.add(0, "clean");
-            goalsList.add("resources:resources");
-            resourceModified = true;
-        } else if (resourceModified) {
-            goalsList.add("resources:resources");
+        boolean clean = cleanPending.get();
+        if (clean) {
+            goalsList.add(0, GOAL_CLEAN);
         }
-        goalsList.add("org.apache.maven.plugins:maven-compiler-plugin:3.12.1:compile"); //v3.12.1 is required as is includes fix https://github.com/apache/maven-compiler-plugin/pull/213
-        if (onlyJavaFilesUpdated) {
-            goalsList.add("-Dmaven.compiler.useIncrementalCompilation=false");
+        if (clean || resourceModified) {
+            goalsList.add(GOAL_PROCESS_RESOURCES);
         }
-        if (resourceModified || !onlyJavaFilesUpdated) {
-            goalsList.add("war:" + (start.isLocal()?"exploded":"war"));
+        if (clean || classesModified) {
+            goalsList.add(GOAL_COMPILE);
+            if (onlyJavaFilesUpdated) {
+                goalsList.add(OPTION_DISABLE_INCREMENTAL_COMPILATION);
+            }
+        }
+        if (!clean && onlyJavaFilesUpdated) {
+            Path outputDirectory = Paths.get(webappDirectory.toPath().toString(), WEB_INF_DIRECTORY, CLASSES_DIRECTORY);
+            goalsList.add(OPTION_OUTPUT_DIRECTORY + "\"" + outputDirectory.toString() + "\"");
         } else {
-            Path outputDirectory = Paths.get(webappDirectory.toPath().toString(), "WEB-INF", "classes");
-            goalsList.add("-Dmaven.compiler.outputDirectory=\"" + outputDirectory.toString() + "\"");
+            goalsList.add(GOAL_WAR + ":" + (start.isLocal() ? GOAL_WAR_EXPLODED : GOAL_WAR));
         }
-        if (!testClassesModified) {
-            goalsList.add("-Dmaven.test.skip=true");
+        if (!testClassesModified && !testResourcesModified) {
+            goalsList.add(SKIP_TESTS_FLAG);
         } else {
-            goalsList.add("-DskipTests");
+            goalsList.add(SKIP_TESTS_OPTION);
+        }
+        for (Profile profile : project.getActiveProfiles()) {
+            if (POM.equalsIgnoreCase(profile.getSource())) {
+                goalsList.add("-P" + profile.getId() + " ");
+            }
         }
         return goalsList;
     }
 
     private void executeBuildReloadTask(List<String> goalsList, boolean rebootRequired) {
+        buildReloadTaskStartTime = System.currentTimeMillis();
         buildReloadTask = executorService.submit(() -> {
-            if (goalsList.get(0).equals("clean")) {
-                deleteBuildDir(project.getBuild().getDirectory());
-                goalsList.remove(0);
-            }
-            InvocationRequest request = new DefaultInvocationRequest();
-            request.setPomFile(new File(project.getBasedir(), "pom.xml"));
-            request.setGoals(goalsList);
-            log.debug("Maven goals: " + goalsList);
-            System.setProperty("maven.multiModuleProjectDirectory", project.getBasedir().toString());
+            String message = "Auto-build started for " + project.getName() + " with goals: " + goalsList;
 
             Invoker invoker = new DefaultInvoker();
             invoker.setLogger(new InvokerLoggerImpl(log));
             invoker.setInputStream(InputStream.nullInputStream());
+
+            InvocationRequest request = new DefaultInvocationRequest();
+            request.setPomFile(new File(project.getBasedir(), POM_XML));
+            System.setProperty(MAVEN_MULTI_MODULE_PROJECT_DIRECTORY, project.getBasedir().toString());
+            if (goalsList.get(0).equals(GOAL_CLEAN)) {
+                deleteBuildDir(project.getBuild().getDirectory());
+                goalsList.remove(0);
+            }
+            request.setGoals(goalsList);
+            try {
+                Thread.sleep(5);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt(); // Restore the interrupted status
+                return; // Exit if the thread is interrupted
+            }
+            log.info(message);
             try {
                 InvocationResult result = invoker.execute(request);
                 if (result.getExitCode() != 0) {
@@ -306,6 +383,8 @@ public abstract class AutoDeployHandler implements Runnable {
                     sourceUpdatedPending.clear();
                 }
             } catch (MavenInvocationException ex) {
+                log.error("Error invoking Maven", ex);
+            } catch (Throwable ex) {
                 log.error("Error invoking Maven", ex);
             }
         });
