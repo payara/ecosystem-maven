@@ -46,7 +46,7 @@ import java.util.Objects;
  *
  * @author Gaurav Gupta
  */
-public class Source {
+public class Source implements Comparable<Source> {
 
     private final Path path;
     private final WatchEvent.Kind<?> kind;
@@ -94,6 +94,11 @@ public class Source {
             return false;
         }
         return Objects.equals(this.kind, other.kind);
+    }
+    
+    @Override
+    public int compareTo(Source other) {
+        return this.path.toString().compareTo(other.path.toString());
     }
 
     @Override
