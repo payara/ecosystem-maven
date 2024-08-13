@@ -38,6 +38,10 @@
  */
 package fish.payara.maven.plugins.micro;
 
+import fish.payara.maven.plugins.AutoDeployHandler;
+import fish.payara.maven.plugins.PropertiesUtils;
+import fish.payara.maven.plugins.StartTask;
+import fish.payara.maven.plugins.WebDriverFactory;
 import fish.payara.maven.plugins.micro.processor.MicroFetchProcessor;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
