@@ -42,5 +42,25 @@ public interface Configuration {
 
     String INOTIFY_USER_LIMIT_REACHED_MESSAGE = "User limit of inotify instances reached";
     String WATCH_SERVICE_ERROR_MESSAGE = "Error starting WatchService. User limit of inotify instances reached or too many open files. Please increase the max_user_watches configuration.";
+    String SKIP_TESTS_OPTION = "-DskipTests";
+    String SKIP_TESTS_FLAG = "-Dmaven.test.skip=true";
+    String GOAL_CLEAN = "clean";
+    String GOAL_PROCESS_RESOURCES = "process-resources";
+    String GOAL_COMPILE = "org.apache.maven.plugins:maven-compiler-plugin:3.12.1:compile"; //v3.12.1 is required as is includes fix https://github.com/apache/maven-compiler-plugin/pull/213
+    String GOAL_WAR_EXPLODED = "exploded";
+    String GOAL_WAR = "war";
+    String OPTION_DISABLE_INCREMENTAL_COMPILATION = "-Dmaven.compiler.useIncrementalCompilation=false";
+    String OPTION_OUTPUT_DIRECTORY = "-Dmaven.compiler.outputDirectory=";
+    String MAVEN_MULTI_MODULE_PROJECT_DIRECTORY = "maven.multiModuleProjectDirectory";
+    String SRC_DIR = "src";
+    String MAIN_DIR = "main";
+    String JAVA_DIR = "java";
+    String RESOURCES_DIR = "resources";
+    String TEST_DIR = "test";
+    String WEB_INF_DIRECTORY = "WEB-INF";
+    String CLASSES_DIRECTORY = "classes";
+    String JAVA_FILE_EXTENSION = ".java";
+    String POM = "pom";
+    String POM_XML = "pom.xml";
 
 }

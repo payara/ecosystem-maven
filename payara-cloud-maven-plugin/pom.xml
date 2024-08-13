@@ -40,7 +40,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>fish.payara.maven.plugins</groupId>
     <artifactId>payara-cloud-maven-plugin</artifactId>
-    <version>1.0-Alpha2</version>
+    <version>1.0-Alpha4-SNAPSHOT</version>
     <packaging>maven-plugin</packaging>
     <name>Payara Cloud Maven Plugin</name>
     <description>Payara Cloud Maven Plugin that deploys Jakarta EE (formerly Java EE) and MicroProfile applications to Payara Cloud, an all-in-one platform as a service (PaaS) solution</description>
@@ -101,7 +101,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>3.6.3</version>
+                <version>3.8.0</version>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -122,7 +122,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-release-plugin</artifactId>
-                <version>3.0.1</version>
+                <version>3.1.1</version>
                 <configuration>
                     <pushChanges>false</pushChanges>
                     <autoVersionSubmodules>true</autoVersionSubmodules>
@@ -167,7 +167,7 @@
         <dependency>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-dependency-plugin</artifactId>
-            <version>3.7.0</version>
+            <version>3.7.1</version>
         </dependency>
         <dependency>
             <groupId>org.apache.maven.shared</groupId>
@@ -177,7 +177,7 @@
         <dependency>
             <groupId>fish.payara.tools</groupId>
             <artifactId>payara-cloud</artifactId>
-            <version>1.0-Alpha3</version>
+            <version>1.0-Alpha4</version>
         </dependency>
         <dependency>
             <groupId>fish.payara.cloud</groupId>
