@@ -323,7 +323,7 @@ public abstract class AutoDeployHandler implements Runnable {
                 goalsList.add(OPTION_DISABLE_INCREMENTAL_COMPILATION);
             }
         }
-        if (!clean && onlyJavaFilesUpdated) {
+        if (!clean && start.isLocal() && onlyJavaFilesUpdated) {
             Path outputDirectory = Paths.get(webappDirectory.toPath().toString(), WEB_INF_DIRECTORY, CLASSES_DIRECTORY);
             goalsList.add(OPTION_OUTPUT_DIRECTORY + "\"" + outputDirectory.toString() + "\"");
         } else {
