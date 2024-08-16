@@ -10,18 +10,6 @@ pipeline {
     }
     stages {
 
-        stage('Checkout Ecosystem Maven') {
-            steps {
-                script {
-                    checkout changelog: false, poll: true, scm: [$class: 'GitSCM',
-                    branches: [[name: "master"]],
-                    doGenerateSubmoduleConfigurations: false,
-                    extensions: [], 
-                    submoduleCfg: [],
-                    userRemoteConfigs: [[credentialsId: 'payara-devops-github-personal-access-token-as-username-password', url:"https://github.com/payara/ecosystem-maven.git"]]]
-                }
-            }
-        }
         stage('Build payara-maven-plugins-common') {
             environment {
                 JAVA_HOME = tool("zulu-11")
