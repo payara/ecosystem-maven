@@ -55,7 +55,6 @@ import static org.twdata.maven.mojoexecutor.MojoExecutor.executionEnvironment;
  */
 abstract class BasePayaraMojo extends AbstractMojo {
 
-    //MavenProject and MavenSession have to be declared with @Parameter now
     @Parameter(defaultValue = "${project}", required = true, readonly = true)
     MavenProject mavenProject;
 
