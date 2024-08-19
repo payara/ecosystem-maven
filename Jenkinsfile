@@ -43,7 +43,7 @@ pipeline {
                     ls -lrt
                     cd payara-micro-maven-plugin
                     echo *#*#*#*#*#*#*#*#*#*#*#*#  Building SRC  *#*#*#*#*#*#*#*#*#*#*#*#*#*#*#
-                    mvn -B -V -ff -e clean install -DskipTests --strict-checksums \
+                    mvn -B -V -ff -e clean install --strict-checksums \
                         -Djavadoc.skip -Dsource.skip
                     echo *#*#*#*#*#*#*#*#*#*#*#*#    Built SRC   *#*#*#*#*#*#*#*#*#*#*#*#*#*#*#
                     '''

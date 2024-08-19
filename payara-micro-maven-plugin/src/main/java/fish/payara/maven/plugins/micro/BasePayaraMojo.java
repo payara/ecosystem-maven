@@ -55,10 +55,10 @@ import static org.twdata.maven.mojoexecutor.MojoExecutor.executionEnvironment;
  */
 abstract class BasePayaraMojo extends AbstractMojo {
 
-    @Component
+    @Parameter(defaultValue = "${project}", required = true, readonly = true)
     MavenProject mavenProject;
 
-    @Component
+    @Parameter(defaultValue = "${session}", required = true, readonly = true)
     MavenSession mavenSession;
 
     @Component
