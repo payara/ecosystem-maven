@@ -66,6 +66,9 @@ public class PayaraMicroVersionSelector {
 
     private static final String MAVEN_METADATA_URL = "https://repo1.maven.org/maven2/fish/payara/extras/payara-micro/maven-metadata.xml";
     private static final String GROUP_ID_JAKARTA = "jakarta.platform";
+    private static final String GROUP_ID_JAVAX = "javax";
+    private static final String ARTIFACT_ID_JAVAEE_WEB_API = "javaee-web-api";
+    private static final String ARTIFACT_ID_JAVAEE_API = "javaee-api";
 
     private static final Map<Integer, String> JAKARTA_TO_PAYARA_MAP = new HashMap<>();
     private final Log log;
@@ -113,6 +116,10 @@ public class PayaraMicroVersionSelector {
         List<Dependency> dependencies = mavenProject.getDependencies();
         for (Dependency dependency : dependencies) {
             if (GROUP_ID_JAKARTA.equals(dependency.getGroupId())) {
+                return dependency.getVersion();
+            }
+            if (GROUP_ID_JAVAX.equals(dependency.getGroupId())
+                    && (ARTIFACT_ID_JAVAEE_API.equals(dependency.getArtifactId()) || ARTIFACT_ID_JAVAEE_WEB_API.equals(dependency.getArtifactId()))) {
                 return dependency.getVersion();
             }
         }
