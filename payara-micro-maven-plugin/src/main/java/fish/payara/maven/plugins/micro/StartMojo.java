@@ -48,9 +48,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.DefaultArtifact;
 import org.apache.maven.artifact.handler.DefaultArtifactHandler;
-import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
-import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.dependency.fromConfiguration.ArtifactItem;
 import org.apache.maven.toolchain.Toolchain;
@@ -72,8 +70,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.apache.maven.project.MavenProject;
 import org.openqa.selenium.WebDriver;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.project.MavenProject;
+import org.apache.maven.plugin.MojoExecutionException;
 
 /**
  * Run mojo that executes payara-micro
@@ -91,7 +91,7 @@ public class StartMojo extends BasePayaraMojo implements StartTask {
     @Parameter(property = "javaPath")
     private String javaPath;
 
-    @Parameter(property = "payaraVersion", defaultValue = "6.2024.3")
+    @Parameter(property = "payaraVersion")
     private String payaraVersion;
 
     @Parameter(property = "payaraMicroAbsolutePath")
@@ -189,7 +189,7 @@ public class StartMojo extends BasePayaraMojo implements StartTask {
     StartMojo() {
         threadGroup = new ThreadGroup(MICRO_THREAD_NAME);
     }
-            
+
     @Override
     public void execute() throws MojoExecutionException {
         if (trimLog == null) {
@@ -442,6 +442,10 @@ public class StartMojo extends BasePayaraMojo implements StartTask {
             return findLocalPathOfArtifact(artifact);
         }
 
+        if (payaraVersion == null) {
+            PayaraMicroVersionSelector payaraMicroVersionSelector = new PayaraMicroVersionSelector(mavenProject, getLog());
+            payaraVersion = payaraMicroVersionSelector.fetchPayaraVersion();
+        }
         if (payaraVersion != null) {
             MojoExecutor.ExecutionEnvironment environment = getEnvironment();
             MicroFetchProcessor microFetchProcessor = new MicroFetchProcessor();
