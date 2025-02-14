@@ -38,14 +38,7 @@
  */
 package fish.payara.maven.plugins.server;
 
-import fish.payara.maven.plugins.server.parser.JDKVersion;
-import fish.payara.maven.plugins.server.parser.JvmOption;
-import fish.payara.maven.plugins.server.parser.JvmConfigReader;
-import fish.payara.maven.plugins.server.utils.JavaUtils;
-import fish.payara.maven.plugins.server.utils.ServerUtils;
-import fish.payara.maven.plugins.server.utils.StringUtils;
 import fish.payara.maven.plugins.AutoDeployHandler;
-import fish.payara.maven.plugins.PropertiesUtils;
 import fish.payara.maven.plugins.StartTask;
 import org.apache.commons.io.IOUtils;
 import org.apache.maven.artifact.Artifact;
@@ -55,7 +48,6 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
-import org.apache.maven.plugins.dependency.fromConfiguration.ArtifactItem;
 import org.apache.maven.toolchain.Toolchain;
 import org.twdata.maven.mojoexecutor.MojoExecutor;
 
@@ -65,10 +57,6 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static fish.payara.maven.plugins.server.Configuration.*;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import org.apache.maven.project.MavenProject;
@@ -129,18 +117,32 @@ public class StartMojo extends ServerMojo implements StartTask {
         serverProcessorThread = new Thread(threadGroup, () -> {
 
             try {
-                ProcessBuilder processBuilder = startServer(new PayaraServerInstance("domain1", path));
-                getLog().info("Starting Payara Server [" + path + "] with the these arguments: " + processBuilder.command());
-                serverProcess = processBuilder.start();//re.exec(actualArgs.toArray(new String[0]));
+                PayaraServerInstance instance = new PayaraServerInstance(domain, path);
+                ServerManager serverManager = new ServerManager(instance, getLog());
+                if (!serverManager.isServerAlreadyRunning()) {
+                    ProcessBuilder processBuilder = serverManager.startServer(debug, debugPort);
+                    getLog().info("Starting Payara Server [" + path + "] with the these arguments: " + processBuilder.command());
+                    serverProcess = processBuilder.start();
 
-                if (daemon) {
-                    redirectStream(serverProcess.getInputStream(), System.out);
-                    redirectStream(serverProcess.getErrorStream(), System.err);
+                    if (daemon) {
+                        redirectStream(serverProcess.getInputStream(), System.out);
+                        redirectStream(serverProcess.getErrorStream(), System.err);
+                    } else {
+                        redirectStreamToGivenOutputStream(serverProcess.getInputStream(), System.out);
+                        redirectStreamToGivenOutputStream(serverProcess.getErrorStream(), System.err);
+                    }
+                    serverManager.connectWithServer();
                 } else {
-                    redirectStreamToGivenOutputStream(serverProcess.getInputStream(), System.out);
-                    redirectStreamToGivenOutputStream(serverProcess.getErrorStream(), System.err);
+                    streamServerLog(instance);
                 }
-
+                String appPath;
+                if (exploded) {
+                    appPath = evaluateProjectArtifactAbsolutePath("");
+                } else {
+                    appPath = evaluateProjectArtifactAbsolutePath("." + mavenProject.getPackaging());
+                }
+                serverManager.undeployApplication(mavenProject.getName());
+                serverManager.deployApplication(mavenProject.getName(), appPath);
                 int exitCode = serverProcess.waitFor();
                 if (exitCode != 0) { // && !autoDeploy
                     throw new MojoFailureException(ERROR_MESSAGE);
@@ -176,166 +178,6 @@ public class StartMojo extends ServerMojo implements StartTask {
 //                }
 //            }
         }
-    }
-
-    public ProcessBuilder startServer(PayaraServerInstance payaraServer) throws Exception {
-        JvmConfigReader jvmConfigReader = new JvmConfigReader(payaraServer.getDomainXmlPath(), DAS_NAME);
-
-        String javaHome = payaraServer.getJDKHome();
-        if (javaHome == null) {
-            throw new Exception("Java home path not found.");
-        }
-
-        JDKVersion javaVersion = JDKVersion.getJDKVersion(javaHome);
-        if (javaVersion == null) {
-            throw new Exception("Java version not found.");
-        }
-
-        List<String> optList = new ArrayList<>();
-        for (JvmOption jvmOption : jvmConfigReader.getJvmOptions()) {
-            if (JDKVersion.isCorrectJDK(javaVersion, jvmOption.getVendor(), jvmOption.getMinVersion(), jvmOption.getMaxVersion())) {
-                optList.add(jvmOption.getOption());
-            }
-        }
-
-        Map<String, String> propMap = jvmConfigReader.getPropMap();
-        addJavaAgent(payaraServer, jvmConfigReader);
-
-        String bootstrapJar = Paths.get(payaraServer.getServerModules(), "glassfish.jar").toString();
-        if (!Files.exists(Paths.get(bootstrapJar))) {
-            throw new Exception("No bootstrap jar exists.");
-        }
-
-        String classPath = "";
-        String javaOpts;
-        String payaraArgs;
-
-        Map<String, String> varMap = varMap(payaraServer, javaHome);
-
-        String debugOpt = propMap.get("debug-options");
-        if (debug != null && !debug.equalsIgnoreCase("false") && debugOpt != null) {
-            if (Boolean.parseBoolean(debug)) {
-                if (isValidPort(debugPort)) {
-                    debugOpt = debugOpt.replaceAll("address=\\d+", "address=" + debugPort);
-                }
-                optList.add(debugOpt);
-            } else if (!"false".equals(debug)) {
-                optList.add(debug);
-            }
-            optList.add(debugOpt);
-        }
-
-        javaOpts = appendOptions(optList, varMap);
-        javaOpts += appendVarMap(varMap);
-        payaraArgs = appendPayaraArgs(getPayaraArgs(payaraServer));
-
-        String javaVmExe = JavaUtils.javaVmExecutableFullPath(javaHome);
-        if (!Files.exists(Paths.get(javaVmExe))) {
-            throw new Exception("Java VM executable for " + payaraServer.getPath() + " was not found.");
-        }
-
-        String allArgs = String.join(" ",
-                javaVmExe,
-                javaOpts,
-                "-jar", bootstrapJar,
-                "--classpath", classPath,
-                payaraArgs);
-        List<String> args = JavaUtils.parseParameters(allArgs);
-        ProcessBuilder processBuilder = new ProcessBuilder(args);
-        processBuilder.directory(new File(payaraServer.getPath()));
-        return processBuilder;
-    }
-
-    private boolean isValidPort(String portStr) {
-        if (portStr == null || portStr.trim().isEmpty()) {
-            return false;
-        }
-        try {
-            int port = Integer.parseInt(portStr.trim());
-            return port >= 0 && port <= 65535;
-        } catch (NumberFormatException e) {
-            return false;
-        }
-    }
-
-    private void addJavaAgent(PayaraServerInstance payaraServer, JvmConfigReader jvmConfigReader) throws Exception {
-        List<JvmOption> optList = jvmConfigReader.getJvmOptions();
-        String serverHome = payaraServer.getServerHome();
-
-        File monitor = Paths.get(serverHome, "lib", "monitor").toFile();
-        File btrace = Paths.get(monitor.getPath(), "btrace-agent.jar").toFile();
-        File flight = Paths.get(monitor.getPath(), "flashlight-agent.jar").toFile();
-
-        if (jvmConfigReader.isMonitoringEnabled()) {
-            if (btrace.exists()) {
-                optList.add(new JvmOption("-javaagent:" + StringUtils.quote(btrace.getPath()) + "=unsafe=true,noServer=true"));
-            } else if (flight.exists()) {
-                optList.add(new JvmOption("-javaagent:" + StringUtils.quote(flight.getPath())));
-            }
-        }
-    }
-
-    private Map<String, String> varMap(PayaraServerInstance payaraServer, String javaHome) {
-        Map<String, String> varMap = new HashMap<>();
-        varMap.put(ServerUtils.PF_HOME_PROPERTY, payaraServer.getServerHome());
-        varMap.put(ServerUtils.PF_DOMAIN_ROOT_PROPERTY, payaraServer.getDomainPath());
-        varMap.put(ServerUtils.PF_JAVA_ROOT_PROPERTY, javaHome);
-        varMap.put(JavaUtils.PATH_SEPARATOR, File.pathSeparator);
-        return varMap;
-    }
-
-    private String appendOptions(List<String> optList, Map<String, String> varMap) {
-        StringBuilder argumentBuf = new StringBuilder();
-        List<String> moduleOptions = new ArrayList<>();
-        Map<String, String> keyValueArgs = new HashMap<>();
-        List<String> keyOrder = new ArrayList<>();
-
-        for (String opt : optList) {
-            opt = StringUtils.doSub(opt.trim(), varMap);
-            int splitIndex = opt.indexOf('=');
-            String name, value = null;
-            if (splitIndex != -1 && !opt.startsWith("-agentpath:")) {
-                name = opt.substring(0, splitIndex);
-                value = StringUtils.quote(opt.substring(splitIndex + 1));
-            } else {
-                name = opt;
-            }
-
-            if (name.startsWith("--add-")) {
-                moduleOptions.add(opt);
-            } else {
-                if (!keyValueArgs.containsKey(name)) {
-                    keyOrder.add(name);
-                }
-                keyValueArgs.put(name, value);
-            }
-        }
-
-        argumentBuf.append(String.join(" ", moduleOptions));
-        for (String key : keyOrder) {
-            argumentBuf.append(" ").append(key);
-            if (keyValueArgs.get(key) != null) {
-                argumentBuf.append("=").append(keyValueArgs.get(key));
-            }
-        }
-        return argumentBuf.toString();
-    }
-
-    private String appendVarMap(Map<String, String> varMap) {
-        StringBuilder javaOpts = new StringBuilder();
-        varMap.forEach((key, value) -> javaOpts.append(" ").append(JavaUtils.systemProperty(key, value)));
-        return javaOpts.toString();
-    }
-
-    private List<String> getPayaraArgs(PayaraServerInstance payaraServer) {
-        List<String> payaraArgs = new ArrayList<>();
-        payaraArgs.add(ServerUtils.cmdLineArgument(ServerUtils.PF_DOMAIN_ARG, payaraServer.getDomainName()));
-        payaraArgs.add(ServerUtils.cmdLineArgument(ServerUtils.PF_DOMAIN_DIR_ARG, StringUtils.quote(payaraServer.getDomainPath())));
-        return payaraArgs;
-    }
-
-    private String appendPayaraArgs(List<String> payaraArgsList) {
-        return String.join(" ", payaraArgsList).trim();
     }
 
     private Thread getShutdownHook() {
@@ -487,6 +329,32 @@ public class StartMojo extends ServerMojo implements StartTask {
 
     Process getServerProcess() {
         return this.serverProcess;
+    }
+
+    private void streamServerLog(PayaraServerInstance instance) {
+        final Thread thread = new Thread(threadGroup, () -> {
+            File logFile = new File(instance.getServerLog());
+            if (logFile.exists()) {
+                try (RandomAccessFile raf = new RandomAccessFile(logFile, "r")) {
+                    raf.seek(raf.length());
+                    String line;
+                    while (true) {
+                        while ((line = raf.readLine()) != null) {
+                            System.out.println(line);
+                        }
+                        Thread.sleep(1000);
+                    }
+                } catch (IOException e) {
+                    getLog().error("Error occurred while streaming server.log", e);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            } else {
+                getLog().warn("Log file does not exist: " + logFile.getAbsolutePath());
+            }
+        });
+        thread.setDaemon(false);
+        thread.start();
     }
 
     private void redirectStream(final InputStream inputStream, final PrintStream printStream) {

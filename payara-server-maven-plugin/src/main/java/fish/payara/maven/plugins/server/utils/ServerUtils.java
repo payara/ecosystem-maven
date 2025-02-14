@@ -39,50 +39,52 @@
 package fish.payara.maven.plugins.server.utils;
 
 import java.io.File;
+import jakarta.xml.bind.DatatypeConverter;
 
 public class ServerUtils {
 
-    /** 
+    /**
      * Payara server Java VM root property name.
      */
     public static final String PF_JAVA_ROOT_PROPERTY = "com.sun.aas.javaRoot";
 
-    /** 
+    /**
      * Payara server home property name.
      *
      * It's value says it is server installation root but in reality it is just
-     * <code>payara</code> subdirectory under server installation root which
-     * we usually call server home.
+     * <code>payara</code> subdirectory under server installation root which we
+     * usually call server home.
      */
     public static final String PF_HOME_PROPERTY = "com.sun.aas.installRoot";
 
-    /** 
+    /**
      * Payara server domain root property name.
      *
-     * It's value says it is server instance root which is the same. 
+     * It's value says it is server instance root which is the same.
      */
     public static final String PF_DOMAIN_ROOT_PROPERTY = "com.sun.aas.instanceRoot";
 
-    /** 
+    /**
      * Payara server Derby root property name.
      */
     public static final String PF_DERBY_ROOT_PROPERTY = "com.sun.aas.derbyRoot";
 
-    /** 
+    /**
      * Payara server domain name command line argument.
      */
     public static final String PF_DOMAIN_ARG = "--domain";
-    
-    
+
     public static final String ASADMIN = "asadmin";
     public static final String STOP_DOMAIN = "stop-domain";
 
-    /** 
+    /**
      * Payara server domain directory command line argument.
      */
     public static final String PF_DOMAIN_DIR_ARG = "--domaindir";
 
-    /** Payara main class to be started when using classpath. */
+    /**
+     * Payara main class to be started when using classpath.
+     */
     public static final String PF_MAIN_CLASS = "com.sun.enterprise.glassfish.bootstrap.ASMain";
 
     public static final String DEFAULT_USERNAME = "admin";
@@ -92,22 +94,28 @@ public class ServerUtils {
     public static final int DEFAULT_HTTP_PORT = 8080;
     public static final String DEFAULT_HOST = "localhost";
 
-    /** Default name of the DAS server. */
+    /**
+     * Default name of the DAS server.
+     */
     public static final String DAS_NAME = "server";
 
-    /** Default retry count to check alive status of server. */
+    /**
+     * Default retry count to check alive status of server.
+     */
     public static final int DEFAULT_RETRY_COUNT = 30;
 
-    /** Default sleep time in millisecond before retry to check alive status of server. */
+    /**
+     * Default sleep time in millisecond before retry to check alive status of
+     * server.
+     */
     public static final int DEFAULT_WAIT = 3000;
 
     /**
-     * Builds command line argument containing argument identifier, space
-     * and argument value, e.g. <code>--name value</code>.
+     * Builds command line argument containing argument identifier, space and
+     * argument value, e.g. <code>--name value</code>.
      *
-     * @param name      Command line argument name including dashes at
-     *                  the beginning.
-     * @param value     Value to be appended prefixed with single space.
+     * @param name Command line argument name including dashes at the beginning.
+     * @param value Value to be appended prefixed with single space.
      * @return Command line argument concatenated together.
      */
     public static String cmdLineArgument(String name, String value) {
@@ -125,5 +133,27 @@ public class ServerUtils {
         File asadminInGlassfish = new File(serverPath + "/glassfish/bin/asadmin");
         File asadminInBin = new File(serverPath + "/bin/asadmin");
         return asadminInGlassfish.exists() && asadminInBin.exists();
+    }
+
+    /**
+     * Payara Basic Authorization user and password separator.
+     */
+    private static final String AUTH_BASIC_FIELD_SEPARATPR = ":";
+
+    /**
+     * Build HTTP Basic authorization base64 encoded credentials argument
+     * containing user name and password.
+     *
+     * @param user Username to be stored into encoded argument.
+     * @param password Password to be stored into encoded argument.
+     */
+    public static String basicAuthCredentials(final String user,
+            final String password) {
+        StringBuilder sb = new StringBuilder(user.length()
+                + AUTH_BASIC_FIELD_SEPARATPR.length() + password.length());
+        sb.append(user);
+        sb.append(AUTH_BASIC_FIELD_SEPARATPR);
+        sb.append(password);
+        return DatatypeConverter.printBase64Binary(sb.toString().getBytes());
     }
 }
