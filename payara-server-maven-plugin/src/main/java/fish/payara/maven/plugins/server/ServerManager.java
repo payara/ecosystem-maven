@@ -365,7 +365,7 @@ public class ServerManager {
 
     public boolean pingServer() throws Exception {
         URI uri = new URI(payaraServer.getProtocol(), null, payaraServer.getHost(), payaraServer.getAdminPort(),
-                            "management/domain/version", null, null);
+                            "/management/domain/version", null, null);
         HttpURLConnection connection = (HttpURLConnection) uri.toURL().openConnection();
         connection.setRequestMethod(HTTP_GET_METHOD);
         connection.setConnectTimeout(HTTP_CONNECTION_TIMEOUT);
