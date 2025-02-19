@@ -79,15 +79,12 @@ import java.security.cert.X509Certificate;
 import java.util.Properties;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
-import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.json.JSONArray;
-import org.json.JSONObject;
 
 /**
  *
@@ -99,29 +96,30 @@ public class ServerManager {
 
     private final PayaraServerInstance payaraServer;
 
-    // Constant definitions
     private static final String HTTP_GET_METHOD = "GET";
-
     private static final String HTTP_POST_METHOD = "POST";
 
     private static final String CONTENT_TYPE_JSON = "application/json";
-
+    private static final String CONTENT_TYPE_STREAM = "application/octet-stream";
     private static final String CONTENT_TYPE_ZIP = "application/zip";
+    private static final String CONTENT_TYPE_HEADER = "Content-Type";
 
     private static final String ERROR_JAVA_HOME_NOT_FOUND = "Java home path not found.";
-
     private static final String ERROR_JAVA_VERSION_NOT_FOUND = "Java version not found.";
-
     private static final String ERROR_BOOTSTRAP_JAR_NOT_FOUND = "No bootstrap jar exists.";
-
     private static final String ERROR_JAVA_VM_EXECUTABLE_NOT_FOUND = "Java VM executable for %s was not found.";
-
     
+    private static final String DEPLOY_COMMAND = "deploy";
+    private static final String UNDEPLOY_COMMAND = "undeploy";
+    private static final String GET_COMMAND = "get";
+    private static final String LOCATIONS_COMMAND = "__locations";
+
+    private static final int MAX_RETRIES = 60;
     /**
      * Delay before administration command execution will be retried.
      */
     public static final int HTTP_RETRY_DELAY = 3000;
-    
+
     /**
      * Socket connection timeout (in miliseconds).
      */
@@ -189,6 +187,7 @@ public class ServerManager {
      * Deploy command <code>force</code> parameter value.
      */
     private static final boolean FORCE_VALUE = true;
+
 
     public ServerManager(PayaraServerInstance payaraServer, Log log) {
         this.log = log;
@@ -340,12 +339,12 @@ public class ServerManager {
     }
 
     public void connectWithServer() throws MojoExecutionException {
-        int retries = 20;
         boolean pingSuccess = false;
-        for (int i = 0; i < retries; i++) {
+        for (int i = 0; i < MAX_RETRIES; i++) {
             try {
-                Thread.sleep(5000);
+                Thread.sleep(HTTP_RETRY_DELAY);
             } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
             }
             try {
                 if (pingServer()) {
@@ -353,8 +352,8 @@ public class ServerManager {
                     break;
                 }
             } catch (Exception e) {
-                if (i == retries - 1) {
-                    throw new MojoExecutionException("Failed to ping Payara Server after " + retries + " attempts.", e);
+                if (i == MAX_RETRIES - 1) {
+                    throw new MojoExecutionException("Failed to ping Payara Server after " + MAX_RETRIES + " attempts.", e);
                 }
             }
         }
@@ -365,7 +364,7 @@ public class ServerManager {
 
     public boolean pingServer() throws Exception {
         URI uri = new URI(payaraServer.getProtocol(), null, payaraServer.getHost(), payaraServer.getAdminPort(),
-                            "/management/domain/version", null, null);
+                "/management/domain/version", null, null);
         HttpURLConnection connection = (HttpURLConnection) uri.toURL().openConnection();
         connection.setRequestMethod(HTTP_GET_METHOD);
         connection.setConnectTimeout(HTTP_CONNECTION_TIMEOUT);
@@ -375,38 +374,40 @@ public class ServerManager {
     }
 
     public boolean isServerAlreadyRunning() {
-        Command command = new Command("__locations", null);
+        Command command = new Command(LOCATIONS_COMMAND, null);
         Response serverRunning;
         try {
             serverRunning = invokeServer(payaraServer, command);
-            if (serverRunning != null 
+            if (serverRunning != null
                     && serverRunning.isExitCodeSuccess()
                     && serverRunning.toString().equals(payaraServer.getDomainPath())) {
                 log.info("Server already running on " + serverRunning.toString());
                 return true;
             }
         } catch (Exception ex) {
-            log.error(ex);
+            // skip
         }
         return false;
     }
-        
-    public void deployApplication(String name, String appPath) {
-        Command command = new Command("deploy", name);
+
+    public void deployApplication(String name, String appPath, String contextRoot) {
+        Command command = new Command(DEPLOY_COMMAND, name);
         command.setPath(appPath);
         command.setQuery(query(command));
+        command.setContextRoot(contextRoot);
         Response deploy;
         try {
             deploy = invokeServer(payaraServer, command);
             if (deploy != null && deploy.isExitCodeSuccess()) {
-                log.info(name + " application deployed successfully.");
-                command = new Command("get", "applications.application." + name + ".context-root");
+                command = new Command(GET_COMMAND, "applications.application." + name + ".context-root");
                 command.setQuery(query(command));
-                Response contextRoot = invokeServer(payaraServer, command);
-                if (contextRoot != null && contextRoot.isExitCodeSuccess()) {
+                Response response = invokeServer(payaraServer, command);
+                if (response != null && response.isExitCodeSuccess()) {
                     URI app = new URI(payaraServer.getProtocol(), null, payaraServer.getHost(), payaraServer.getHttpPort(),
-                            contextRoot.getContextRoot(), null, null);
-                    log.info(name + " application available on : " + app.toString());
+                            response.getContextRoot(), null, null);
+                    log.info(name + " application deployed successfully : " + app.toString());
+                } else {
+                    log.info(name + " application deployed successfully.");
                 }
             } else {
                 log.error("Failed to deploy application.");
@@ -415,10 +416,9 @@ public class ServerManager {
             log.error("Error deploying the application: " + ex.getMessage());
         }
     }
-    
-    
+
     public void undeployApplication(String name) {
-        Command command = new Command("undeploy", name);
+        Command command = new Command(UNDEPLOY_COMMAND, name);
         command.setQuery(query(command));
         try {
             invokeServer(payaraServer, command);
@@ -427,38 +427,41 @@ public class ServerManager {
         }
     }
 
-
     /**
      * Builds deploy query string for given command.
-     * 
+     *
      * @param command Payara server administration deploy command entity.
      * @return Deploy query string for given command.
      */
     private static String query(Command command) {
         StringBuilder sb = new StringBuilder();
         switch (command.getCommand()) {
-            case "deploy":
+            case DEPLOY_COMMAND:
                 sb.append(DEFAULT_PARAM).append(PARAM_ASSIGN_VALUE).append(command.getPath());
                 sb.append(PARAM_SEPARATOR);
                 sb.append(FORCE_PARAM).append(PARAM_ASSIGN_VALUE).append(FORCE_VALUE);
                 if (command.getName() != null && command.getName().length() > 0) {
                     sb.append(PARAM_SEPARATOR);
                     sb.append(NAME_PARAM).append(PARAM_ASSIGN_VALUE).append(command.getName());
-                }   if (command.getTarget() != null) {
+                }
+                if (command.getTarget() != null) {
                     sb.append(PARAM_SEPARATOR);
                     sb.append(TARGET_PARAM).append(PARAM_ASSIGN_VALUE).append(command.getTarget());
-                }   if (command.getContextRoot() != null && command.getContextRoot().length() > 0) {
+                }
+                if (command.getContextRoot() != null && command.getContextRoot().length() > 0) {
                     sb.append(PARAM_SEPARATOR);
                     sb.append(CTXROOT_PARAM).append(PARAM_ASSIGN_VALUE).append(command.getContextRoot());
-                }   if (command.isHotDeploy()) {
+                }
+                if (command.isHotDeploy()) {
                     sb.append(PARAM_SEPARATOR);
                     sb.append(HOT_DEPLOY_PARAM);
                     sb.append(PARAM_ASSIGN_VALUE).append(command.isHotDeploy());
-                }   break;
-            case "undeploy":
+                }
+                break;
+            case UNDEPLOY_COMMAND:
                 sb.append(DEFAULT_PARAM).append(PARAM_ASSIGN_VALUE).append(command.getName());
                 break;
-            case "get":
+            case GET_COMMAND:
                 sb.append(PATTERN_PARAM).append(PARAM_ASSIGN_VALUE).append(command.getName());
                 break;
             default:
@@ -485,7 +488,6 @@ public class ServerManager {
                         httpSucceeded = true;
                     }
                 } catch (ProtocolException | ConnectException | RuntimeException ex) {
-                    log.error(ex);
                     return response;
                 } catch (IOException ex) {
                     if (retries <= 0) {
@@ -598,13 +600,13 @@ public class ServerManager {
                     try {
                         ostream.close();
                     } catch (IOException ex) {
-                    log.error(ex);
+                        log.error(ex);
                     }
                 }
             }
         }
     }
-    
+
     /**
      * Get extra properties for ZIP entries.
      * <p/>
@@ -617,7 +619,7 @@ public class ServerManager {
         props.setProperty("last-modified", Long.toString(file.lastModified()));
         props.put("data-request-name", "DEFAULT");
         props.put("data-request-is-recursive", "true");
-        props.put("Content-Type", "application/octet-stream");
+        props.put(CONTENT_TYPE_HEADER, CONTENT_TYPE_STREAM);
         props.list(new java.io.PrintStream(baos));
         return baos.toByteArray();
     }
@@ -635,7 +637,6 @@ public class ServerManager {
         }
         return null;
     }
-
 
     /**
      * Prepare headers for HTTP connection. This handles all common headers for
@@ -718,110 +719,3 @@ public class ServerManager {
 
 }
 
-class Command {
-
-    private final String name;
-    private final String command;
-    private String path;
-    private String query;
-    private boolean dirDeploy;
-    private String target;
-    private String contextRoot;
-    private boolean hotDeploy;
-
-    public Command(String command, String name) {
-        this.command = command;
-        this.name = name;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public String getPath() {
-        return path;
-    }
-
-    public String getCommand() {
-        return command;
-    }
-
-    public String getQuery() {
-        return query;
-    }
-
-    public boolean isDirDeploy() {
-        return dirDeploy;
-    }
-
-    public void setDirDeploy(boolean dirDeploy) {
-        this.dirDeploy = dirDeploy;
-    }
-
-    public void setPath(String path) {
-        this.path = path;
-    }
-
-    public void setQuery(String query) {
-        this.query = query;
-    }
-
-    public String getTarget() {
-        return target;
-    }
-
-    public String getContextRoot() {
-        return contextRoot;
-    }
-
-    public boolean isHotDeploy() {
-        return hotDeploy;
-    }
-
-}
-
-class Response {
-    private final JSONObject body;
-    private final Map<String, List<String>> headerFields;
-    private final int code;
-
-    public Response(String jsonString, int code, Map<String, List<String>> headerFields) {
-        this.body = new JSONObject(jsonString);
-        this.headerFields = headerFields;
-        this.code = code;
-    }
-
-    public String getContextRoot() {
-        JSONArray resultArray = body.getJSONArray("result");
-        if (resultArray.length() > 0) {
-            String nameValue = resultArray.getJSONObject(0).getString("name");
-            String[] parts = nameValue.split("context-root=");
-            if (parts.length > 1) {
-                return parts[1];
-            }
-        }
-        return null;
-    }
-
-    public boolean isExitCodeSuccess() {
-        return "SUCCESS".equalsIgnoreCase(body.getString("exit_code"));
-    }
-    
-    @Override
-    public String toString() {
-        return body.getString("name") != null ? body.getString("name") : body.toString();
-    }
-
-    public JSONObject getBody() {
-        return body;
-    }
-
-    public Map<String, List<String>> getHeaderFields() {
-        return headerFields;
-    }
-
-    public int getCode() {
-        return code;
-    }
-
-}

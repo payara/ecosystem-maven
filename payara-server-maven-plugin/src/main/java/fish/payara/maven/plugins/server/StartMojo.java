@@ -141,8 +141,9 @@ public class StartMojo extends ServerMojo implements StartTask {
                 } else {
                     appPath = evaluateProjectArtifactAbsolutePath("." + mavenProject.getPackaging());
                 }
-                serverManager.undeployApplication(mavenProject.getName());
-                serverManager.deployApplication(mavenProject.getName(), appPath);
+                String projectName = mavenProject.getName().replaceAll("\\s+", "");
+                serverManager.undeployApplication(projectName);
+                serverManager.deployApplication(projectName, appPath, contextRoot);
                 int exitCode = serverProcess.waitFor();
                 if (exitCode != 0) { // && !autoDeploy
                     throw new MojoFailureException(ERROR_MESSAGE);
