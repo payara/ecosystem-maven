@@ -99,6 +99,7 @@ public class StartMojo extends ServerMojo implements StartTask {
     private final List<String> rebootOnChange = new ArrayList<>();
     private WebDriver driver;
     private String payaraServerURL;
+    private ServerManager serverManager;
 
     StartMojo() {
         threadGroup = new ThreadGroup(SERVER_THREAD_NAME);
@@ -118,7 +119,7 @@ public class StartMojo extends ServerMojo implements StartTask {
 
             try {
                 PayaraServerInstance instance = new PayaraServerInstance(domain, path);
-                ServerManager serverManager = new ServerManager(instance, getLog());
+                serverManager = new ServerManager(instance, getLog());
                 if (!serverManager.isServerAlreadyRunning()) {
                     ProcessBuilder processBuilder = serverManager.startServer(debug, debugPort);
                     getLog().info("Starting Payara Server [" + path + "] with the these arguments: " + processBuilder.command());
@@ -185,6 +186,8 @@ public class StartMojo extends ServerMojo implements StartTask {
         return new Thread(threadGroup, () -> {
             if (serverProcess != null && serverProcess.isAlive()) {
                 try {
+                    String projectName = mavenProject.getName().replaceAll("\\s+", "");
+                    serverManager.undeployApplication(projectName);
                     serverProcess.destroy();
                     serverProcess.waitFor(1, TimeUnit.MINUTES);
                 } catch (InterruptedException ignored) {
