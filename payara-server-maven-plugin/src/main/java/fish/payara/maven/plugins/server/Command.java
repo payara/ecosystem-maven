@@ -38,34 +38,72 @@
  */
 package fish.payara.maven.plugins.server;
 
-import org.apache.maven.plugins.annotations.Parameter;
-import org.apache.maven.plugins.dependency.fromConfiguration.ArtifactItem;
-
 /**
  *
  * @author Gaurav Gupta
  */
-public abstract class ServerMojo extends BasePayaraMojo {
+public class Command {
 
-    @Parameter(property = "javaPath")
-    protected String javaPath;
+    private final String name;
+    private final String command;
+    private String path;
+    private String query;
+    private boolean dirDeploy;
+    private String target;
+    private String contextRoot;
+    private boolean hotDeploy;
 
-    @Parameter(property = "payaraVersion", defaultValue = "6.2024.12")
-    protected String payaraVersion;
+    public Command(String command, String name) {
+        this.command = command;
+        this.name = name;
+    }
 
-    @Parameter(property = "payaraServerAbsolutePath")
-    protected String payaraServerAbsolutePath;
-    
-    @Parameter(property = "domain", defaultValue = "domain1")
-    protected String domain;
+    public String getName() {
+        return name;
+    }
 
-    @Parameter(property = "artifactItem")
-    protected ArtifactItem artifactItem;
-    
-    @Parameter(property = "exploded", defaultValue = "false")
-    protected boolean exploded;
+    public String getPath() {
+        return path;
+    }
 
-    @Parameter(property = "contextRoot")
-    protected String contextRoot;
+    public String getCommand() {
+        return command;
+    }
+
+    public String getQuery() {
+        return query;
+    }
+
+    public boolean isDirDeploy() {
+        return dirDeploy;
+    }
+
+    public void setDirDeploy(boolean dirDeploy) {
+        this.dirDeploy = dirDeploy;
+    }
+
+    public void setPath(String path) {
+        this.path = path;
+    }
+
+    public void setQuery(String query) {
+        this.query = query;
+    }
+
+    public String getTarget() {
+        return target;
+    }
+
+    public String getContextRoot() {
+        return contextRoot;
+    }
+
+    public void setContextRoot(String contextRoot) {
+        this.contextRoot = contextRoot;
+    }
+
+    public boolean isHotDeploy() {
+        return hotDeploy;
+    }
 
 }

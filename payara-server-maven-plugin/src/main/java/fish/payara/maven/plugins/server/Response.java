@@ -38,34 +38,58 @@
  */
 package fish.payara.maven.plugins.server;
 
-import org.apache.maven.plugins.annotations.Parameter;
-import org.apache.maven.plugins.dependency.fromConfiguration.ArtifactItem;
+import java.util.List;
+import java.util.Map;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 /**
  *
  * @author Gaurav Gupta
  */
-public abstract class ServerMojo extends BasePayaraMojo {
+public class Response {
 
-    @Parameter(property = "javaPath")
-    protected String javaPath;
+    private final JSONObject body;
+    private final Map<String, List<String>> headerFields;
+    private final int code;
 
-    @Parameter(property = "payaraVersion", defaultValue = "6.2024.12")
-    protected String payaraVersion;
+    public Response(String jsonString, int code, Map<String, List<String>> headerFields) {
+        this.body = new JSONObject(jsonString);
+        this.headerFields = headerFields;
+        this.code = code;
+    }
 
-    @Parameter(property = "payaraServerAbsolutePath")
-    protected String payaraServerAbsolutePath;
-    
-    @Parameter(property = "domain", defaultValue = "domain1")
-    protected String domain;
+    public String getContextRoot() {
+        JSONArray resultArray = body.getJSONArray("result");
+        if (resultArray.length() > 0) {
+            String nameValue = resultArray.getJSONObject(0).getString("name");
+            String[] parts = nameValue.split("context-root=");
+            if (parts.length > 1) {
+                return parts[1];
+            }
+        }
+        return null;
+    }
 
-    @Parameter(property = "artifactItem")
-    protected ArtifactItem artifactItem;
-    
-    @Parameter(property = "exploded", defaultValue = "false")
-    protected boolean exploded;
+    public boolean isExitCodeSuccess() {
+        return "SUCCESS".equalsIgnoreCase(body.getString("exit_code"));
+    }
 
-    @Parameter(property = "contextRoot")
-    protected String contextRoot;
+    @Override
+    public String toString() {
+        return body.getString("name") != null ? body.getString("name") : body.toString();
+    }
+
+    public JSONObject getBody() {
+        return body;
+    }
+
+    public Map<String, List<String>> getHeaderFields() {
+        return headerFields;
+    }
+
+    public int getCode() {
+        return code;
+    }
 
 }
