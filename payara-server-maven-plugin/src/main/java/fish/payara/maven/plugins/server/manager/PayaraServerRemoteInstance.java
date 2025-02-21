@@ -36,60 +36,20 @@
  * only if the new code is made subject to such option by the copyright
  * holder.
  */
-package fish.payara.maven.plugins.server;
-
-import java.util.List;
-import java.util.Map;
-import org.json.JSONArray;
-import org.json.JSONObject;
+package fish.payara.maven.plugins.server.manager;
 
 /**
  *
  * @author Gaurav Gupta
  */
-public class Response {
-
-    private final JSONObject body;
-    private final Map<String, List<String>> headerFields;
-    private final int code;
-
-    public Response(String jsonString, int code, Map<String, List<String>> headerFields) {
-        this.body = new JSONObject(jsonString);
-        this.headerFields = headerFields;
-        this.code = code;
-    }
-
-    public String getContextRoot() {
-        JSONArray resultArray = body.getJSONArray("result");
-        if (resultArray.length() > 0) {
-            String nameValue = resultArray.getJSONObject(0).getString("name");
-            String[] parts = nameValue.split("context-root=");
-            if (parts.length > 1) {
-                return parts[1];
-            }
-        }
-        return null;
-    }
-
-    public boolean isExitCodeSuccess() {
-        return "SUCCESS".equalsIgnoreCase(body.getString("exit_code"));
-    }
-
-    @Override
-    public String toString() {
-        return body.getString("name") != null ? body.getString("name") : body.toString();
-    }
-
-    public JSONObject getBody() {
-        return body;
-    }
-
-    public Map<String, List<String>> getHeaderFields() {
-        return headerFields;
-    }
-
-    public int getCode() {
-        return code;
+public class PayaraServerRemoteInstance extends PayaraServerInstance {
+    
+    public PayaraServerRemoteInstance(String host) {
+        this.host = host;
+        this.adminPort = 4848;
+        this.httpPort = 8080;
+        this.httpsPort = 8181;
+        this.protocol = "https";
     }
 
 }

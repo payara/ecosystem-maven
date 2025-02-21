@@ -38,6 +38,11 @@
  */
 package fish.payara.maven.plugins.server;
 
+import fish.payara.maven.plugins.server.manager.PayaraServerRemoteInstance;
+import fish.payara.maven.plugins.server.manager.RemoteInstanceManager;
+import fish.payara.maven.plugins.server.manager.PayaraServerLocalInstance;
+import fish.payara.maven.plugins.server.manager.LocalInstanceManager;
+import fish.payara.maven.plugins.server.manager.InstanceManager;
 import fish.payara.maven.plugins.AutoDeployHandler;
 import fish.payara.maven.plugins.StartTask;
 import org.apache.commons.io.IOUtils;
@@ -57,6 +62,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static fish.payara.maven.plugins.server.Configuration.*;
+import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import org.apache.maven.project.MavenProject;
@@ -71,6 +77,7 @@ import org.openqa.selenium.WebDriver;
 public class StartMojo extends ServerMojo implements StartTask {
 
     private static final String ERROR_MESSAGE = "Errors occurred while executing payara-server.";
+    private static final String REMOTE_INSTANCE_NOT_RUNNING_MESSAGE = "The remote Payara server instance is not running.";
 
     @Parameter(property = "daemon", defaultValue = "false")
     private boolean daemon;
@@ -99,7 +106,7 @@ public class StartMojo extends ServerMojo implements StartTask {
     private final List<String> rebootOnChange = new ArrayList<>();
     private WebDriver driver;
     private String payaraServerURL;
-    private ServerManager serverManager;
+    private InstanceManager serverManager;
 
     StartMojo() {
         threadGroup = new ThreadGroup(SERVER_THREAD_NAME);
@@ -116,45 +123,91 @@ public class StartMojo extends ServerMojo implements StartTask {
         final String path = decideOnWhichServerToUse();
 
         serverProcessorThread = new Thread(threadGroup, () -> {
-
-            try {
-                PayaraServerInstance instance = new PayaraServerInstance(domain, path);
-                serverManager = new ServerManager(instance, getLog());
-                if (!serverManager.isServerAlreadyRunning()) {
-                    ProcessBuilder processBuilder = serverManager.startServer(debug, debugPort);
-                    getLog().info("Starting Payara Server [" + path + "] with the these arguments: " + processBuilder.command());
-                    serverProcess = processBuilder.start();
-
-                    if (daemon) {
-                        redirectStream(serverProcess.getInputStream(), System.out);
-                        redirectStream(serverProcess.getErrorStream(), System.err);
-                    } else {
-                        redirectStreamToGivenOutputStream(serverProcess.getInputStream(), System.out);
-                        redirectStreamToGivenOutputStream(serverProcess.getErrorStream(), System.err);
+            if (remote) {
+                PayaraServerRemoteInstance instance = new PayaraServerRemoteInstance(host);
+                instance.setAdminUser(adminUser);
+                instance.setAdminPassword(getAdminPassword());
+                if (adminPort != null) {
+                    instance.setAdminPort(Integer.parseInt(adminPort));
+                }
+                if (httpPort != null) {
+                    instance.setHttpPort(Integer.parseInt(httpPort));
+                }
+                if (httpsPort != null) {
+                    instance.setHttpsPort(Integer.parseInt(httpsPort));
+                }
+                if (protocol != null) {
+                    instance.setProtocol(protocol);
+                }
+                serverManager = new RemoteInstanceManager(instance, getLog());
+                if (serverManager.isServerAlreadyRunning()) {
+                    Thread logThread = streamRemoteServerLog();
+                    String appPath = evaluateProjectArtifactAbsolutePath("." + mavenProject.getPackaging());
+                    String projectName = mavenProject.getName().replaceAll("\\s+", "");
+                    serverManager.undeployApplication(projectName, instanceName);
+                    serverManager.deployApplication(projectName, appPath, instanceName, contextRoot);
+                    try {
+                        logThread.join();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
                     }
-                    serverManager.connectWithServer();
                 } else {
-                    streamServerLog(instance);
+                    throw new RuntimeException(REMOTE_INSTANCE_NOT_RUNNING_MESSAGE);
                 }
-                String appPath;
-                if (exploded) {
-                    appPath = evaluateProjectArtifactAbsolutePath("");
-                } else {
-                    appPath = evaluateProjectArtifactAbsolutePath("." + mavenProject.getPackaging());
-                }
-                String projectName = mavenProject.getName().replaceAll("\\s+", "");
-                serverManager.undeployApplication(projectName);
-                serverManager.deployApplication(projectName, appPath, contextRoot);
-                int exitCode = serverProcess.waitFor();
-                if (exitCode != 0) { // && !autoDeploy
-                    throw new MojoFailureException(ERROR_MESSAGE);
-                }
-            } catch (InterruptedException ignored) {
-            } catch (Exception e) {
-                throw new RuntimeException(ERROR_MESSAGE, e);
-            } finally {
-                if (!daemon) {
-                    closeServerProcess();
+            } else {
+                try {
+                    PayaraServerLocalInstance instance = new PayaraServerLocalInstance(domain, path);
+                    instance.setAdminUser(adminUser);
+                    instance.setAdminPassword(getAdminPassword());
+                    if (adminPort != null) {
+                        instance.setAdminPort(Integer.parseInt(adminPort));
+                    }
+                    if (httpPort != null) {
+                        instance.setHttpPort(Integer.parseInt(httpPort));
+                    }
+                    if (httpsPort != null) {
+                        instance.setHttpsPort(Integer.parseInt(httpsPort));
+                    }
+                    if (protocol != null) {
+                        instance.setProtocol(protocol);
+                    }
+                    serverManager = new LocalInstanceManager(instance, getLog());
+                    if (!serverManager.isServerAlreadyRunning()) {
+                        ProcessBuilder processBuilder = ((LocalInstanceManager) serverManager).startServer(debug, debugPort);
+                        getLog().info("Starting Payara Server [" + path + "] with the these arguments: " + processBuilder.command());
+                        serverProcess = processBuilder.start();
+
+                        if (daemon) {
+                            redirectStream(serverProcess.getInputStream(), System.out);
+                            redirectStream(serverProcess.getErrorStream(), System.err);
+                        } else {
+                            redirectStreamToGivenOutputStream(serverProcess.getInputStream(), System.out);
+                            redirectStreamToGivenOutputStream(serverProcess.getErrorStream(), System.err);
+                        }
+                        serverManager.connectWithServer();
+                    } else {
+                        streamLocalServerLog(instance);
+                    }
+                    String appPath;
+                    if (exploded) {
+                        appPath = evaluateProjectArtifactAbsolutePath("");
+                    } else {
+                        appPath = evaluateProjectArtifactAbsolutePath("." + mavenProject.getPackaging());
+                    }
+                    String projectName = mavenProject.getName().replaceAll("\\s+", "");
+                    serverManager.undeployApplication(projectName, instanceName);
+                    serverManager.deployApplication(projectName, appPath, instanceName, contextRoot);
+                    int exitCode = serverProcess.waitFor();
+                    if (exitCode != 0) { // && !autoDeploy
+                        throw new MojoFailureException(ERROR_MESSAGE);
+                    }
+                } catch (InterruptedException ignored) {
+                } catch (Exception e) {
+                    throw new RuntimeException(ERROR_MESSAGE, e);
+                } finally {
+                    if (!daemon) {
+                        closeServerProcess();
+                    }
                 }
             }
         });
@@ -187,7 +240,7 @@ public class StartMojo extends ServerMojo implements StartTask {
             if (serverProcess != null && serverProcess.isAlive()) {
                 try {
                     String projectName = mavenProject.getName().replaceAll("\\s+", "");
-                    serverManager.undeployApplication(projectName);
+                    serverManager.undeployApplication(projectName, instanceName);
                     serverProcess.destroy();
                     serverProcess.waitFor(1, TimeUnit.MINUTES);
                 } catch (InterruptedException ignored) {
@@ -335,7 +388,26 @@ public class StartMojo extends ServerMojo implements StartTask {
         return this.serverProcess;
     }
 
-    private void streamServerLog(PayaraServerInstance instance) {
+    private Thread streamRemoteServerLog() {
+        final Thread thread = new Thread(threadGroup, () -> {
+            try {
+                while (true) {
+                    String log = ((RemoteInstanceManager) serverManager).fetchLogs(instanceName);
+                    if (log != null && !log.isEmpty()) {
+                        System.out.println(log);
+                    }
+                    Thread.sleep(2000);
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        });
+        thread.setDaemon(false);
+        thread.start();
+        return thread;
+    }
+
+    private void streamLocalServerLog(PayaraServerLocalInstance instance) {
         final Thread thread = new Thread(threadGroup, () -> {
             File logFile = new File(instance.getServerLog());
             if (logFile.exists()) {

@@ -36,7 +36,7 @@
  * only if the new code is made subject to such option by the copyright
  * holder.
  */
-package fish.payara.maven.plugins.server;
+package fish.payara.maven.plugins.server.manager;
 
 import fish.payara.maven.plugins.server.parser.JDKVersion;
 import fish.payara.maven.plugins.server.parser.PortReader;
@@ -47,21 +47,18 @@ import java.nio.file.Paths;
  *
  * @author Gaurav Gupta
  */
-public class PayaraServerInstance {
-    
+public class PayaraServerLocalInstance extends PayaraServerInstance {
+
     private PortReader portReader;
     private Process logStream;
 
     private String path;
     private String domainName;
     private String jdkHome;
-    
-    private String adminUser;
-    private String adminPassword;
 
-    public PayaraServerInstance(String domainName, String path) {
+    public PayaraServerLocalInstance(String domainName, String path) {
         this.path = path;
-         this.domainName = domainName;
+        this.domainName = domainName;
     }
 
     public String getId() {
@@ -103,8 +100,7 @@ public class PayaraServerInstance {
     public String getServerLog() {
         return Paths.get(getDomainPath(), "logs", "server.log").toString();
     }
-    
-    
+
     public String getJDKHome() {
         if (this.jdkHome != null) {
             return this.jdkHome;
@@ -112,23 +108,18 @@ public class PayaraServerInstance {
         return JDKVersion.getDefaultJDKHome();
     }
 
-//    @Override
-//    public boolean isMatchingLocation(String baseRoot, String domainRoot) {
-//        Path basePath = Paths.get(baseRoot, "glassfish").normalize();
-//        Path domainPath = Paths.get(domainRoot).getFileName();
-//        return basePath.equals(Paths.get(getPath(), "glassfish").normalize())
-//                && domainRoot.endsWith(getDomainName());
-//    }
-    
     public String getProtocol() {
-        return "http";
+        return protocol == null ? "http" : protocol;
     }
 
     public String getHost() {
-        return "localhost";
+        return host == null ? "localhost" : host;
     }
 
     public int getHttpPort() {
+        if(httpPort > 0) {
+            return httpPort;
+        }
         if (portReader == null) {
             portReader = createPortReader();
         }
@@ -136,6 +127,9 @@ public class PayaraServerInstance {
     }
 
     public int getHttpsPort() {
+        if(httpsPort > 0) {
+            return httpsPort;
+        }
         if (portReader == null) {
             portReader = createPortReader();
         }
@@ -143,6 +137,9 @@ public class PayaraServerInstance {
     }
 
     public int getAdminPort() {
+        if(adminPort > 0) {
+            return adminPort;
+        }
         if (portReader == null) {
             portReader = createPortReader();
         }
@@ -179,7 +176,6 @@ public class PayaraServerInstance {
 //    public void showLog() throws IOException {
 //        Files.readAllLines(Paths.get(getServerLog())).forEach(line -> getOutputChannel().appendLine(line));
 //    }
-
 //    public void connectOutput() throws IOException {
 //        if (logStream == null && Files.exists(Paths.get(getServerLog()))) {
 //            List<String> command = new ArrayList<>();
@@ -203,23 +199,6 @@ public class PayaraServerInstance {
 //            logStream.getOutputStream().transferTo(getOutputChannel().getOutputStream());
 //        }
 //    }
-
-    public String getAdminUser() {
-        return adminUser;
-    }
-
-    public void setAdminUser(String adminUser) {
-        this.adminUser = adminUser;
-    }
-    
-    public String getAdminPassword() {
-        return adminPassword;
-    }
-
-    public void setAdminPassword(String adminPassword) {
-        this.adminPassword = adminPassword;
-    }
-
     public void disconnectOutput() {
         if (logStream != null) {
             logStream.destroy();

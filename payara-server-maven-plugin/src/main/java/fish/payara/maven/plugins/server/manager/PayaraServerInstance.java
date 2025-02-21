@@ -36,95 +36,77 @@
  * only if the new code is made subject to such option by the copyright
  * holder.
  */
-package fish.payara.maven.plugins.server;
-
-import static fish.payara.maven.plugins.server.manager.InstanceManager.CONTENT_TYPE_JSON;
+package fish.payara.maven.plugins.server.manager;
 
 /**
  *
  * @author Gaurav Gupta
  */
-public class Command {
+public abstract class PayaraServerInstance {
+    
+    protected String adminUser;
+    protected String adminPassword;
 
-    private final String value;
-    private final String rootPath;
-    private final String command;
-    private String instanceName;
-    private String path;
-    private String query;
-    private boolean dirDeploy;
-    private String contextRoot;
-    private boolean hotDeploy;
-    private String contentType = CONTENT_TYPE_JSON;
+    protected String protocol;
+    protected String host;
+    protected int adminPort;
+    protected int httpPort;
+    protected int httpsPort;
 
-    public Command(String rootPath, String command, String value) {
-        this.rootPath = rootPath;
-        this.command = command;
-        this.value = value;
+    public String getAdminUser() {
+        return adminUser;
     }
 
-    public String getValue() {
-        return value;
+    public void setAdminUser(String adminUser) {
+        this.adminUser = adminUser;
+    }
+    
+    public String getAdminPassword() {
+        return adminPassword;
     }
 
-    public String getRootPath() {
-        return rootPath;
+    public void setAdminPassword(String adminPassword) {
+        this.adminPassword = adminPassword;
     }
 
-    public String getPath() {
-        return path;
+    public String getProtocol() {
+        return protocol;
     }
 
-    public String getCommand() {
-        return command;
+    public void setProtocol(String protocol) {
+        this.protocol = protocol;
     }
 
-    public String getQuery() {
-        return query;
+    public String getHost() {
+        return host;
     }
 
-    public boolean isDirDeploy() {
-        return dirDeploy;
+    public void setHost(String host) {
+        this.host = host;
     }
 
-    public void setDirDeploy(boolean dirDeploy) {
-        this.dirDeploy = dirDeploy;
+    public int getHttpPort() {
+        return httpPort;
     }
 
-    public void setPath(String path) {
-        this.path = path;
+    public void setHttpPort(int httpPort) {
+        this.httpPort = httpPort;
     }
 
-    public void setQuery(String query) {
-        this.query = query;
+    public int getAdminPort() {
+        return adminPort;
     }
 
-    public String getContextRoot() {
-        return contextRoot;
+    public void setAdminPort(int adminPort) {
+        this.adminPort = adminPort;
     }
 
-    public void setContextRoot(String contextRoot) {
-        this.contextRoot = contextRoot;
+    public int getHttpsPort() {
+        return httpsPort;
     }
 
-    public boolean isHotDeploy() {
-        return hotDeploy;
-    }
-
-    public String getInstanceName() {
-        return instanceName;
-    }
-
-    public void setInstanceName(String instanceName) {
-        this.instanceName = instanceName;
-    }
-
-    public String getContentType() {
-        return contentType;
-    }
-
-    public void setContentType(String contentType) {
-        this.contentType = contentType;
+    public void setHttpsPort(int httpsPort) {
+        this.httpsPort = httpsPort;
     }
 
 }

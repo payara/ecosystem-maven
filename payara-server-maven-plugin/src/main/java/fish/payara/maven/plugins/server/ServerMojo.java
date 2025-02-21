@@ -38,6 +38,12 @@
  */
 package fish.payara.maven.plugins.server;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.dependency.fromConfiguration.ArtifactItem;
 
@@ -67,5 +73,54 @@ public abstract class ServerMojo extends BasePayaraMojo {
 
     @Parameter(property = "contextRoot")
     protected String contextRoot;
+    
+    @Parameter(property = "remote", defaultValue = "false")
+    protected boolean remote;
+    
+    @Parameter(property = "host", defaultValue = "${env.PAYARA_HOST}")
+    protected String host;
+    
+    @Parameter(property = "adminPort", defaultValue = "${env.PAYARA_ADMIN_PORT}")
+    protected String adminPort;
+    
+    @Parameter(property = "httpPort", defaultValue = "${env.PAYARA_HTTP_PORT}")
+    protected String httpPort;
+    
+    @Parameter(property = "httpsPort", defaultValue = "${env.PAYARA_HTTPS_PORT}")
+    protected String httpsPort;
 
+    @Parameter(property = "protocol", defaultValue = "${env.PAYARA_PROTOCOL}")
+    protected String protocol;
+
+    @Parameter(property = "adminPassword", defaultValue = "${env.PAYARA_ADMIN_PASSWORD}")
+    protected String adminPassword;
+
+    @Parameter(property = "adminPasswordFile", defaultValue = "${env.PAYARA_ADMIN_PASSWORD_FILE}")
+    protected String adminPasswordFile;
+
+    @Parameter(property = "adminUser", defaultValue = "${env.PAYARA_ADMIN_USER}")
+    protected String adminUser;
+    
+    @Parameter(property = "instanceName")
+    protected String instanceName;
+
+    protected String getAdminPasswordFromFile() {
+        if (adminPasswordFile != null) {
+            Properties props = new Properties();
+            try (FileInputStream fis = new FileInputStream(adminPasswordFile)) {
+                props.load(fis);
+                return props.getProperty("adminPassword");
+            } catch (Exception ex) {
+                return null;
+            }
+        }
+        return adminPassword;
+    }
+    
+    protected String getAdminPassword() {
+        if(adminPassword == null) {
+            adminPassword = getAdminPasswordFromFile();
+        }
+        return adminPassword;
+    }
 }
