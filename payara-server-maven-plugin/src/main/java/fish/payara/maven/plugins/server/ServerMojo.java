@@ -101,7 +101,7 @@ public abstract class ServerMojo extends BasePayaraMojo {
     @Parameter(property = "adminUser", defaultValue = "${env.PAYARA_ADMIN_USER}")
     protected String adminUser;
     
-    @Parameter(property = "instanceName")
+    @Parameter(property = "instanceName", defaultValue = "${env.PAYARA_INSTANCE}")
     protected String instanceName;
 
     protected String getAdminPasswordFromFile() {
