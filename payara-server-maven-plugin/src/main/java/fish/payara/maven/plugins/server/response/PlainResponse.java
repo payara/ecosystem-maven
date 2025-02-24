@@ -36,95 +36,43 @@
  * only if the new code is made subject to such option by the copyright
  * holder.
  */
-package fish.payara.maven.plugins.server;
+package fish.payara.maven.plugins.server.response;
 
-import static fish.payara.maven.plugins.server.manager.InstanceManager.CONTENT_TYPE_JSON;
+import java.util.List;
+import java.util.Map;
 
 /**
  *
  * @author Gaurav Gupta
  */
-public class Command {
+public class PlainResponse implements Response {
 
-    private final String value;
-    private final String rootPath;
-    private final String command;
-    private String instanceName;
-    private String path;
-    private String query;
-    private boolean dirDeploy;
-    private String contextRoot;
-    private boolean hotDeploy;
-    private String contentType = CONTENT_TYPE_JSON;
+    private final String body;
+    private final Map<String, List<String>> headerFields;
+    private final int code;
 
-    public Command(String rootPath, String command, String value) {
-        this.rootPath = rootPath;
-        this.command = command;
-        this.value = value;
+    public PlainResponse(String body, int code, Map<String, List<String>> headerFields) {
+        this.body = body;
+        this.headerFields = headerFields;
+        this.code = code;
     }
 
-    public String getValue() {
-        return value;
+    @Override
+    public String toString() {
+        return body;
     }
 
-    public String getRootPath() {
-        return rootPath;
+    public Map<String, List<String>> getHeaderFields() {
+        return headerFields;
     }
 
-    public String getPath() {
-        return path;
+    public int getCode() {
+        return code;
     }
 
-    public String getCommand() {
-        return command;
-    }
-
-    public String getQuery() {
-        return query;
-    }
-
-    public boolean isDirDeploy() {
-        return dirDeploy;
-    }
-
-    public void setDirDeploy(boolean dirDeploy) {
-        this.dirDeploy = dirDeploy;
-    }
-
-    public void setPath(String path) {
-        this.path = path;
-    }
-
-    public void setQuery(String query) {
-        this.query = query;
-    }
-
-    public String getContextRoot() {
-        return contextRoot;
-    }
-
-    public void setContextRoot(String contextRoot) {
-        this.contextRoot = contextRoot;
-    }
-
-    public boolean isHotDeploy() {
-        return hotDeploy;
-    }
-
-    public String getInstanceName() {
-        return instanceName;
-    }
-
-    public void setInstanceName(String instanceName) {
-        this.instanceName = instanceName;
-    }
-
-    public String getContentType() {
-        return contentType;
-    }
-
-    public void setContentType(String contentType) {
-        this.contentType = contentType;
+    @Override
+    public boolean isExitCodeSuccess() {
+        return code == 200;
     }
 
 }

@@ -36,95 +36,53 @@
  * only if the new code is made subject to such option by the copyright
  * holder.
  */
-package fish.payara.maven.plugins.server;
+package fish.payara.maven.plugins.server.manager;
 
-import static fish.payara.maven.plugins.server.manager.InstanceManager.CONTENT_TYPE_JSON;
+import fish.payara.maven.plugins.server.Command;
+import fish.payara.maven.plugins.server.response.Response;
+import java.util.List;
+import org.apache.maven.plugin.logging.Log;
 
 /**
  *
  * @author Gaurav Gupta
  */
-public class Command {
-
-    private final String value;
-    private final String rootPath;
-    private final String command;
-    private String instanceName;
-    private String path;
-    private String query;
-    private boolean dirDeploy;
-    private String contextRoot;
-    private boolean hotDeploy;
-    private String contentType = CONTENT_TYPE_JSON;
-
-    public Command(String rootPath, String command, String value) {
-        this.rootPath = rootPath;
-        this.command = command;
-        this.value = value;
+public class RemoteInstanceManager extends InstanceManager<PayaraServerRemoteInstance> {
+    
+    public RemoteInstanceManager( PayaraServerRemoteInstance payaraServer, Log log) {
+        super(payaraServer, log);
     }
+    
+    private String appendPreviousStart, appendnextStart;
+    private static final String APPEND_NEXT_HEADER = "X-Text-Append-Next";
 
-    public String getValue() {
-        return value;
-    }
+    public String fetchLogs(String instanceName) {
+        Command command = new Command(MANAGEMENT_PATH, VIEW_LOG_COMMAND, "0");
+        command.setContentType(CONTENT_TYPE_PLAIN_TEXT);
+        command.setInstanceName(instanceName);
+        if (appendnextStart == null) {
+            command.setQuery(query(command));
+        } else {
+            command.setQuery(appendnextStart);
+        }
 
-    public String getRootPath() {
-        return rootPath;
-    }
-
-    public String getPath() {
-        return path;
-    }
-
-    public String getCommand() {
-        return command;
-    }
-
-    public String getQuery() {
-        return query;
-    }
-
-    public boolean isDirDeploy() {
-        return dirDeploy;
-    }
-
-    public void setDirDeploy(boolean dirDeploy) {
-        this.dirDeploy = dirDeploy;
-    }
-
-    public void setPath(String path) {
-        this.path = path;
-    }
-
-    public void setQuery(String query) {
-        this.query = query;
-    }
-
-    public String getContextRoot() {
-        return contextRoot;
-    }
-
-    public void setContextRoot(String contextRoot) {
-        this.contextRoot = contextRoot;
-    }
-
-    public boolean isHotDeploy() {
-        return hotDeploy;
-    }
-
-    public String getInstanceName() {
-        return instanceName;
-    }
-
-    public void setInstanceName(String instanceName) {
-        this.instanceName = instanceName;
-    }
-
-    public String getContentType() {
-        return contentType;
-    }
-
-    public void setContentType(String contentType) {
-        this.contentType = contentType;
+        Response logResponse;
+        try {
+            logResponse = invokeServer(payaraServer, command);
+            List<String> headerValues = logResponse.getHeaderFields().get(APPEND_NEXT_HEADER);
+            if (headerValues != null && !headerValues.isEmpty()) {
+                String headerValue = headerValues.get(0);
+                int questionMarkIndex = headerValue.indexOf('?');
+                if (questionMarkIndex != -1 && questionMarkIndex < headerValue.length() - 1) {
+                    appendPreviousStart = appendnextStart;
+                    appendnextStart = headerValue.substring(questionMarkIndex + 1);
+                }
+            }
+            return  appendPreviousStart == null || appendnextStart.equals(appendPreviousStart)? "" : logResponse.toString();
+        } catch (Exception ex) {
+            log.error("Error retrieving log: " + ex.getMessage());
+        }
+        return null;
     }
 
 }

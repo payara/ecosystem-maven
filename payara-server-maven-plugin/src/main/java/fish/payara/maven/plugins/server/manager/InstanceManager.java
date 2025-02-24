@@ -36,40 +36,35 @@
  * only if the new code is made subject to such option by the copyright
  * holder.
  */
-package fish.payara.maven.plugins.server;
+package fish.payara.maven.plugins.server.manager;
 
-import static fish.payara.maven.plugins.server.Configuration.DAS_NAME;
-import fish.payara.maven.plugins.server.parser.JvmConfigReader;
-import fish.payara.maven.plugins.server.parser.JvmOption;
-import fish.payara.maven.plugins.server.utils.JavaUtils;
+import fish.payara.maven.plugins.server.Command;
+import fish.payara.maven.plugins.server.response.PlainResponse;
+import fish.payara.maven.plugins.server.response.JsonResponse;
+import fish.payara.maven.plugins.server.response.Response;
+import static fish.payara.maven.plugins.server.manager.LocalInstanceManager.HTTP_CONNECTION_TIMEOUT;
+import static fish.payara.maven.plugins.server.manager.LocalInstanceManager.HTTP_RETRY_DELAY;
+import static fish.payara.maven.plugins.server.manager.LocalInstanceManager.PARAM_ASSIGN_VALUE;
+import static fish.payara.maven.plugins.server.manager.LocalInstanceManager.PARAM_SEPARATOR;
 import fish.payara.maven.plugins.server.utils.ServerUtils;
-import fish.payara.maven.plugins.server.utils.StringUtils;
-import java.io.File;
-import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import org.apache.maven.plugin.logging.Log;
-import fish.payara.maven.plugins.server.parser.JDKVersion;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.ConnectException;
+import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.ProtocolException;
 import java.net.Proxy;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.net.URLConnection;
 import java.net.UnknownHostException;
 import java.security.KeyManagementException;
@@ -85,34 +80,29 @@ import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.logging.Log;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 /**
  *
  * @author Gaurav Gupta
  */
-public class ServerManager {
+public class InstanceManager<X extends PayaraServerInstance> {
 
-    private final Log log;
+    protected Log log;
 
-    private final PayaraServerInstance payaraServer;
+    protected X payaraServer;
 
     private static final String HTTP_GET_METHOD = "GET";
     private static final String HTTP_POST_METHOD = "POST";
 
-    private static final String CONTENT_TYPE_JSON = "application/json";
+    public static final String CONTENT_TYPE_JSON = "application/json";
     private static final String CONTENT_TYPE_STREAM = "application/octet-stream";
     private static final String CONTENT_TYPE_ZIP = "application/zip";
+    public static final String CONTENT_TYPE_PLAIN_TEXT = "text/plain";
+    public static final String CONTENT_TYPE_HTML_TEXT = "text/html";
     private static final String CONTENT_TYPE_HEADER = "Content-Type";
-
-    private static final String ERROR_JAVA_HOME_NOT_FOUND = "Java home path not found.";
-    private static final String ERROR_JAVA_VERSION_NOT_FOUND = "Java version not found.";
-    private static final String ERROR_BOOTSTRAP_JAR_NOT_FOUND = "No bootstrap jar exists.";
-    private static final String ERROR_JAVA_VM_EXECUTABLE_NOT_FOUND = "Java VM executable for %s was not found.";
-    
-    private static final String DEPLOY_COMMAND = "deploy";
-    private static final String UNDEPLOY_COMMAND = "undeploy";
-    private static final String GET_COMMAND = "get";
-    private static final String LOCATIONS_COMMAND = "__locations";
 
     private static final int MAX_RETRIES = 60;
     /**
@@ -128,6 +118,15 @@ public class ServerManager {
      * Socket read timeout (in miliseconds).
      */
     public static final int HTTP_READ_TIMEOUT = 3000;
+
+    private static final String DEPLOY_COMMAND = "deploy";
+    private static final String UNDEPLOY_COMMAND = "undeploy";
+    private static final String GET_COMMAND = "get";
+    protected static final String VIEW_LOG_COMMAND = "view-log";
+    protected static final String LOCATIONS_COMMAND = "__locations";
+    protected static final String ASADMIN_PATH = "/__asadmin/";
+    protected static final String MANAGEMENT_PATH = "/management/domain/";
+    protected static final String VERSION_COMMAND = "version";
 
     /**
      * Character used to separate individual parameters.
@@ -159,6 +158,16 @@ public class ServerManager {
     private static final String PATTERN_PARAM = "pattern";
 
     /**
+     * View Log command <code>start</code> parameter name.
+     */
+    private static final String START_PARAM = "start";
+
+    /**
+     * View Log command <code>instanceName</code> parameter name.
+     */
+    private static final String INSTANCE_NAME_PARAM = "instanceName";
+
+    /**
      * Deploy command <code>contextroot</code> parameter name.
      */
     private static final String CTXROOT_PARAM = "contextroot";
@@ -188,154 +197,9 @@ public class ServerManager {
      */
     private static final boolean FORCE_VALUE = true;
 
-
-    public ServerManager(PayaraServerInstance payaraServer, Log log) {
-        this.log = log;
+    public InstanceManager(X payaraServer, Log log) {
         this.payaraServer = payaraServer;
-    }
-
-    public ProcessBuilder startServer(String debug, String debugPort) throws Exception {
-        JvmConfigReader jvmConfigReader = new JvmConfigReader(payaraServer.getDomainXmlPath(), DAS_NAME);
-        String javaHome = payaraServer.getJDKHome();
-        if (javaHome == null) {
-            throw new Exception(ERROR_JAVA_HOME_NOT_FOUND);
-        }
-        JDKVersion javaVersion = JDKVersion.getJDKVersion(javaHome);
-        if (javaVersion == null) {
-            throw new Exception(ERROR_JAVA_VERSION_NOT_FOUND);
-        }
-        List<String> optList = new ArrayList<>();
-        for (JvmOption jvmOption : jvmConfigReader.getJvmOptions()) {
-            if (JDKVersion.isCorrectJDK(javaVersion, jvmOption.getVendor(), jvmOption.getMinVersion(), jvmOption.getMaxVersion())) {
-                optList.add(jvmOption.getOption());
-            }
-        }
-        Map<String, String> propMap = jvmConfigReader.getPropMap();
-        addJavaAgent(payaraServer, jvmConfigReader);
-        String bootstrapJar = Paths.get(payaraServer.getServerModules(), "glassfish.jar").toString();
-        if (!Files.exists(Paths.get(bootstrapJar))) {
-            throw new Exception(ERROR_BOOTSTRAP_JAR_NOT_FOUND);
-        }
-        String classPath = "";
-        String javaOpts;
-        String payaraArgs;
-        Map<String, String> varMap = varMap(payaraServer, javaHome);
-        String debugOpt = propMap.get("debug-options");
-        if (debug != null && !debug.equalsIgnoreCase(Boolean.FALSE.toString()) && debugOpt != null) {
-            if (Boolean.parseBoolean(debug)) {
-                if (isValidPort(debugPort)) {
-                    debugOpt = debugOpt.replaceAll("address=\\d+", "address=" + debugPort);
-                }
-                optList.add(debugOpt);
-            } else if (!Boolean.FALSE.toString().equals(debug)) {
-                optList.add(debug);
-            }
-            optList.add(debugOpt);
-        }
-        javaOpts = appendOptions(optList, varMap);
-        javaOpts += appendVarMap(varMap);
-        payaraArgs = appendPayaraArgs(getPayaraArgs(payaraServer));
-        String javaVmExe = JavaUtils.javaVmExecutableFullPath(javaHome);
-        if (!Files.exists(Paths.get(javaVmExe))) {
-            throw new Exception(String.format(ERROR_JAVA_VM_EXECUTABLE_NOT_FOUND, payaraServer.getPath()));
-        }
-        String allArgs = String.join(" ", javaVmExe, javaOpts, "-jar", bootstrapJar, "--classpath", classPath, payaraArgs);
-        List<String> args = JavaUtils.parseParameters(allArgs);
-        ProcessBuilder processBuilder = new ProcessBuilder(args);
-        processBuilder.directory(new File(payaraServer.getPath()));
-        return processBuilder;
-    }
-
-    private boolean isValidPort(String portStr) {
-        if (portStr == null || portStr.trim().isEmpty()) {
-            return false;
-        }
-        try {
-            int port = Integer.parseInt(portStr.trim());
-            return port >= 0 && port <= 65535;
-        } catch (NumberFormatException e) {
-            return false;
-        }
-    }
-
-    private void addJavaAgent(PayaraServerInstance payaraServer, JvmConfigReader jvmConfigReader) throws Exception {
-        List<JvmOption> optList = jvmConfigReader.getJvmOptions();
-        String serverHome = payaraServer.getServerHome();
-
-        File monitor = Paths.get(serverHome, "lib", "monitor").toFile();
-        File btrace = Paths.get(monitor.getPath(), "btrace-agent.jar").toFile();
-        File flight = Paths.get(monitor.getPath(), "flashlight-agent.jar").toFile();
-
-        if (jvmConfigReader.isMonitoringEnabled()) {
-            if (btrace.exists()) {
-                optList.add(new JvmOption("-javaagent:" + StringUtils.quote(btrace.getPath()) + "=unsafe=true,noServer=true"));
-            } else if (flight.exists()) {
-                optList.add(new JvmOption("-javaagent:" + StringUtils.quote(flight.getPath())));
-            }
-        }
-    }
-
-    private Map<String, String> varMap(PayaraServerInstance payaraServer, String javaHome) {
-        Map<String, String> varMap = new HashMap<>();
-        varMap.put(ServerUtils.PF_HOME_PROPERTY, payaraServer.getServerHome());
-        varMap.put(ServerUtils.PF_DOMAIN_ROOT_PROPERTY, payaraServer.getDomainPath());
-        varMap.put(ServerUtils.PF_JAVA_ROOT_PROPERTY, javaHome);
-        varMap.put(JavaUtils.PATH_SEPARATOR, File.pathSeparator);
-        return varMap;
-    }
-
-    private String appendOptions(List<String> optList, Map<String, String> varMap) {
-        StringBuilder argumentBuf = new StringBuilder();
-        List<String> moduleOptions = new ArrayList<>();
-        Map<String, String> keyValueArgs = new HashMap<>();
-        List<String> keyOrder = new ArrayList<>();
-
-        for (String opt : optList) {
-            opt = StringUtils.doSub(opt.trim(), varMap);
-            int splitIndex = opt.indexOf('=');
-            String name, value = null;
-            if (splitIndex != -1 && !opt.startsWith("-agentpath:")) {
-                name = opt.substring(0, splitIndex);
-                value = StringUtils.quote(opt.substring(splitIndex + 1));
-            } else {
-                name = opt;
-            }
-
-            if (name.startsWith("--add-")) {
-                moduleOptions.add(opt);
-            } else {
-                if (!keyValueArgs.containsKey(name)) {
-                    keyOrder.add(name);
-                }
-                keyValueArgs.put(name, value);
-            }
-        }
-
-        argumentBuf.append(String.join(" ", moduleOptions));
-        for (String key : keyOrder) {
-            argumentBuf.append(" ").append(key);
-            if (keyValueArgs.get(key) != null) {
-                argumentBuf.append("=").append(keyValueArgs.get(key));
-            }
-        }
-        return argumentBuf.toString();
-    }
-
-    private String appendVarMap(Map<String, String> varMap) {
-        StringBuilder javaOpts = new StringBuilder();
-        varMap.forEach((key, value) -> javaOpts.append(" ").append(JavaUtils.systemProperty(key, value)));
-        return javaOpts.toString();
-    }
-
-    private List<String> getPayaraArgs(PayaraServerInstance payaraServer) {
-        List<String> payaraArgs = new ArrayList<>();
-        payaraArgs.add(ServerUtils.cmdLineArgument(ServerUtils.PF_DOMAIN_ARG, payaraServer.getDomainName()));
-        payaraArgs.add(ServerUtils.cmdLineArgument(ServerUtils.PF_DOMAIN_DIR_ARG, StringUtils.quote(payaraServer.getDomainPath())));
-        return payaraArgs;
-    }
-
-    private String appendPayaraArgs(List<String> payaraArgsList) {
-        return String.join(" ", payaraArgsList).trim();
+        this.log = log;
     }
 
     public void connectWithServer() throws MojoExecutionException {
@@ -364,7 +228,7 @@ public class ServerManager {
 
     public boolean pingServer() throws Exception {
         URI uri = new URI(payaraServer.getProtocol(), null, payaraServer.getHost(), payaraServer.getAdminPort(),
-                "/management/domain/version", null, null);
+                MANAGEMENT_PATH + VERSION_COMMAND, null, null);
         HttpURLConnection connection = (HttpURLConnection) uri.toURL().openConnection();
         connection.setRequestMethod(HTTP_GET_METHOD);
         connection.setConnectTimeout(HTTP_CONNECTION_TIMEOUT);
@@ -374,13 +238,12 @@ public class ServerManager {
     }
 
     public boolean isServerAlreadyRunning() {
-        Command command = new Command(LOCATIONS_COMMAND, null);
+        Command command = new Command(ASADMIN_PATH, LOCATIONS_COMMAND, null);
         Response serverRunning;
         try {
             serverRunning = invokeServer(payaraServer, command);
             if (serverRunning != null
-                    && serverRunning.isExitCodeSuccess()
-                    && serverRunning.toString().equals(payaraServer.getDomainPath())) {
+                    && serverRunning.isExitCodeSuccess()) {
                 log.info("Server already running on " + serverRunning.toString());
                 return true;
             }
@@ -390,36 +253,52 @@ public class ServerManager {
         return false;
     }
 
-    public void deployApplication(String name, String appPath, String contextRoot) {
-        Command command = new Command(DEPLOY_COMMAND, name);
+    public void deployApplication(String name, String appPath, String instanceName, String contextRoot) {
+        Command command = new Command(ASADMIN_PATH, DEPLOY_COMMAND, name);
         command.setPath(appPath);
-        command.setQuery(query(command));
         command.setContextRoot(contextRoot);
+        command.setInstanceName(instanceName);
+        command.setQuery(query(command));
         Response deploy;
         try {
             deploy = invokeServer(payaraServer, command);
             if (deploy != null && deploy.isExitCodeSuccess()) {
-                command = new Command(GET_COMMAND, "applications.application." + name + ".context-root");
+                command = new Command(ASADMIN_PATH, GET_COMMAND, "applications.application." + name + ".context-root");
                 command.setQuery(query(command));
                 Response response = invokeServer(payaraServer, command);
                 if (response != null && response.isExitCodeSuccess()) {
-                    URI app = new URI(payaraServer.getProtocol(), null, payaraServer.getHost(), payaraServer.getHttpPort(),
-                            response.getContextRoot(), null, null);
+                    URI app = new URI(payaraServer.getProtocol(), null,
+                            payaraServer.getHost(),
+                            payaraServer.getProtocol().equals("http") ? payaraServer.getHttpPort() : payaraServer.getHttpPort(),
+                            getContextRoot(((JsonResponse) response).getJsonBody()), null, null);
                     log.info(name + " application deployed successfully : " + app.toString());
                 } else {
                     log.info(name + " application deployed successfully.");
                 }
             } else {
-                log.error("Failed to deploy application.");
+                log.error("Failed to deploy application. " + deploy.getHeaderFields());
             }
         } catch (Exception ex) {
             log.error("Error deploying the application: " + ex.getMessage());
         }
     }
 
-    public void undeployApplication(String name) {
-        Command command = new Command(UNDEPLOY_COMMAND, name);
+    public String getContextRoot(JSONObject body) {
+        JSONArray resultArray = body.getJSONArray("result");
+        if (resultArray.length() > 0) {
+            String nameValue = resultArray.getJSONObject(0).getString("name");
+            String[] parts = nameValue.split("context-root=");
+            if (parts.length > 1) {
+                return parts[1];
+            }
+        }
+        return null;
+    }
+
+    public void undeployApplication(String name, String instanceName) {
+        Command command = new Command(ASADMIN_PATH, UNDEPLOY_COMMAND, name);
         command.setQuery(query(command));
+        command.setInstanceName(instanceName);
         try {
             invokeServer(payaraServer, command);
         } catch (Exception ex) {
@@ -427,51 +306,7 @@ public class ServerManager {
         }
     }
 
-    /**
-     * Builds deploy query string for given command.
-     *
-     * @param command Payara server administration deploy command entity.
-     * @return Deploy query string for given command.
-     */
-    private static String query(Command command) {
-        StringBuilder sb = new StringBuilder();
-        switch (command.getCommand()) {
-            case DEPLOY_COMMAND:
-                sb.append(DEFAULT_PARAM).append(PARAM_ASSIGN_VALUE).append(command.getPath());
-                sb.append(PARAM_SEPARATOR);
-                sb.append(FORCE_PARAM).append(PARAM_ASSIGN_VALUE).append(FORCE_VALUE);
-                if (command.getName() != null && command.getName().length() > 0) {
-                    sb.append(PARAM_SEPARATOR);
-                    sb.append(NAME_PARAM).append(PARAM_ASSIGN_VALUE).append(command.getName());
-                }
-                if (command.getTarget() != null) {
-                    sb.append(PARAM_SEPARATOR);
-                    sb.append(TARGET_PARAM).append(PARAM_ASSIGN_VALUE).append(command.getTarget());
-                }
-                if (command.getContextRoot() != null && command.getContextRoot().length() > 0) {
-                    sb.append(PARAM_SEPARATOR);
-                    sb.append(CTXROOT_PARAM).append(PARAM_ASSIGN_VALUE).append(command.getContextRoot());
-                }
-                if (command.isHotDeploy()) {
-                    sb.append(PARAM_SEPARATOR);
-                    sb.append(HOT_DEPLOY_PARAM);
-                    sb.append(PARAM_ASSIGN_VALUE).append(command.isHotDeploy());
-                }
-                break;
-            case UNDEPLOY_COMMAND:
-                sb.append(DEFAULT_PARAM).append(PARAM_ASSIGN_VALUE).append(command.getName());
-                break;
-            case GET_COMMAND:
-                sb.append(PATTERN_PARAM).append(PARAM_ASSIGN_VALUE).append(command.getName());
-                break;
-            default:
-                break;
-        }
-
-        return sb.toString();
-    }
-
-    private Response invokeServer(PayaraServerInstance instance, Command command) throws Exception {
+    protected Response invokeServer(PayaraServerInstance instance, Command command) throws Exception {
         boolean httpSucceeded = false;
         String commandUrl = constructCommandUrl(instance, command);
         int retries = 1;
@@ -563,10 +398,13 @@ public class ServerManager {
             String inputLine;
             response = new StringBuilder();
             while ((inputLine = in.readLine()) != null) {
-                response.append(inputLine);
+                response.append('\n').append(inputLine);
             }
         }
-        return new Response(response.toString(), respCode, hconn.getHeaderFields());
+        if (command.getContentType().equals(CONTENT_TYPE_PLAIN_TEXT)) {
+            return new PlainResponse(response.toString(), respCode, hconn.getHeaderFields());
+        }
+        return new JsonResponse(response.toString(), respCode, hconn.getHeaderFields());
     }
 
     private void handleSend(Command command, HttpURLConnection hconn) throws IOException {
@@ -665,7 +503,7 @@ public class ServerManager {
             conn.setRequestProperty("Content-Type", contentType);
             conn.setChunkedStreamingMode(0);
         }
-        conn.setRequestProperty("Accept", CONTENT_TYPE_JSON);
+        conn.setRequestProperty("Accept", command.getContentType());
         if (adminPassword != null && adminPassword.length() > 0) {
             String authString = ServerUtils.basicAuthCredentials(
                     adminUser, adminPassword);
@@ -706,16 +544,64 @@ public class ServerManager {
     }
 
     private String constructCommandUrl(PayaraServerInstance server, Command command) throws IllegalStateException {
-        String path = "/__asadmin/";
         URI uri;
         try {
             uri = new URI(server.getProtocol(), null, server.getHost(), server.getAdminPort(),
-                    path + command.getCommand(), command.getQuery(), null);
+                    command.getRootPath() + command.getCommand(), command.getQuery(), null);
         } catch (URISyntaxException use) {
             throw new IllegalStateException(use);
         }
         return uri.toASCIIString().replace("+", "%2b");
     }
 
-}
+    /**
+     * Builds deploy query string for given command.
+     *
+     * @param command Payara server administration deploy command entity.
+     * @return Deploy query string for given command.
+     */
+    protected static String query(Command command) {
+        StringBuilder sb = new StringBuilder();
+        switch (command.getCommand()) {
+            case DEPLOY_COMMAND:
+                sb.append(DEFAULT_PARAM).append(PARAM_ASSIGN_VALUE).append(command.getPath());
+                sb.append(PARAM_SEPARATOR);
+                sb.append(FORCE_PARAM).append(PARAM_ASSIGN_VALUE).append(FORCE_VALUE);
+                if (command.getValue() != null && command.getValue().length() > 0) {
+                    sb.append(PARAM_SEPARATOR);
+                    sb.append(NAME_PARAM).append(PARAM_ASSIGN_VALUE).append(command.getValue());
+                }
+                if (command.getInstanceName() != null) {
+                    sb.append(PARAM_SEPARATOR);
+                    sb.append(TARGET_PARAM).append(PARAM_ASSIGN_VALUE).append(command.getInstanceName());
+                }
+                if (command.getContextRoot() != null && command.getContextRoot().length() > 0) {
+                    sb.append(PARAM_SEPARATOR);
+                    sb.append(CTXROOT_PARAM).append(PARAM_ASSIGN_VALUE).append(command.getContextRoot());
+                }
+                if (command.isHotDeploy()) {
+                    sb.append(PARAM_SEPARATOR);
+                    sb.append(HOT_DEPLOY_PARAM);
+                    sb.append(PARAM_ASSIGN_VALUE).append(command.isHotDeploy());
+                }
+                break;
+            case UNDEPLOY_COMMAND:
+                sb.append(DEFAULT_PARAM).append(PARAM_ASSIGN_VALUE).append(command.getValue());
+                break;
+            case GET_COMMAND:
+                sb.append(PATTERN_PARAM).append(PARAM_ASSIGN_VALUE).append(command.getValue());
+                break;
+            case VIEW_LOG_COMMAND:
+                sb.append(START_PARAM).append(PARAM_ASSIGN_VALUE).append(command.getValue());
+                if (command.getInstanceName() != null) {
+                    sb.append(INSTANCE_NAME_PARAM).append(PARAM_ASSIGN_VALUE).append(command.getInstanceName());
+                }
+                break;
+            default:
+                break;
+        }
 
+        return sb.toString();
+    }
+
+}
