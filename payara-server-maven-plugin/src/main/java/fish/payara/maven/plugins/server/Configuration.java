@@ -41,9 +41,10 @@ package fish.payara.maven.plugins.server;
 import java.io.File;
 
 public interface Configuration {
+
     String SERVER_GROUPID = "fish.payara.distributions";
     String SERVER_ARTIFACTID = "payara";
-    
+
     String DAS_NAME = "server";
 
     String JAVA_EXECUTABLE = "java";
@@ -52,7 +53,7 @@ public interface Configuration {
 
     String SERVER_THREAD_NAME = "PayaraServerThread";
     String SERVER_READY_MESSAGE = "ready in";
-    
+
     // Log parser
     String INSTANCE_CONFIGURATION = " \"Instance Configuration\": {";
     String HOST_IP_PATTERN = "\"Host\": \"([^\"]+)\"";

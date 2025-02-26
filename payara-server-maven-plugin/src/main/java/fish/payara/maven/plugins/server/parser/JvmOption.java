@@ -89,11 +89,11 @@ public class JvmOption {
 
     @Override
     public String toString() {
-        return "JvmOption{" +
-                "option='" + option + '\'' +
-                ", vendor='" + vendor + '\'' +
-                ", minVersion=" + minVersion +
-                ", maxVersion=" + maxVersion +
-                '}';
+        return "JvmOption{"
+                + "option='" + option + '\''
+                + ", vendor='" + vendor + '\''
+                + ", minVersion=" + minVersion
+                + ", maxVersion=" + maxVersion
+                + '}';
     }
 }

@@ -37,6 +37,7 @@
  * holder.
  */
 package fish.payara.maven.plugins.server.utils;
+
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -60,13 +61,13 @@ public class StringUtils {
 
     /**
      * Utility method that finds all occurrences of variable references and
-     * replaces them with their values.
-     * Values are taken from <code>varMap</code> and escaped. If they are
-     * not present there, system properties are queried. If not found there
-     * the variable reference is replaced with the same string with special
-     * characters escaped.
-     * 
-     * @param input String value where the variables have to be replaced with values
+     * replaces them with their values. Values are taken from
+     * <code>varMap</code> and escaped. If they are not present there, system
+     * properties are queried. If not found there the variable reference is
+     * replaced with the same string with special characters escaped.
+     *
+     * @param input String value where the variables have to be replaced with
+     * values
      * @param varMap mapping of variable names to their values
      * @return String where the all the replacement was done
      */
@@ -82,12 +83,12 @@ public class StringUtils {
     }
 
     /**
-     * Add escape characters for backslash and dollar sign characters in
-     * path field.
+     * Add escape characters for backslash and dollar sign characters in path
+     * field.
      *
      * @param path file path in string form.
      * @return adjusted path with backslashes and dollar signs escaped with
-     *   backslash character.
+     * backslash character.
      */
     public static String escapePath(String path) {
         return path.replace("\\", "\\\\").replace("$", "\\$");

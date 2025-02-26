@@ -45,25 +45,39 @@ import java.util.List;
 
 public class JavaUtils {
 
-    /** Java executables directory under Java home. */
+    /**
+     * Java executables directory under Java home.
+     */
     private static final String JAVA_BIN_DIR = "bin";
 
-    /** Java VM executable file name (without path). */
+    /**
+     * Java VM executable file name (without path).
+     */
     private static final String JAVA_VM_EXE = "java";
 
-    /** Java Process file name (without path). */
+    /**
+     * Java Process file name (without path).
+     */
     private static final String JAVA_PROCESS_EXE = "jps";
 
-    /** Java SE JDK class path option. */
+    /**
+     * Java SE JDK class path option.
+     */
     public static final String VM_CLASSPATH_OPTION = "-cp";
 
-    /** Java VM system property option. */
+    /**
+     * Java VM system property option.
+     */
     private static final String VM_SYS_PROP_OPT = "-D";
 
-    /** Java VM system property quoting character. */
+    /**
+     * Java VM system property quoting character.
+     */
     private static final String VM_SYS_PROP_QUOTE = "\"";
 
-    /** Java VM system property assignment. */
+    /**
+     * Java VM system property assignment.
+     */
     private static final String VM_SYS_PROP_ASSIGN = "=";
 
     public static final String PATH_SEPARATOR = System.getProperty("path.separator");
@@ -73,8 +87,8 @@ public class JavaUtils {
     /**
      * Append quoted Java VM system property
      * <code>-D"&lt;name&gt;=&lt;value&gt;"</code> into a StringBuilder.
-     * 
-     * @param name  Java VM system property name.
+     *
+     * @param name Java VM system property name.
      * @param value Java VM system property value.
      * @return formatted system property string.
      */
@@ -84,7 +98,7 @@ public class JavaUtils {
 
     /**
      * Build Java VM executable full path from Java Home directory.
-     * 
+     *
      * @param javaHome Full path to Java Home directory.
      * @return Java VM executable full path.
      */
@@ -94,7 +108,7 @@ public class JavaUtils {
 
     /**
      * Build Java Process executable full path from Java Home directory.
-     * 
+     *
      * @param javaHome Full path to Java Home directory.
      * @return Java Process executable full path.
      */
@@ -119,38 +133,34 @@ public class JavaUtils {
         return javaExecStr;
     }
 
-
     /**
      * Parses parameters from a given string in a shell-like manner and appends
      * them to the executable file.
-     * 
+     *
      * Users of the Bourne shell (e.g., on Unix) will already be familiar with
-     * the behavior. For example, you should be able to:
-     * Include command names with embedded spaces, such as
-     * <code>c:\Program Files\jdk\bin\javac</code>.
-     * Include extra command arguments, such as <code>-Dname=value</code>.
-     * Do anything else which might require unusual characters
-     * or processing. For example:
-     * <code>
+     * the behavior. For example, you should be able to: Include command names
+     * with embedded spaces, such as
+     * <code>c:\Program Files\jdk\bin\javac</code>. Include extra command
+     * arguments, such as <code>-Dname=value</code>. Do anything else which
+     * might require unusual characters or processing. For example:      <code>
      * "c:\program files\jdk\bin\java" -Dmessage="Hello /\\/\\ there!" -Xmx128m
      * </code>
-     * 
-     * This example would create the following executable name and
-     * arguments:
-     * 
+     *
+     * This example would create the following executable name and arguments:
+     *
      * <code>c:\program files\jdk\bin\java</code>
-     * <code>-Dmessage=Hello /\/\ there!</code>
-     * <code>-Xmx128m</code>
-     * 
-     * Note that the command string does not escape its backslashes--under
-     * the assumption that Windows users will not think to do this, meaningless
+     * <code>-Dmessage=Hello /\/\ there!</code> <code>-Xmx128m</code>
+     *
+     * Note that the command string does not escape its backslashes--under the
+     * assumption that Windows users will not think to do this, meaningless
      * escapes are just left as backslashes plus the following character.
-     * 
-     * Caveat: even after parsing, Windows programs (such as the
-     * Java launcher) may not fully honor certain characters, such as quotes,
-     * in command names or arguments. This is because programs under Windows
-     * frequently perform their own parsing and unescaping (since the shell
-     * cannot be relied on to do this). On Unix, this problem should not occur.
+     *
+     * Caveat: even after parsing, Windows programs (such as the Java launcher)
+     * may not fully honor certain characters, such as quotes, in command names
+     * or arguments. This is because programs under Windows frequently perform
+     * their own parsing and unescaping (since the shell cannot be relied on to
+     * do this). On Unix, this problem should not occur.
+     *
      * @param args A string to parse.
      * @return A list of executable file and parameters to be passed to it.
      */
@@ -265,13 +275,14 @@ public class JavaUtils {
 
         return params;
     }
+
     public static void main(String[] args) {
         // Test the methods
         String javaHome = "/path/to/java/home";
         System.out.println("Java VM Full Path: " + javaVmExecutableFullPath(javaHome));
         System.out.println("Java Process Full Path: " + javaProcessExecutableFullPath(javaHome));
         System.out.println("System Property: " + systemProperty("my.property", "value"));
-        
+
         String commandLineArgs = "\"C:\\Program Files\\Java\\jdk1.8.0_171\\bin\\java\" -Dproperty=value -Xmx128m";
         List<String> parsedArgs = parseParameters(commandLineArgs);
         for (String arg : parsedArgs) {
