@@ -43,7 +43,7 @@ package fish.payara.maven.plugins.server.manager;
  * @author Gaurav Gupta
  */
 public class PayaraServerRemoteInstance extends PayaraServerInstance {
-    
+
     public PayaraServerRemoteInstance(String host) {
         this.host = host;
         this.adminPort = 4848;

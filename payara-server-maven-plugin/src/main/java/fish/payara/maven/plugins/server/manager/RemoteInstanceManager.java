@@ -48,11 +48,11 @@ import org.apache.maven.plugin.logging.Log;
  * @author Gaurav Gupta
  */
 public class RemoteInstanceManager extends InstanceManager<PayaraServerRemoteInstance> {
-    
-    public RemoteInstanceManager( PayaraServerRemoteInstance payaraServer, Log log) {
+
+    public RemoteInstanceManager(PayaraServerRemoteInstance payaraServer, Log log) {
         super(payaraServer, log);
     }
-    
+
     private String appendPreviousStart, appendnextStart;
     private static final String APPEND_NEXT_HEADER = "X-Text-Append-Next";
 
@@ -78,7 +78,7 @@ public class RemoteInstanceManager extends InstanceManager<PayaraServerRemoteIns
                     appendnextStart = headerValue.substring(questionMarkIndex + 1);
                 }
             }
-            return  appendPreviousStart == null || appendnextStart.equals(appendPreviousStart)? "" : logResponse.toString();
+            return appendPreviousStart == null || appendnextStart.equals(appendPreviousStart) ? "" : logResponse.toString();
         } catch (Exception ex) {
             log.error("Error retrieving log: " + ex.getMessage());
         }

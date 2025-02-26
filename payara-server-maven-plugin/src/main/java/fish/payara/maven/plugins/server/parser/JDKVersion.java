@@ -131,37 +131,57 @@ public class JDKVersion {
     }
 
     private boolean gtNumber(Integer v1, Integer v2) {
-        if (v1 == null) v1 = DEFAULT_VALUE;
-        if (v2 == null) v2 = DEFAULT_VALUE;
+        if (v1 == null) {
+            v1 = DEFAULT_VALUE;
+        }
+        if (v2 == null) {
+            v2 = DEFAULT_VALUE;
+        }
         return v1 > v2;
     }
 
     private boolean ltNumber(Integer v1, Integer v2) {
-        if (v1 == null) v1 = DEFAULT_VALUE;
-        if (v2 == null) v2 = DEFAULT_VALUE;
+        if (v1 == null) {
+            v1 = DEFAULT_VALUE;
+        }
+        if (v2 == null) {
+            v2 = DEFAULT_VALUE;
+        }
         return v1 < v2;
     }
 
     private boolean eq(Integer v1, Integer v2) {
-        if (v1 == null) v1 = DEFAULT_VALUE;
-        if (v2 == null) v2 = DEFAULT_VALUE;
+        if (v1 == null) {
+            v1 = DEFAULT_VALUE;
+        }
+        if (v2 == null) {
+            v2 = DEFAULT_VALUE;
+        }
         return v1.equals(v2);
     }
 
     public boolean equals(JDKVersion other) {
-        if (other == null) return false;
-        return this.major == other.getMajor() &&
-               eq(this.minor, other.getMinor()) &&
-               eq(this.subminor, other.getSubMinor()) &&
-               eq(this.update, other.getUpdate());
+        if (other == null) {
+            return false;
+        }
+        return this.major == other.getMajor()
+                && eq(this.minor, other.getMinor())
+                && eq(this.subminor, other.getSubMinor())
+                && eq(this.update, other.getUpdate());
     }
 
     @Override
     public String toString() {
         StringBuilder value = new StringBuilder(Integer.toString(major));
-        if (minor != null) value.append(minor);
-        if (subminor != null) value.append(subminor);
-        if (update != null) value.append(update);
+        if (minor != null) {
+            value.append(minor);
+        }
+        if (subminor != null) {
+            value.append(subminor);
+        }
+        if (update != null) {
+            value.append(update);
+        }
         return value.toString();
     }
 
@@ -184,11 +204,15 @@ public class JDKVersion {
             String[] split = javaVersionSplit[0].split("\\.");
             if (split.length > 0) {
                 versions[MAJOR_INDEX] = Integer.parseInt(split[0]);
-                if (split.length > 1) versions[MINOR_INDEX] = Integer.parseInt(split[1]);
+                if (split.length > 1) {
+                    versions[MINOR_INDEX] = Integer.parseInt(split[1]);
+                }
                 if (split.length > 2) {
                     String[] subSplit = split[2].split("[_u]+");
                     versions[SUBMINOR_INDEX] = Integer.parseInt(subSplit[0]);
-                    if (subSplit.length > 1) versions[UPDATE_INDEX] = Integer.parseInt(subSplit[1]);
+                    if (subSplit.length > 1) {
+                        versions[UPDATE_INDEX] = Integer.parseInt(subSplit[1]);
+                    }
                 }
             }
         }
@@ -237,14 +261,15 @@ public class JDKVersion {
 
         return null;
     }
-    
-     private static String extractValue(String line) {
+
+    private static String extractValue(String line) {
         String[] keyValue = line.split("=");
         if (keyValue.length == 2) {
             return keyValue[1].trim();
         }
         return "";
     }
+
     public static boolean isCorrectJDK(JDKVersion jdkVersion, String vendor, JDKVersion minVersion, JDKVersion maxVersion) {
         boolean correctJDK = true;
         if (vendor != null) {

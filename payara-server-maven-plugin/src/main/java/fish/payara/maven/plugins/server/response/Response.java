@@ -46,8 +46,8 @@ import java.util.Map;
  * @author Gaurav Gupta
  */
 public interface Response {
-    
-    boolean isExitCodeSuccess() ;
+
+    boolean isExitCodeSuccess();
 
     Map<String, List<String>> getHeaderFields();
 

@@ -47,7 +47,6 @@ import fish.payara.maven.plugins.server.utils.JavaUtils;
 import fish.payara.maven.plugins.server.utils.ServerUtils;
 import fish.payara.maven.plugins.server.utils.StringUtils;
 import java.io.File;
-import java.net.HttpURLConnection;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -56,8 +55,10 @@ import java.util.List;
 import java.util.Map;
 import org.apache.maven.plugin.logging.Log;
 import fish.payara.maven.plugins.server.parser.JDKVersion;
-import java.net.URI;
-import org.apache.maven.plugin.MojoExecutionException;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.Arrays;
 
 /**
  *
@@ -69,7 +70,7 @@ public class LocalInstanceManager extends InstanceManager<PayaraServerLocalInsta
     private static final String ERROR_JAVA_VERSION_NOT_FOUND = "Java version not found.";
     private static final String ERROR_BOOTSTRAP_JAR_NOT_FOUND = "No bootstrap jar exists.";
     private static final String ERROR_JAVA_VM_EXECUTABLE_NOT_FOUND = "Java VM executable for %s was not found.";
-    
+
     public LocalInstanceManager(PayaraServerLocalInstance payaraServer, Log log) {
         super(payaraServer, log);
     }
@@ -235,5 +236,64 @@ public class LocalInstanceManager extends InstanceManager<PayaraServerLocalInsta
         return false;
     }
 
-}
+    public String runAsadminCommand(String command) throws Exception {
+        String javaHome = payaraServer.getJDKHome();
+        if (javaHome == null) {
+            throw new Exception(ERROR_JAVA_HOME_NOT_FOUND);
+        }
 
+        String javaVmExe = JavaUtils.javaVmExecutableFullPath(javaHome);
+        if (!Files.exists(Paths.get(javaVmExe))) {
+            throw new Exception(String.format(ERROR_JAVA_VM_EXECUTABLE_NOT_FOUND, payaraServer.getPath()));
+        }
+
+        String asadminPath = Paths.get(payaraServer.getServerHome(), "bin", "asadmin").toString();
+        if (!Files.exists(Paths.get(asadminPath))) {
+            throw new Exception("asadmin executable not found at " + asadminPath);
+        }
+
+        List<String> commandList = new ArrayList<>();
+
+        if (System.getProperty("os.name").toLowerCase().contains("win")) {
+            commandList.add("cmd.exe");
+            commandList.add("/c");
+        } else {
+            commandList.add("/bin/sh");
+            commandList.add("-c");
+        }
+
+        commandList.add(asadminPath);
+        commandList.addAll(Arrays.asList(command.split("\\s+")));
+
+        ProcessBuilder processBuilder = new ProcessBuilder(commandList);
+        processBuilder.directory(Paths.get(payaraServer.getServerHome(), "bin").toFile());
+
+        Process process = processBuilder.start();
+
+        StringBuilder sb = new StringBuilder();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                sb.append(line).append("\n");
+            }
+        } catch (IOException e) {
+            log.error("Error reading process output", e);
+        }
+
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                sb.append(line);
+            }
+        } catch (IOException e) {
+            log.error("Error reading process error output", e);
+        }
+
+        int exitCode = process.waitFor();
+        if (exitCode != 0) {
+            log.error("asadmin command failed with exit code " + exitCode);
+        }
+        return sb.toString();
+    }
+
+}

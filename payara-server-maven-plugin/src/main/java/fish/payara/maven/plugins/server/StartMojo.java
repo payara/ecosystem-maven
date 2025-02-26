@@ -62,7 +62,9 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static fish.payara.maven.plugins.server.Configuration.*;
-import java.util.regex.Pattern;
+import java.util.Scanner;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import org.apache.maven.project.MavenProject;
@@ -107,6 +109,7 @@ public class StartMojo extends ServerMojo implements StartTask {
     private WebDriver driver;
     private String payaraServerURL;
     private InstanceManager serverManager;
+    private String appPath, projectName;
 
     StartMojo() {
         threadGroup = new ThreadGroup(SERVER_THREAD_NAME);
@@ -188,15 +191,15 @@ public class StartMojo extends ServerMojo implements StartTask {
                     } else {
                         streamLocalServerLog(instance);
                     }
-                    String appPath;
                     if (exploded) {
                         appPath = evaluateProjectArtifactAbsolutePath("");
                     } else {
                         appPath = evaluateProjectArtifactAbsolutePath("." + mavenProject.getPackaging());
                     }
-                    String projectName = mavenProject.getName().replaceAll("\\s+", "");
+                    projectName = mavenProject.getName().replaceAll("\\s+", "");
                     serverManager.undeployApplication(projectName, instanceName);
                     serverManager.deployApplication(projectName, appPath, instanceName, contextRoot);
+                    watchAsadminCommand();
                     int exitCode = serverProcess.waitFor();
                     if (exitCode != 0) { // && !autoDeploy
                         throw new MojoFailureException(ERROR_MESSAGE);
@@ -224,7 +227,7 @@ public class StartMojo extends ServerMojo implements StartTask {
                 }
             }
         } else {
-            Runtime.getRuntime().addShutdownHook(getShutdownHook());
+            Runtime.getRuntime().addShutdownHook(killServerProcess());
             serverProcessorThread.run();
 
 //            if (autoDeploy) {
@@ -235,14 +238,13 @@ public class StartMojo extends ServerMojo implements StartTask {
         }
     }
 
-    private Thread getShutdownHook() {
+    private Thread killServerProcess() {
         return new Thread(threadGroup, () -> {
             if (serverProcess != null && serverProcess.isAlive()) {
                 try {
-                    String projectName = mavenProject.getName().replaceAll("\\s+", "");
                     serverManager.undeployApplication(projectName, instanceName);
                     serverProcess.destroy();
-                    serverProcess.waitFor(1, TimeUnit.MINUTES);
+                    serverProcess.waitFor(15, TimeUnit.SECONDS);
                 } catch (InterruptedException ignored) {
                 } finally {
                     serverProcess.destroyForcibly();
@@ -386,6 +388,54 @@ public class StartMojo extends ServerMojo implements StartTask {
 
     Process getServerProcess() {
         return this.serverProcess;
+    }
+
+    private void watchAsadminCommand() {
+        Thread thread = new Thread(threadGroup, () -> {
+            try (Scanner scanner = new Scanner(System.in)) {
+                String userQuery = null;
+
+                Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                    Thread.currentThread().interrupt();
+                }));
+
+                while (!Thread.currentThread().isInterrupted() && !"exit".equals(userQuery)) {
+                    try {
+                        if (scanner.hasNextLine()) {
+                            userQuery = scanner.nextLine();
+                        } else {
+                            Thread.currentThread().interrupt();
+                            break; // Exit if input stream closes
+                        }
+                    } catch (java.util.NoSuchElementException nsee) {
+                        break;
+                    }
+                    try {
+                        if (userQuery.startsWith("asadmin")) {
+                            if (serverManager instanceof LocalInstanceManager) {
+                               String repsonse = ((LocalInstanceManager) serverManager).runAsadminCommand(userQuery.substring(8));
+                               getLog().info(repsonse);
+                            }
+                        } else if (userQuery.equals("deploy")) {
+                            serverManager.undeployApplication(projectName, instanceName);
+                            serverManager.deployApplication(projectName, appPath, instanceName, contextRoot);
+                        } else if (userQuery.equals("undeploy")) {
+                            serverManager.undeployApplication(projectName, instanceName);
+                        } else if (userQuery.equals("exit")) {
+                            Thread.currentThread().interrupt();
+                            getLog().info("watchAsadminCommand exit");
+                            killServerProcess().start();
+                            break;
+                        }
+                    } catch (Exception ex) {
+                        Logger.getLogger(StartMojo.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+            }
+        });
+
+        thread.setDaemon(false);
+        thread.start();
     }
 
     private Thread streamRemoteServerLog() {

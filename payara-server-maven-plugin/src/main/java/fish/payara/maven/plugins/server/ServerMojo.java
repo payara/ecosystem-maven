@@ -39,11 +39,7 @@
 package fish.payara.maven.plugins.server;
 
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.util.Properties;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.dependency.fromConfiguration.ArtifactItem;
 
@@ -61,31 +57,31 @@ public abstract class ServerMojo extends BasePayaraMojo {
 
     @Parameter(property = "payaraServerAbsolutePath")
     protected String payaraServerAbsolutePath;
-    
+
     @Parameter(property = "domain", defaultValue = "domain1")
     protected String domain;
 
     @Parameter(property = "artifactItem")
     protected ArtifactItem artifactItem;
-    
+
     @Parameter(property = "exploded", defaultValue = "false")
     protected boolean exploded;
 
     @Parameter(property = "contextRoot")
     protected String contextRoot;
-    
+
     @Parameter(property = "remote", defaultValue = "false")
     protected boolean remote;
-    
+
     @Parameter(property = "host", defaultValue = "${env.PAYARA_HOST}")
     protected String host;
-    
+
     @Parameter(property = "adminPort", defaultValue = "${env.PAYARA_ADMIN_PORT}")
     protected String adminPort;
-    
+
     @Parameter(property = "httpPort", defaultValue = "${env.PAYARA_HTTP_PORT}")
     protected String httpPort;
-    
+
     @Parameter(property = "httpsPort", defaultValue = "${env.PAYARA_HTTPS_PORT}")
     protected String httpsPort;
 
@@ -100,7 +96,7 @@ public abstract class ServerMojo extends BasePayaraMojo {
 
     @Parameter(property = "adminUser", defaultValue = "${env.PAYARA_ADMIN_USER}")
     protected String adminUser;
-    
+
     @Parameter(property = "instanceName", defaultValue = "${env.PAYARA_INSTANCE}")
     protected String instanceName;
 
@@ -116,9 +112,9 @@ public abstract class ServerMojo extends BasePayaraMojo {
         }
         return adminPassword;
     }
-    
+
     protected String getAdminPassword() {
-        if(adminPassword == null) {
+        if (adminPassword == null) {
             adminPassword = getAdminPasswordFromFile();
         }
         return adminPassword;

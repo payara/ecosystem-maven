@@ -43,7 +43,7 @@ package fish.payara.maven.plugins.server.manager;
  * @author Gaurav Gupta
  */
 public abstract class PayaraServerInstance {
-    
+
     protected String adminUser;
     protected String adminPassword;
 
@@ -60,7 +60,7 @@ public abstract class PayaraServerInstance {
     public void setAdminUser(String adminUser) {
         this.adminUser = adminUser;
     }
-    
+
     public String getAdminPassword() {
         return adminPassword;
     }
