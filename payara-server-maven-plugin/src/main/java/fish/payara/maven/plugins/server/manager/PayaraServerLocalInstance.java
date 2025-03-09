@@ -117,7 +117,7 @@ public class PayaraServerLocalInstance extends PayaraServerInstance {
     }
 
     public int getHttpPort() {
-        if(httpPort > 0) {
+        if (httpPort > 0) {
             return httpPort;
         }
         if (portReader == null) {
@@ -127,7 +127,7 @@ public class PayaraServerLocalInstance extends PayaraServerInstance {
     }
 
     public int getHttpsPort() {
-        if(httpsPort > 0) {
+        if (httpsPort > 0) {
             return httpsPort;
         }
         if (portReader == null) {
@@ -137,7 +137,7 @@ public class PayaraServerLocalInstance extends PayaraServerInstance {
     }
 
     public int getAdminPort() {
-        if(adminPort > 0) {
+        if (adminPort > 0) {
             return adminPort;
         }
         if (portReader == null) {

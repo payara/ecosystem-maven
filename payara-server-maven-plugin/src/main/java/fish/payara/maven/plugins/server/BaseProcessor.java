@@ -46,9 +46,9 @@ import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
 public abstract class BaseProcessor implements Configuration {
 
     private BaseProcessor nextProcessor;
-    
-    Plugin dependencyPlugin =
-            plugin(groupId("org.apache.maven.plugins"), artifactId("maven-dependency-plugin"), version("3.8.1"));
+
+    Plugin dependencyPlugin
+            = plugin(groupId("org.apache.maven.plugins"), artifactId("maven-dependency-plugin"), version("3.8.1"));
 
     public abstract void handle(ExecutionEnvironment environment) throws MojoExecutionException;
 

@@ -62,17 +62,17 @@ public class PortReader {
     private void parseDomainXML(String domainXmlPath) {
         try {
             File file = new File(domainXmlPath);
-            
+
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             DocumentBuilder builder = factory.newDocumentBuilder();
             Document document = builder.parse(file);
-            
+
             // Normalize the XML structure
             document.getDocumentElement().normalize();
-            
+
             NodeList servers = document.getElementsByTagName("server");
             NodeList configs = document.getElementsByTagName("config");
-            
+
             // Iterate over servers
             for (int i = 0; i < servers.getLength(); i++) {
                 Node serverNode = servers.item(i);
@@ -84,7 +84,7 @@ public class PortReader {
                     }
                 }
             }
-            
+
             // Iterate over configs
             for (int i = 0; i < configs.getLength(); i++) {
                 Node configNode = configs.item(i);

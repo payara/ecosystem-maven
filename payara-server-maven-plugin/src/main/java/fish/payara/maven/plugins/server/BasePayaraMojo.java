@@ -75,13 +75,13 @@ abstract class BasePayaraMojo extends AbstractMojo {
         }
         return environment;
     }
-    
-    protected String getProjectGAV(){
+
+    protected String getProjectGAV() {
         return mavenProject.getGroupId() + ":" + mavenProject.getArtifactId() + ":" + mavenProject.getVersion();
     }
 
     protected Toolchain getToolchain() {
-        if ( toolchainManager != null ) {
+        if (toolchainManager != null) {
             return toolchainManager.getToolchainFromBuildContext("jdk", mavenSession);
         }
         return null;
