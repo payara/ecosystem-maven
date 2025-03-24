@@ -303,7 +303,7 @@ public class StartMojo extends ServerMojo implements StartTask {
 
     public void deployApplication() {
         serverManager.undeployApplication(projectName, instanceName);
-        URI appUri = serverManager.deployApplication(projectName, appPath, instanceName, contextRoot);
+        URI appUri = serverManager.deployApplication(projectName, appPath, instanceName, contextRoot, exploded, hotDeploy);
         if (appUri != null) {
             applicationURL = appUri.toString();
         }
@@ -504,8 +504,7 @@ public class StartMojo extends ServerMojo implements StartTask {
                                 getLog().info(repsonse);
                             }
                         } else if (userQuery.equals("deploy")) {
-                            serverManager.undeployApplication(projectName, instanceName);
-                            serverManager.deployApplication(projectName, appPath, instanceName, contextRoot);
+                            deployApplication();
                         } else if (userQuery.equals("undeploy")) {
                             serverManager.undeployApplication(projectName, instanceName);
                         } else if (userQuery.equals("exit")) {
@@ -633,6 +632,7 @@ public class StartMojo extends ServerMojo implements StartTask {
     }
 
     private void openApp() {
+        System.out.println("openApp openApp openApp openApp *********");
         try {
             driver = WebDriverFactory.createWebDriver(browser, getLog());
             String url = PropertiesUtils.getProperty(applicationURL, applicationURL);

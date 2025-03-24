@@ -62,8 +62,9 @@ public class ServerAutoDeployHandler extends AutoDeployHandler {
 
     @Override
     public void reload(boolean rebootRequired) {
-        start.deployApplication();
         WebDriverFactory.updateTitle(RELOADING, project, start.getDriver(), log);
+        start.deployApplication();
+        WebDriverFactory.updateTitle("", project, start.getDriver(), log);
     }
 
 }

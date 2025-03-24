@@ -111,6 +111,10 @@ public class Command {
         return hotDeploy;
     }
 
+    public void setHotDeploy(boolean hotDeploy) {
+        this.hotDeploy = hotDeploy;
+    }
+
     public String getInstanceName() {
         return instanceName;
     }

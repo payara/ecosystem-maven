@@ -253,12 +253,14 @@ public class InstanceManager<X extends PayaraServerInstance> {
         return false;
     }
 
-    public URI deployApplication(String name, String appPath, String instanceName, String contextRoot) {
+    public URI deployApplication(String name, String appPath, String instanceName, String contextRoot, boolean exploded, boolean hotDeploy) {
         Command command = new Command(ASADMIN_PATH, DEPLOY_COMMAND, name);
         command.setPath(appPath);
         command.setContextRoot(contextRoot);
         command.setInstanceName(instanceName);
         command.setQuery(query(command));
+        command.setDirDeploy(exploded);
+        command.setHotDeploy(hotDeploy);
         Response deploy;
         try {
             deploy = invokeServer(payaraServer, command);
@@ -464,19 +466,24 @@ public class InstanceManager<X extends PayaraServerInstance> {
         return baos.toByteArray();
     }
 
-    private InputStream getInputStream(Command command) {
-        if (command.isDirDeploy()) {
-            return null;
-        } else if (command.getPath() != null) {
-            try {
-                return new FileInputStream(command.getPath());
-            } catch (FileNotFoundException fnfe) {
-                log.error(fnfe);
-                return null;
-            }
-        }
+private InputStream getInputStream(Command command) {
+    if (command.isDirDeploy()) {
         return null;
+    } else if (command.getPath() != null) {
+        File file = new File(command.getPath());
+        if (!file.exists() || !file.canRead()) {
+            log.error("File not found or cannot be read: " + command.getPath());
+            return null;
+        }
+        try {
+            return new FileInputStream(file);
+        } catch (FileNotFoundException fnfe) {
+            log.error("Exception while opening file: " + fnfe.getMessage());
+            return null;
+        }
     }
+    return null;
+}
 
     /**
      * Prepare headers for HTTP connection. This handles all common headers for
