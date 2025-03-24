@@ -44,7 +44,10 @@ import fish.payara.maven.plugins.server.manager.PayaraServerLocalInstance;
 import fish.payara.maven.plugins.server.manager.LocalInstanceManager;
 import fish.payara.maven.plugins.server.manager.InstanceManager;
 import fish.payara.maven.plugins.AutoDeployHandler;
+import fish.payara.maven.plugins.LogUtils;
+import fish.payara.maven.plugins.PropertiesUtils;
 import fish.payara.maven.plugins.StartTask;
+import fish.payara.maven.plugins.WebDriverFactory;
 import org.apache.commons.io.IOUtils;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.DefaultArtifact;
@@ -62,11 +65,17 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static fish.payara.maven.plugins.server.Configuration.*;
+import fish.payara.maven.plugins.server.manager.PayaraServerInstance;
+import java.awt.Desktop;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Collections;
 import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+import org.apache.commons.lang.StringUtils;
 import org.apache.maven.project.MavenProject;
 import org.openqa.selenium.WebDriver;
 
@@ -87,6 +96,33 @@ public class StartMojo extends ServerMojo implements StartTask {
     @Parameter(property = "immediateExit", defaultValue = "false")
     private boolean immediateExit;
 
+    @Parameter(property = "deployWar", defaultValue = "false")
+    protected boolean deployWar;
+
+    @Parameter(property = "autoDeploy")
+    protected Boolean autoDeploy;
+
+    @Parameter(property = "keepState")
+    protected Boolean keepState;
+
+    @Parameter(property = "liveReload")
+    protected Boolean liveReload;
+
+    @Parameter(property = "browser")
+    protected String browser;
+
+    @Parameter(property = "trimLog")
+    protected Boolean trimLog;
+
+    @Parameter(property = "hotDeploy")
+    protected boolean hotDeploy;
+
+    /**
+     * The directory where the webapp is built, default value is exploded war.
+     */
+    @Parameter(defaultValue = "${project.build.directory}/${project.build.finalName}", required = true)
+    protected File webappDirectory;
+
     /**
      * Attach a debugger. If set to "true", the process will suspend and wait
      * for a debugger to attach on port 5005. If set to other value, will be
@@ -98,6 +134,12 @@ public class StartMojo extends ServerMojo implements StartTask {
 
     @Parameter(property = "debugPort")
     protected String debugPort;
+    
+    @Parameter(property = "commandLineOptions")
+    private List<Option> commandLineOptions;
+
+    @Parameter(property = "javaCommandLineOptions")
+    private List<Option> javaCommandLineOptions;
 
     private Process serverProcess;
     private Thread serverProcessorThread;
@@ -105,18 +147,39 @@ public class StartMojo extends ServerMojo implements StartTask {
     private Toolchain toolchain;
 
     private AutoDeployHandler autoDeployHandler;
-    private final List<String> rebootOnChange = new ArrayList<>();
     private WebDriver driver;
-    private String payaraServerURL;
+    private String applicationURL;
     private InstanceManager serverManager;
     private String appPath, projectName;
-
+    private PayaraServerInstance instance;
+    
     StartMojo() {
         threadGroup = new ThreadGroup(SERVER_THREAD_NAME);
     }
 
     @Override
     public void execute() throws MojoExecutionException {
+        if (trimLog == null) {
+            trimLog = false;
+        }
+        if (autoDeploy == null) {
+            autoDeploy = false;
+        }
+        if (liveReload == null) {
+            liveReload = false;
+        }
+        if (keepState == null) {
+            keepState = false;
+        }
+        if (autoDeploy && autoDeployHandler == null) {
+            autoDeployHandler = new ServerAutoDeployHandler(this, webappDirectory);
+            Thread devModeThread = new Thread(autoDeployHandler);
+            devModeThread.setDaemon(true);
+            devModeThread.start();
+        } else {
+            autoDeployHandler = null;
+        }
+
         if (skip) {
             getLog().info("Start mojo execution is skipped");
             return;
@@ -127,7 +190,7 @@ public class StartMojo extends ServerMojo implements StartTask {
 
         serverProcessorThread = new Thread(threadGroup, () -> {
             if (remote) {
-                PayaraServerRemoteInstance instance = new PayaraServerRemoteInstance(host);
+                instance = new PayaraServerRemoteInstance(host);
                 instance.setAdminUser(adminUser);
                 instance.setAdminPassword(getAdminPassword());
                 if (adminPort != null) {
@@ -142,13 +205,13 @@ public class StartMojo extends ServerMojo implements StartTask {
                 if (protocol != null) {
                     instance.setProtocol(protocol);
                 }
-                serverManager = new RemoteInstanceManager(instance, getLog());
+                serverManager = new RemoteInstanceManager((PayaraServerRemoteInstance) instance, getLog());
                 if (serverManager.isServerAlreadyRunning()) {
                     Thread logThread = streamRemoteServerLog();
-                    String appPath = evaluateProjectArtifactAbsolutePath("." + mavenProject.getPackaging());
-                    String projectName = mavenProject.getName().replaceAll("\\s+", "");
-                    serverManager.undeployApplication(projectName, instanceName);
-                    serverManager.deployApplication(projectName, appPath, instanceName, contextRoot);
+                    appPath = evaluateProjectArtifactAbsolutePath("." + mavenProject.getPackaging());
+                    projectName = mavenProject.getName().replaceAll("\\s+", "");
+                    deployApplication();
+                    openApp();
                     try {
                         logThread.join();
                     } catch (InterruptedException e) {
@@ -159,7 +222,7 @@ public class StartMojo extends ServerMojo implements StartTask {
                 }
             } else {
                 try {
-                    PayaraServerLocalInstance instance = new PayaraServerLocalInstance(domain, path);
+                    instance = new PayaraServerLocalInstance(domain, path);
                     instance.setAdminUser(adminUser);
                     instance.setAdminPassword(getAdminPassword());
                     if (adminPort != null) {
@@ -174,9 +237,9 @@ public class StartMojo extends ServerMojo implements StartTask {
                     if (protocol != null) {
                         instance.setProtocol(protocol);
                     }
-                    serverManager = new LocalInstanceManager(instance, getLog());
+                    serverManager = new LocalInstanceManager((PayaraServerLocalInstance) instance, getLog());
                     if (!serverManager.isServerAlreadyRunning()) {
-                        ProcessBuilder processBuilder = ((LocalInstanceManager) serverManager).startServer(debug, debugPort);
+                        ProcessBuilder processBuilder = ((LocalInstanceManager) serverManager).startServer(debug, debugPort, javaCommandLineOptions, commandLineOptions);
                         getLog().info("Starting Payara Server [" + path + "] with the these arguments: " + processBuilder.command());
                         serverProcess = processBuilder.start();
 
@@ -189,7 +252,7 @@ public class StartMojo extends ServerMojo implements StartTask {
                         }
                         serverManager.connectWithServer();
                     } else {
-                        streamLocalServerLog(instance);
+                        streamLocalServerLog((PayaraServerLocalInstance) instance);
                     }
                     if (exploded) {
                         appPath = evaluateProjectArtifactAbsolutePath("");
@@ -197,8 +260,8 @@ public class StartMojo extends ServerMojo implements StartTask {
                         appPath = evaluateProjectArtifactAbsolutePath("." + mavenProject.getPackaging());
                     }
                     projectName = mavenProject.getName().replaceAll("\\s+", "");
-                    serverManager.undeployApplication(projectName, instanceName);
-                    serverManager.deployApplication(projectName, appPath, instanceName, contextRoot);
+                    deployApplication();
+                    openApp();
                     watchAsadminCommand();
                     int exitCode = serverProcess.waitFor();
                     if (exitCode != 0) { // && !autoDeploy
@@ -230,11 +293,19 @@ public class StartMojo extends ServerMojo implements StartTask {
             Runtime.getRuntime().addShutdownHook(killServerProcess());
             serverProcessorThread.run();
 
-//            if (autoDeploy) {
-//                while (autoDeployHandler.isAlive()) {
-//                    serverProcessorThread.run();
-//                }
-//            }
+            if (autoDeploy) {
+                while (autoDeployHandler.isAlive()) {
+                    serverProcessorThread.run();
+                }
+            }
+        }
+    }
+
+    public void deployApplication() {
+        serverManager.undeployApplication(projectName, instanceName);
+        URI appUri = serverManager.deployApplication(projectName, appPath, instanceName, contextRoot);
+        if (appUri != null) {
+            applicationURL = appUri.toString();
         }
     }
 
@@ -250,13 +321,29 @@ public class StartMojo extends ServerMojo implements StartTask {
                     serverProcess.destroyForcibly();
                 }
             }
+            if (autoDeployHandler != null) {
+                autoDeployHandler.stop();
+            }
+            if (driver != null) {
+                try {
+                    PropertiesUtils.saveProperties(applicationURL, driver.getCurrentUrl());
+                } catch (Throwable t) {
+                    getLog().debug(t);
+                } finally {
+                    try {
+                        driver.quit();
+                    } catch (Throwable t) {
+                        getLog().debug(t);
+                    }
+                }
+            }
         });
     }
 
     private String evaluateJavaPath() {
         String javaToUse = JAVA_EXECUTABLE;
 
-        if (org.apache.commons.lang.StringUtils.isNotEmpty(javaPath)) {
+        if (StringUtils.isNotEmpty(javaPath)) {
             javaToUse = javaPath;
         } else if (toolchain != null) {
             javaToUse = toolchain.findTool(JAVA_EXECUTABLE);
@@ -369,7 +456,7 @@ public class StartMojo extends ServerMojo implements StartTask {
     }
 
     private String evaluateExecutorName(String extension) {
-        if (org.apache.commons.lang.StringUtils.isNotEmpty(mavenProject.getBuild().getFinalName())) {
+        if (StringUtils.isNotEmpty(mavenProject.getBuild().getFinalName())) {
             return mavenProject.getBuild().getFinalName() + extension;
         }
         return mavenProject.getArtifactId() + '-' + mavenProject.getVersion() + extension;
@@ -413,8 +500,8 @@ public class StartMojo extends ServerMojo implements StartTask {
                     try {
                         if (userQuery.startsWith("asadmin")) {
                             if (serverManager instanceof LocalInstanceManager) {
-                               String repsonse = ((LocalInstanceManager) serverManager).runAsadminCommand(userQuery.substring(8));
-                               getLog().info(repsonse);
+                                String repsonse = ((LocalInstanceManager) serverManager).runAsadminCommand(userQuery.substring(8));
+                                getLog().info(repsonse);
                             }
                         } else if (userQuery.equals("deploy")) {
                             serverManager.undeployApplication(projectName, instanceName);
@@ -511,13 +598,28 @@ public class StartMojo extends ServerMojo implements StartTask {
     private void redirectStreamToGivenOutputStream(final InputStream inputStream, final OutputStream outputStream) {
         Thread thread = new Thread(threadGroup, () -> {
             try {
-                if (outputStream instanceof PrintStream) {
+                if (liveReload && outputStream instanceof PrintStream) {
                     String line;
                     BufferedReader br = new BufferedReader(new InputStreamReader(inputStream));
                     PrintStream printStream = (PrintStream) outputStream;
 
                     while ((line = br.readLine()) != null) {
-                        printStream.println(line);
+                        printStream.println(trimLog ? LogUtils.trimLog(line) : line);
+                        if (line.contains(APP_DEPLOYMENT_FAILED)) {
+                            WebDriverFactory.updateTitle(APP_DEPLOYMENT_FAILED_MESSAGE, getEnvironment().getMavenProject(), driver, this.getLog());
+                        } else if (applicationURL != null
+                                && !applicationURL.isEmpty()
+                                && driver != null
+                                && line.contains(APP_DEPLOYED)) {
+                            try {
+                                driver.navigate().refresh();
+                            } catch (Exception ex) {
+                                getLog().debug("Error in refreshing with WebDriver", ex);
+                            }
+                        } else if (autoDeploy
+                                && line.contains(INOTIFY_USER_LIMIT_REACHED_MESSAGE)) {
+                            getLog().error(WATCH_SERVICE_ERROR_MESSAGE);
+                        }
                     }
                 } else {
                     IOUtils.copy(inputStream, outputStream);
@@ -530,6 +632,37 @@ public class StartMojo extends ServerMojo implements StartTask {
         thread.start();
     }
 
+    private void openApp() {
+        try {
+            driver = WebDriverFactory.createWebDriver(browser, getLog());
+            String url = PropertiesUtils.getProperty(applicationURL, applicationURL);
+            if ((url == null || url.isEmpty())) {
+                url = instance.getProtocol() + "://" + instance.getHost() + ":" + (instance.getProtocol().equals("http") ? instance.getHttpPort() : instance.getHttpPort());
+                if (contextRoot != null) {
+                    url = url + "/" + contextRoot;
+                }
+                applicationURL = url;
+            }
+            driver.get(url);
+        } catch (Exception ex) {
+            getLog().error("Error in running WebDriver", ex);
+            try {
+                if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
+                    Desktop.getDesktop().browse(new URI(applicationURL));
+                }
+            } catch (IOException | URISyntaxException e) {
+                getLog().error("Error in running Desktop browse", e);
+            } finally {
+                driver = null;
+            }
+        }
+    }
+
+    @Override
+    public WebDriver getDriver() {
+        return driver;
+    }
+
     @Override
     public MavenProject getProject() {
         return this.getEnvironment().getMavenProject();
@@ -537,14 +670,12 @@ public class StartMojo extends ServerMojo implements StartTask {
 
     @Override
     public List<String> getRebootOnChange() {
-        return rebootOnChange;
+        return Collections.EMPTY_LIST;
     }
 
-    public WebDriver getDriver() {
-        return null;
-    }
-
+    @Override
     public boolean isLocal() {
-        return true;
+        return exploded;
     }
+
 }

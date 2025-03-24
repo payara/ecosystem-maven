@@ -253,7 +253,7 @@ public class InstanceManager<X extends PayaraServerInstance> {
         return false;
     }
 
-    public void deployApplication(String name, String appPath, String instanceName, String contextRoot) {
+    public URI deployApplication(String name, String appPath, String instanceName, String contextRoot) {
         Command command = new Command(ASADMIN_PATH, DEPLOY_COMMAND, name);
         command.setPath(appPath);
         command.setContextRoot(contextRoot);
@@ -272,6 +272,7 @@ public class InstanceManager<X extends PayaraServerInstance> {
                             payaraServer.getProtocol().equals("http") ? payaraServer.getHttpPort() : payaraServer.getHttpPort(),
                             getContextRoot(((JsonResponse) response).getJsonBody()), null, null);
                     log.info(name + " application deployed successfully : " + app.toString());
+                    return app;
                 } else {
                     log.info(name + " application deployed successfully.");
                 }
@@ -281,6 +282,7 @@ public class InstanceManager<X extends PayaraServerInstance> {
         } catch (Exception ex) {
             log.error("Error deploying the application: " + ex.getMessage());
         }
+        return null;
     }
 
     public String getContextRoot(JSONObject body) {

@@ -38,6 +38,7 @@
  */
 package fish.payara.maven.plugins.micro;
 
+import fish.payara.maven.plugins.LogUtils;
 import fish.payara.maven.plugins.AutoDeployHandler;
 import fish.payara.maven.plugins.PropertiesUtils;
 import fish.payara.maven.plugins.StartTask;
