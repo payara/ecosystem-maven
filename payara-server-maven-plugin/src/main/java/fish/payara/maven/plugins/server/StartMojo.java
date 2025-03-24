@@ -632,7 +632,6 @@ public class StartMojo extends ServerMojo implements StartTask {
     }
 
     private void openApp() {
-        System.out.println("openApp openApp openApp openApp *********");
         try {
             driver = WebDriverFactory.createWebDriver(browser, getLog());
             String url = PropertiesUtils.getProperty(applicationURL, applicationURL);
