@@ -41,6 +41,7 @@ package fish.payara.maven.plugins.server.manager;
 import fish.payara.maven.plugins.server.Command;
 import fish.payara.maven.plugins.server.response.Response;
 import static fish.payara.maven.plugins.server.Configuration.DAS_NAME;
+import fish.payara.maven.plugins.server.Option;
 import fish.payara.maven.plugins.server.parser.JvmConfigReader;
 import fish.payara.maven.plugins.server.parser.JvmOption;
 import fish.payara.maven.plugins.server.utils.JavaUtils;
@@ -75,7 +76,7 @@ public class LocalInstanceManager extends InstanceManager<PayaraServerLocalInsta
         super(payaraServer, log);
     }
 
-    public ProcessBuilder startServer(String debug, String debugPort) throws Exception {
+    public ProcessBuilder startServer(String debug, String debugPort, List<Option> javaCommandLineOptions, List<Option> commandLineOptions) throws Exception {
         JvmConfigReader jvmConfigReader = new JvmConfigReader(payaraServer.getDomainXmlPath(), DAS_NAME);
         String javaHome = payaraServer.getJDKHome();
         if (javaHome == null) {
@@ -85,6 +86,33 @@ public class LocalInstanceManager extends InstanceManager<PayaraServerLocalInsta
         if (javaVersion == null) {
             throw new Exception(ERROR_JAVA_VERSION_NOT_FOUND);
         }
+
+        List<String> options = new ArrayList<>();
+        if (javaCommandLineOptions != null) {
+            for (Option option : javaCommandLineOptions) {
+                if (option.getKey() != null && option.getValue() != null) {
+                    String systemProperty = String.format("%s=%s", option.getKey(), option.getValue());
+                    options.add(systemProperty);
+                } else if (option.getValue() != null) {
+                    options.add(option.getValue());
+                }
+            }
+        }
+        String javaConfigOptions = String.join(" ", options).trim();
+        
+        options = new ArrayList<>();
+        if (commandLineOptions != null) {
+            for (Option option : commandLineOptions) {
+                if (option.getKey() != null && option.getValue() != null) {
+                    String systemProperty = String.format("%s=%s", option.getKey(), option.getValue());
+                    options.add(systemProperty);
+                } else if (option.getValue() != null) {
+                    options.add(option.getValue());
+                }
+            }
+        }
+        String payaraConfigOptions = String.join(" ", options).trim();
+        
         List<String> optList = new ArrayList<>();
         for (JvmOption jvmOption : jvmConfigReader.getJvmOptions()) {
             if (JDKVersion.isCorrectJDK(javaVersion, jvmOption.getVendor(), jvmOption.getMinVersion(), jvmOption.getMaxVersion())) {
@@ -120,7 +148,7 @@ public class LocalInstanceManager extends InstanceManager<PayaraServerLocalInsta
         if (!Files.exists(Paths.get(javaVmExe))) {
             throw new Exception(String.format(ERROR_JAVA_VM_EXECUTABLE_NOT_FOUND, payaraServer.getPath()));
         }
-        String allArgs = String.join(" ", javaVmExe, javaOpts, "-jar", bootstrapJar, "--classpath", classPath, payaraArgs);
+        String allArgs = String.join(" ", javaVmExe, javaOpts, javaConfigOptions, "-jar", bootstrapJar, "--classpath", classPath, payaraArgs, payaraConfigOptions);
         List<String> args = JavaUtils.parseParameters(allArgs);
         ProcessBuilder processBuilder = new ProcessBuilder(args);
         processBuilder.directory(new File(payaraServer.getPath()));

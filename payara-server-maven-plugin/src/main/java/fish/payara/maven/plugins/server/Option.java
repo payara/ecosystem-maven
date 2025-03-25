@@ -38,97 +38,32 @@
  */
 package fish.payara.maven.plugins.server;
 
-import static fish.payara.maven.plugins.server.manager.InstanceManager.CONTENT_TYPE_JSON;
+public class Option {
 
-/**
- *
- * @author Gaurav Gupta
- */
-public class Command {
+    private String key;
+    private String value;
 
-    private final String value;
-    private final String rootPath;
-    private final String command;
-    private String instanceName;
-    private String path;
-    private String query;
-    private boolean dirDeploy;
-    private String contextRoot;
-    private boolean hotDeploy;
-    private String contentType = CONTENT_TYPE_JSON;
+    public Option() {
+    }
 
-    public Command(String rootPath, String command, String value) {
-        this.rootPath = rootPath;
-        this.command = command;
+    public Option(String key, String value) {
+        this.key = key;
         this.value = value;
+    }
+
+    public String getKey() {
+        return key;
+    }
+
+    public void setKey(String key) {
+        this.key = key;
     }
 
     public String getValue() {
         return value;
     }
 
-    public String getRootPath() {
-        return rootPath;
+    public void setValue(String value) {
+        this.value = value;
     }
-
-    public String getPath() {
-        return path;
-    }
-
-    public String getCommand() {
-        return command;
-    }
-
-    public String getQuery() {
-        return query;
-    }
-
-    public boolean isDirDeploy() {
-        return dirDeploy;
-    }
-
-    public void setDirDeploy(boolean dirDeploy) {
-        this.dirDeploy = dirDeploy;
-    }
-
-    public void setPath(String path) {
-        this.path = path;
-    }
-
-    public void setQuery(String query) {
-        this.query = query;
-    }
-
-    public String getContextRoot() {
-        return contextRoot;
-    }
-
-    public void setContextRoot(String contextRoot) {
-        this.contextRoot = contextRoot;
-    }
-
-    public boolean isHotDeploy() {
-        return hotDeploy;
-    }
-
-    public void setHotDeploy(boolean hotDeploy) {
-        this.hotDeploy = hotDeploy;
-    }
-
-    public String getInstanceName() {
-        return instanceName;
-    }
-
-    public void setInstanceName(String instanceName) {
-        this.instanceName = instanceName;
-    }
-
-    public String getContentType() {
-        return contentType;
-    }
-
-    public void setContentType(String contentType) {
-        this.contentType = contentType;
-    }
-
 }
