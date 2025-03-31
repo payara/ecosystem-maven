@@ -89,64 +89,67 @@ public class StartMojo extends BasePayaraMojo implements StartTask {
     private static final String POST_BOOT = "--postbootcommandfile";
     private static final String POST_DEPLOY = "--postdeploycommandfile";
 
+    @Parameter(property = "payara.java.home", defaultValue = "${env.PAYARA_JAVA_HOME}")
+    private String javaHome;
+
+    @Parameter(property = "payara.micro.version", defaultValue = "${env.PAYARA_MICRO_VERSION}")
+    private String payaraMicroVersion;
+
+    @Parameter(property = "payara.micro.path", defaultValue = "${env.PAYARA_MICRO_PATH}")
+    private String payaraMicroPath;
+
+    @Deprecated
     @Parameter(property = "javaPath")
     private String javaPath;
 
+    @Deprecated
     @Parameter(property = "payaraVersion")
     private String payaraVersion;
 
+    @Deprecated
     @Parameter(property = "payaraMicroAbsolutePath")
     private String payaraMicroAbsolutePath;
 
-    @Parameter(property = "daemon", defaultValue = "false")
+    @Parameter(property = "payara.daemon", defaultValue = "${env.PAYARA_DAEMON}")
     private boolean daemon;
 
-    @Parameter(property = "immediateExit", defaultValue = "false")
+    @Parameter(property = "payara.immediate.exit", defaultValue = "${env.PAYARA_IMMEDIATE_EXIT}")
     private boolean immediateExit;
 
-    @Parameter(property = "artifactItem")
+    @Parameter
     private ArtifactItem artifactItem;
 
-    @Parameter(property = "useUberJar", defaultValue = "false")
+    @Parameter(property = "payara.use.uber.jar", defaultValue = "${env.PAYARA_USE_UBER_JAR}")
     private boolean useUberJar;
 
-    @Parameter(property = "deployWar", defaultValue = "false")
+    @Parameter(property = "payara.deploy.war", defaultValue = "${env.PAYARA_DEPLOY_WAR}")
     protected boolean deployWar;
 
-    /**
-     * Use exploded artifact for deployment.
-     */
-    @Parameter(property = "exploded", defaultValue = "false")
+    @Parameter(property = "payara.exploded", defaultValue = "${env.PAYARA_EXPLODED}")
     protected boolean exploded;
 
-    @Parameter(property = "autoDeploy")
+    @Parameter(property = "payara.auto.deploy", defaultValue = "${env.PAYARA_AUTO_DEPLOY}")
     protected Boolean autoDeploy;
 
-    @Parameter(property = "keepState")
+    @Parameter(property = "payara.keep.state", defaultValue = "${env.PAYARA_KEEP_STATE}")
     protected Boolean keepState;
 
-    @Parameter(property = "liveReload")
+    @Parameter(property = "payara.live.reload", defaultValue = "${env.PAYARA_LIVE_RELOAD}")
     protected Boolean liveReload;
 
-    @Parameter(property = "browser")
+    @Parameter(property = "payara.browser", defaultValue = "${env.PAYARA_BROWSER}")
     protected String browser;
 
-    @Parameter(property = "trimLog")
+    @Parameter(property = "payara.trim.log", defaultValue = "${env.PAYARA_TRIM_LOG}")
     protected Boolean trimLog;
 
-    /**
-     * Attach a debugger. If set to "true", the process will suspend and wait
-     * for a debugger to attach on port 5005. If set to other value, will be
-     * appended to the argLine, allowing you to configure custom debug options.
-     *
-     */
-    @Parameter(property = "debug", defaultValue = "false")
+    @Parameter(property = "payara.debug", defaultValue = "${env.PAYARA_DEBUG}")
     protected String debug;
 
-    @Parameter(property = "contextRoot")
+    @Parameter(property = "payara.context.root", defaultValue = "${env.PAYARA_CONTEXT_ROOT}")
     protected String contextRoot;
 
-    @Parameter(property = "hotDeploy")
+    @Parameter(property = "payara.hot.deploy", defaultValue = "${env.PAYARA_HOT_DEPLOY}")
     protected boolean hotDeploy;
 
     /**
@@ -166,13 +169,13 @@ public class StartMojo extends BasePayaraMojo implements StartTask {
     @Parameter(property = "copySystemProperties", defaultValue = "false")
     private boolean copySystemProperties;
 
-    @Parameter(property = "commandLineOptions")
+    @Parameter
     protected List<Option> commandLineOptions;
 
-    @Parameter(property = "javaCommandLineOptions")
+    @Parameter
     private List<Option> javaCommandLineOptions;
 
-    @Parameter(property = "classpathArtifactItems")
+    @Parameter
     private List<ArtifactItem> classpathArtifactItems;
 
     private Process microProcess;
@@ -189,6 +192,53 @@ public class StartMojo extends BasePayaraMojo implements StartTask {
 
     StartMojo() {
         threadGroup = new ThreadGroup(MICRO_THREAD_NAME);
+        
+        // Backward compatibility for params
+        if (javaPath != null) {
+            javaHome = javaPath;
+        }
+        if (payaraVersion != null) {
+            payaraMicroVersion = payaraVersion;
+        }
+        if (payaraMicroAbsolutePath != null) {
+            payaraMicroPath = payaraMicroAbsolutePath;
+        }
+        if (System.getProperty("daemon") != null) {
+            daemon = Boolean.parseBoolean(System.getProperty("daemon"));
+        }
+        if (System.getProperty("immediateExit") != null) {
+            immediateExit = Boolean.parseBoolean(System.getProperty("immediateExit"));
+        }
+        if (System.getProperty("deployWar") != null) {
+            deployWar = Boolean.parseBoolean(System.getProperty("deployWar"));
+        }
+        if (System.getProperty("exploded") != null) {
+            exploded = Boolean.parseBoolean(System.getProperty("exploded"));
+        }
+        if (System.getProperty("autoDeploy") != null) {
+            autoDeploy = Boolean.valueOf(System.getProperty("autoDeploy"));
+        }
+        if (System.getProperty("keepState") != null) {
+            keepState = Boolean.valueOf(System.getProperty("keepState"));
+        }
+        if (System.getProperty("liveReload") != null) {
+            liveReload = Boolean.valueOf(System.getProperty("liveReload"));
+        }
+        if (System.getProperty("browser") != null) {
+            browser = System.getProperty("browser");
+        }
+        if (System.getProperty("trimLog") != null) {
+            trimLog = Boolean.valueOf(System.getProperty("trimLog"));
+        }
+        if (System.getProperty("debug") != null) {
+            debug = System.getProperty("debug");
+        }
+        if (System.getProperty("contextRoot") != null) {
+            contextRoot = System.getProperty("contextRoot");
+        }
+        if (System.getProperty("hotDeploy") != null) {
+            hotDeploy = Boolean.parseBoolean(System.getProperty("hotDeploy"));
+        }
     }
 
     @Override
@@ -409,8 +459,8 @@ public class StartMojo extends BasePayaraMojo implements StartTask {
     private String evaluateJavaPath() {
         String javaToUse = JAVA_EXECUTABLE;
 
-        if (StringUtils.isNotEmpty(javaPath)) {
-            javaToUse = javaPath;
+        if (StringUtils.isNotEmpty(javaHome)) {
+            javaToUse = javaHome;
         } else if (toolchain != null) {
             javaToUse = toolchain.findTool(JAVA_EXECUTABLE);
         }
@@ -428,8 +478,8 @@ public class StartMojo extends BasePayaraMojo implements StartTask {
             return path;
         }
 
-        if (payaraMicroAbsolutePath != null) {
-            return payaraMicroAbsolutePath;
+        if (payaraMicroPath != null) {
+            return payaraMicroPath;
         }
 
         if (artifactItem.getGroupId() != null) {
@@ -443,17 +493,17 @@ public class StartMojo extends BasePayaraMojo implements StartTask {
             return findLocalPathOfArtifact(artifact);
         }
 
-        if (payaraVersion == null) {
+        if (payaraMicroVersion == null) {
             PayaraMicroVersionSelector payaraMicroVersionSelector = new PayaraMicroVersionSelector(mavenProject, getLog());
-            payaraVersion = payaraMicroVersionSelector.fetchPayaraVersion();
+            payaraMicroVersion = payaraMicroVersionSelector.fetchPayaraVersion();
         }
-        if (payaraVersion != null) {
+        if (payaraMicroVersion != null) {
             MojoExecutor.ExecutionEnvironment environment = getEnvironment();
             MicroFetchProcessor microFetchProcessor = new MicroFetchProcessor();
-            microFetchProcessor.set(payaraVersion).handle(environment);
+            microFetchProcessor.set(payaraMicroVersion).handle(environment);
 
             DefaultArtifact artifact = new DefaultArtifact(MICRO_GROUPID, MICRO_ARTIFACTID,
-                    payaraVersion,
+                    payaraMicroVersion,
                     null,
                     "jar",
                     null,

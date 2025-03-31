@@ -51,7 +51,6 @@ public class DevMojo extends StartMojo {
 
     @Override
     public void execute() throws MojoExecutionException {
-        deployWar = true;
         exploded = true;
         if (autoDeploy == null) {
             autoDeploy = true;

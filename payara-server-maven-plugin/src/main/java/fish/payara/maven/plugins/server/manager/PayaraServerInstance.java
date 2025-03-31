@@ -38,6 +38,8 @@
  */
 package fish.payara.maven.plugins.server.manager;
 
+import org.apache.maven.plugins.annotations.Parameter;
+
 /**
  *
  * @author Gaurav Gupta
@@ -52,6 +54,9 @@ public abstract class PayaraServerInstance {
     protected int adminPort;
     protected int httpPort;
     protected int httpsPort;
+    
+    protected Integer httpConnectionTimeout;
+    protected Integer httpReadTimeout;
 
     public String getAdminUser() {
         return adminUser;
@@ -107,6 +112,22 @@ public abstract class PayaraServerInstance {
 
     public void setHttpsPort(int httpsPort) {
         this.httpsPort = httpsPort;
+    }
+
+    public Integer getHttpConnectionTimeout() {
+        return httpConnectionTimeout;
+    }
+
+    public void setHttpConnectionTimeout(Integer httpConnectionTimeout) {
+        this.httpConnectionTimeout = httpConnectionTimeout;
+    }
+
+    public Integer getHttpReadTimeout() {
+        return httpReadTimeout;
+    }
+
+    public void setHttpReadTimeout(Integer httpReadTimeout) {
+        this.httpReadTimeout = httpReadTimeout;
     }
 
 }
