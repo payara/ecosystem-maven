@@ -49,56 +49,113 @@ import org.apache.maven.plugins.dependency.fromConfiguration.ArtifactItem;
  */
 public abstract class ServerMojo extends BasePayaraMojo {
 
-    @Parameter(property = "javaPath")
-    protected String javaPath;
+    /**
+     * Path to the Java executable used to run Payara.
+     */
+    @Parameter(property = "payara.java.home", defaultValue = "${env.PAYARA_JAVA_HOME}")
+    protected String javaHome;
 
-    @Parameter(property = "payaraVersion", defaultValue = "6.2024.12")
-    protected String payaraVersion;
+    /**
+     * Version of the Payara server.
+     */
+    @Parameter(property = "payara.server.version", defaultValue = "${env.PAYARA_SERVER_VERSION}")
+    protected String payaraServerVersion;
 
-    @Parameter(property = "payaraServerAbsolutePath")
-    protected String payaraServerAbsolutePath;
+    /**
+     * Absolute path to the Payara server installation directory.
+     */
+    @Parameter(property = "payara.server.path", defaultValue = "${env.PAYARA_SERVER_PATH}")
+    protected String payaraServerPath;
 
-    @Parameter(property = "domain", defaultValue = "domain1")
-    protected String domain;
+    /**
+     * Payara server domain to be used.
+     */
+    @Parameter(property = "payara.domain.name", defaultValue = "${env.PAYARA_DOMAIN_NAME}")
+    protected String domainName;
 
-    @Parameter(property = "artifactItem")
+    /**
+     * Specifies the artifact item to be deployed.
+     */
+    @Parameter
     protected ArtifactItem artifactItem;
 
-    @Parameter(property = "exploded", defaultValue = "false")
+    /**
+     * If true, deploys the application in an exploded (unpacked) format.
+     */
+    @Parameter(property = "payara.exploded", defaultValue = "${env.PAYARA_EXPLODED}")
     protected boolean exploded;
 
-    @Parameter(property = "contextRoot")
+    /**
+     * The context root under which the application is deployed.
+     */
+    @Parameter(property = "payara.context.root", defaultValue = "${env.PAYARA_CONTEXT_PATH}")
     protected String contextRoot;
 
-    @Parameter(property = "remote", defaultValue = "false")
+    /**
+     * If true, connects to a remote Payara server instance.
+     */
+    @Parameter(property = "payara.remote", defaultValue = "${env.PAYARA_REMOTE}")
     protected boolean remote;
 
-    @Parameter(property = "host", defaultValue = "${env.PAYARA_HOST}")
-    protected String host;
+    /**
+     * Hostname or IP address of the Payara server.
+     */
+    @Parameter(property = "payara.host.name", defaultValue = "${env.PAYARA_HOST_NAME}")
+    protected String hostName;
 
-    @Parameter(property = "adminPort", defaultValue = "${env.PAYARA_ADMIN_PORT}")
+    /**
+     * Admin port for Payara server administration.
+     */
+    @Parameter(property = "payara.admin.port", defaultValue = "${env.PAYARA_ADMIN_PORT}")
     protected String adminPort;
 
-    @Parameter(property = "httpPort", defaultValue = "${env.PAYARA_HTTP_PORT}")
+    /**
+     * HTTP port for accessing deployed applications.
+     */
+    @Parameter(property = "payara.http.port", defaultValue = "${env.PAYARA_HTTP_PORT}")
     protected String httpPort;
 
-    @Parameter(property = "httpsPort", defaultValue = "${env.PAYARA_HTTPS_PORT}")
+    /**
+     * HTTPS port for accessing deployed applications securely.
+     */
+    @Parameter(property = "payara.https.port", defaultValue = "${env.PAYARA_HTTPS_PORT}")
     protected String httpsPort;
 
-    @Parameter(property = "protocol", defaultValue = "${env.PAYARA_PROTOCOL}")
+    /**
+     * Protocol to be used for server communication (e.g., HTTP or HTTPS).
+     */
+    @Parameter(property = "payara.protocol", defaultValue = "${env.PAYARA_PROTOCOL}")
     protected String protocol;
 
-    @Parameter(property = "adminPassword", defaultValue = "${env.PAYARA_ADMIN_PASSWORD}")
+    /**
+     * Password for the Payara admin user.
+     */
+    @Parameter(property = "payara.admin.password", defaultValue = "${env.PAYARA_ADMIN_PASSWORD}")
     protected String adminPassword;
 
-    @Parameter(property = "adminPasswordFile", defaultValue = "${env.PAYARA_ADMIN_PASSWORD_FILE}")
+    /**
+     * Path to the file containing the Payara admin password.
+     */
+    @Parameter(property = "payara.admin.password.file", defaultValue = "${env.PAYARA_ADMIN_PASSWORD_FILE}")
     protected String adminPasswordFile;
 
-    @Parameter(property = "adminUser", defaultValue = "${env.PAYARA_ADMIN_USER}")
+    /**
+     * Username for Payara server administration.
+     */
+    @Parameter(property = "payara.admin.user", defaultValue = "${env.PAYARA_ADMIN_USER}")
     protected String adminUser;
 
-    @Parameter(property = "instanceName", defaultValue = "${env.PAYARA_INSTANCE}")
+    /**
+     * Name of the Payara server instance.
+     */
+    @Parameter(property = "payara.instance.name", defaultValue = "${env.PAYARA_INSTANCE}")
     protected String instanceName;
+    
+    public ServerMojo() {
+        if (domainName == null || domainName.isEmpty()) {
+            domainName = "domain1";
+        }
+    }
 
     protected String getAdminPasswordFromFile() {
         if (adminPasswordFile != null) {

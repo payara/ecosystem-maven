@@ -38,12 +38,7 @@
 package fish.payara.maven.plugins.server;
 
 import java.io.File;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
-import org.apache.maven.plugin.MojoExecutionException;
 import fish.payara.maven.plugins.AutoDeployHandler;
-import fish.payara.maven.plugins.Source;
 import fish.payara.maven.plugins.WebDriverFactory;
 
 /**

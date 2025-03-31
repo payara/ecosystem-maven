@@ -52,11 +52,12 @@ public class PayaraServerLocalInstance extends PayaraServerInstance {
     private PortReader portReader;
     private Process logStream;
 
-    private String path;
-    private String domainName;
+    private final String path;
+    private final String domainName;
     private String jdkHome;
 
-    public PayaraServerLocalInstance(String domainName, String path) {
+    public PayaraServerLocalInstance(String jdkHome, String path, String domainName) {
+        this.jdkHome = jdkHome;
         this.path = path;
         this.domainName = domainName;
     }
@@ -108,14 +109,21 @@ public class PayaraServerLocalInstance extends PayaraServerInstance {
         return JDKVersion.getDefaultJDKHome();
     }
 
+    public void setJdkHome(String jdkHome) {
+        this.jdkHome = jdkHome;
+    }
+
+    @Override
     public String getProtocol() {
         return protocol == null ? "http" : protocol;
     }
 
+    @Override
     public String getHost() {
         return host == null ? "localhost" : host;
     }
 
+    @Override
     public int getHttpPort() {
         if (httpPort > 0) {
             return httpPort;
@@ -126,6 +134,7 @@ public class PayaraServerLocalInstance extends PayaraServerInstance {
         return portReader.getHttpPort();
     }
 
+    @Override
     public int getHttpsPort() {
         if (httpsPort > 0) {
             return httpsPort;
@@ -136,6 +145,7 @@ public class PayaraServerLocalInstance extends PayaraServerInstance {
         return portReader.getHttpsPort();
     }
 
+    @Override
     public int getAdminPort() {
         if (adminPort > 0) {
             return adminPort;

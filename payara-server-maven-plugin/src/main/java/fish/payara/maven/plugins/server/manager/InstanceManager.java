@@ -42,7 +42,6 @@ import fish.payara.maven.plugins.server.Command;
 import fish.payara.maven.plugins.server.response.PlainResponse;
 import fish.payara.maven.plugins.server.response.JsonResponse;
 import fish.payara.maven.plugins.server.response.Response;
-import static fish.payara.maven.plugins.server.manager.LocalInstanceManager.HTTP_CONNECTION_TIMEOUT;
 import static fish.payara.maven.plugins.server.manager.LocalInstanceManager.HTTP_RETRY_DELAY;
 import static fish.payara.maven.plugins.server.manager.LocalInstanceManager.PARAM_ASSIGN_VALUE;
 import static fish.payara.maven.plugins.server.manager.LocalInstanceManager.PARAM_SEPARATOR;
@@ -109,15 +108,6 @@ public class InstanceManager<X extends PayaraServerInstance> {
      * Delay before administration command execution will be retried.
      */
     public static final int HTTP_RETRY_DELAY = 3000;
-
-    /**
-     * Socket connection timeout (in miliseconds).
-     */
-    public static final int HTTP_CONNECTION_TIMEOUT = 3000;
-    /**
-     * Socket read timeout (in miliseconds).
-     */
-    public static final int HTTP_READ_TIMEOUT = 3000;
 
     private static final String DEPLOY_COMMAND = "deploy";
     private static final String UNDEPLOY_COMMAND = "undeploy";
@@ -231,8 +221,8 @@ public class InstanceManager<X extends PayaraServerInstance> {
                 MANAGEMENT_PATH + VERSION_COMMAND, null, null);
         HttpURLConnection connection = (HttpURLConnection) uri.toURL().openConnection();
         connection.setRequestMethod(HTTP_GET_METHOD);
-        connection.setConnectTimeout(HTTP_CONNECTION_TIMEOUT);
-        connection.setReadTimeout(HTTP_READ_TIMEOUT);
+        connection.setConnectTimeout(payaraServer.getHttpConnectionTimeout());
+        connection.setReadTimeout(payaraServer.getHttpReadTimeout());
         int responseCode = connection.getResponseCode();
         return (responseCode == HttpURLConnection.HTTP_OK);
     }
@@ -498,7 +488,7 @@ private InputStream getInputStream(Command command) {
         conn.setAllowUserInteraction(false);
         conn.setDoInput(true);
         conn.setUseCaches(false);
-        conn.setConnectTimeout(HTTP_CONNECTION_TIMEOUT);
+        conn.setConnectTimeout(server.getHttpConnectionTimeout());
         String adminUser = server.getAdminUser();
         String adminPassword = server.getAdminPassword();
         try {

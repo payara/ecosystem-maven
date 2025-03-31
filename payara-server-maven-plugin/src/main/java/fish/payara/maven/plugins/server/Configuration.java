@@ -38,8 +38,6 @@
  */
 package fish.payara.maven.plugins.server;
 
-import java.io.File;
-
 public interface Configuration {
 
     String SERVER_GROUPID = "fish.payara.distributions";

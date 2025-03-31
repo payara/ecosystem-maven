@@ -90,62 +90,101 @@ public class StartMojo extends ServerMojo implements StartTask {
     private static final String ERROR_MESSAGE = "Errors occurred while executing payara-server.";
     private static final String REMOTE_INSTANCE_NOT_RUNNING_MESSAGE = "The remote Payara server instance is not running.";
 
-    @Parameter(property = "daemon", defaultValue = "false")
+    /**
+     * Runs Payara server as a daemon (background process).
+     */
+    @Parameter(property = "payara.daemon", defaultValue = "${env.PAYARA_DAEMON}")
     private boolean daemon;
 
-    @Parameter(property = "immediateExit", defaultValue = "false")
+    /**
+     * If set to true, exits the Maven process immediately after starting the server.
+     */
+    @Parameter(property = "payara.immediate.exit", defaultValue = "${env.PAYARA_IMMEDIATE_EXIT}")
     private boolean immediateExit;
 
-    @Parameter(property = "deployWar", defaultValue = "false")
-    protected boolean deployWar;
-
-    @Parameter(property = "autoDeploy")
+    /**
+     * Enables automatic deployment of the application.
+     */
+    @Parameter(property = "payara.auto.deploy", defaultValue = "${env.PAYARA_AUTO_DEPLOY}")
     protected Boolean autoDeploy;
 
-    @Parameter(property = "keepState")
+    /**
+     * Keeps the current state of the Payara server on restart.
+     */
+    @Parameter(property = "payara.keep.state", defaultValue = "${env.PAYARA_KEEP_STATE}")
     protected Boolean keepState;
 
-    @Parameter(property = "liveReload")
+    /**
+     * Enables live reload for automatic updates.
+     */
+    @Parameter(property = "payara.live.reload", defaultValue = "${env.PAYARA_LIVE_RELOAD}")
     protected Boolean liveReload;
 
-    @Parameter(property = "browser")
+    /**
+     * Specifies the browser to open after deployment.
+     */
+    @Parameter(property = "payara.browser", defaultValue = "${env.PAYARA_BROWSER}")
     protected String browser;
 
-    @Parameter(property = "trimLog")
+    /**
+     * Trims excessive logs for a cleaner output.
+     */
+    @Parameter(property = "payara.trim.log", defaultValue = "${env.PAYARA_TRIM_LOG}")
     protected Boolean trimLog;
 
-    @Parameter(property = "hotDeploy")
+    /**
+     * Enables hot deployment of application changes.
+     */
+    @Parameter(property = "payara.hot.deploy", defaultValue = "${env.PAYARA_HOT_DEPLOY}")
     protected boolean hotDeploy;
 
     /**
-     * The directory where the webapp is built, default value is exploded war.
+     * The directory where the web application is built.
+     * Default value points to the exploded directory.
      */
     @Parameter(defaultValue = "${project.build.directory}/${project.build.finalName}", required = true)
     protected File webappDirectory;
 
     /**
-     * Attach a debugger. If set to "true", the process will suspend and wait
-     * for a debugger to attach on port 5005. If set to other value, will be
-     * appended to the argLine, allowing you to configure custom debug options.
-     *
+     * Enables debugging mode.
+     * If set to "true", the server waits for a debugger to attach on the debug port.
      */
-    @Parameter(property = "debug", defaultValue = "false")
+    @Parameter(property = "payara.debug", defaultValue = "${env.PAYARA_DEBUG}")
     protected String debug;
 
-    @Parameter(property = "debugPort")
+    /**
+     * The port for remote debugging.
+     */
+    @Parameter(property = "payara.debug.port", defaultValue = "${env.PAYARA_DEBUG_PORT}")
     protected String debugPort;
     
-    @Parameter(property = "commandLineOptions")
+    /**
+     * Additional command-line options for Payara server.
+     */
+    @Parameter
     private List<Option> commandLineOptions;
 
-    @Parameter(property = "javaCommandLineOptions")
+    /**
+     * Additional Java command-line options for the JVM.
+     */
+    @Parameter
     private List<Option> javaCommandLineOptions;
+    
+    /**
+     * Socket connection timeout (in miliseconds).
+     */
+    @Parameter(property = "payara.http.connection.timeout", defaultValue = "${env.PAYARA_HTTP_CONNECTION_TIMEOUT}")
+    public Integer httpConnectionTimeout;
+
+    /**
+     * Socket read timeout (in miliseconds).
+     */
+    @Parameter(property = "payara.http.read.timeout", defaultValue = "${env.PAYARA_HTTP_READ_TIMEOUT}")
+    public Integer httpReadTimeout;
 
     private Process serverProcess;
     private Thread serverProcessorThread;
     private final ThreadGroup threadGroup;
-    private Toolchain toolchain;
-
     private AutoDeployHandler autoDeployHandler;
     private WebDriver driver;
     private String applicationURL;
@@ -155,6 +194,15 @@ public class StartMojo extends ServerMojo implements StartTask {
     
     StartMojo() {
         threadGroup = new ThreadGroup(SERVER_THREAD_NAME);
+        if (debug == null || debug.isEmpty()) {
+            debug = "false";
+        }
+        if (httpConnectionTimeout == null) {
+            httpConnectionTimeout = 3000;
+        }
+        if (httpReadTimeout == null) {
+            httpReadTimeout = 3000;
+        }
     }
 
     @Override
@@ -185,12 +233,9 @@ public class StartMojo extends ServerMojo implements StartTask {
             return;
         }
 
-        toolchain = getToolchain();
-        final String path = decideOnWhichServerToUse();
-
         serverProcessorThread = new Thread(threadGroup, () -> {
             if (remote) {
-                instance = new PayaraServerRemoteInstance(host);
+                instance = new PayaraServerRemoteInstance(hostName);
                 instance.setAdminUser(adminUser);
                 instance.setAdminPassword(getAdminPassword());
                 if (adminPort != null) {
@@ -202,6 +247,8 @@ public class StartMojo extends ServerMojo implements StartTask {
                 if (httpsPort != null) {
                     instance.setHttpsPort(Integer.parseInt(httpsPort));
                 }
+                instance.setHttpConnectionTimeout(httpConnectionTimeout);
+                instance.setHttpReadTimeout(httpReadTimeout);
                 if (protocol != null) {
                     instance.setProtocol(protocol);
                 }
@@ -222,7 +269,8 @@ public class StartMojo extends ServerMojo implements StartTask {
                 }
             } else {
                 try {
-                    instance = new PayaraServerLocalInstance(domain, path);
+                    final String path = decideOnWhichServerToUse();
+                    instance = new PayaraServerLocalInstance(javaHome, path, domainName);
                     instance.setAdminUser(adminUser);
                     instance.setAdminPassword(getAdminPassword());
                     if (adminPort != null) {
@@ -234,6 +282,8 @@ public class StartMojo extends ServerMojo implements StartTask {
                     if (httpsPort != null) {
                         instance.setHttpsPort(Integer.parseInt(httpsPort));
                     }
+                    instance.setHttpConnectionTimeout(httpConnectionTimeout);
+                    instance.setHttpReadTimeout(httpReadTimeout);
                     if (protocol != null) {
                         instance.setProtocol(protocol);
                     }
@@ -340,20 +390,9 @@ public class StartMojo extends ServerMojo implements StartTask {
         });
     }
 
-    private String evaluateJavaPath() {
-        String javaToUse = JAVA_EXECUTABLE;
-
-        if (StringUtils.isNotEmpty(javaPath)) {
-            javaToUse = javaPath;
-        } else if (toolchain != null) {
-            javaToUse = toolchain.findTool(JAVA_EXECUTABLE);
-        }
-        return javaToUse;
-    }
-
     private String decideOnWhichServerToUse() throws MojoExecutionException {
-        if (payaraServerAbsolutePath != null) {
-            return payaraServerAbsolutePath;
+        if (payaraServerPath != null) {
+            return payaraServerPath;
         }
 
         if (artifactItem.getGroupId() != null) {
@@ -364,7 +403,7 @@ public class StartMojo extends ServerMojo implements StartTask {
                     artifactItem.getType(),
                     artifactItem.getClassifier(),
                     new DefaultArtifactHandler("zip"));
-            String targetDir = getBaseDir() + File.separator + "payara-server-" + payaraVersion;
+            String targetDir = getBaseDir() + File.separator + "payara-server-" + payaraServerVersion;
             // Check if the target directory already exists
             File extractedDir = new File(targetDir + File.separator + "payara" + artifactItem.getVersion().charAt(0));
             if (!extractedDir.exists()) {
@@ -378,21 +417,21 @@ public class StartMojo extends ServerMojo implements StartTask {
             return extractedDir.getAbsolutePath();
         }
 
-        if (payaraVersion != null) {
+        if (payaraServerVersion != null) {
             MojoExecutor.ExecutionEnvironment environment = getEnvironment();
             ServerFetchProcessor serverFetchProcessor = new ServerFetchProcessor();
-            serverFetchProcessor.set(payaraVersion).handle(environment);
+            serverFetchProcessor.set(payaraServerVersion).handle(environment);
 
             // after downloading extract the zip
             DefaultArtifact artifact = new DefaultArtifact(SERVER_GROUPID, SERVER_ARTIFACTID,
-                    payaraVersion,
+                    payaraServerVersion,
                     null,
                     "zip",
                     null,
                     new DefaultArtifactHandler("zip"));
-            String targetDir = getBaseDir() + File.separator + "payara-server-" + payaraVersion;
+            String targetDir = getBaseDir() + File.separator + "payara-server-" + payaraServerVersion;
             // Check if the target directory already exists
-            File extractedDir = new File(targetDir + File.separator + "payara" + payaraVersion.charAt(0));
+            File extractedDir = new File(targetDir + File.separator + "payara" + payaraServerVersion.charAt(0));
             if (!extractedDir.exists()) {
                 try {
                     extractZipFile(findLocalPathOfArtifact(artifact), targetDir);
