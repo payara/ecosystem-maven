@@ -125,6 +125,9 @@ public class LocalInstanceManager extends InstanceManager<PayaraServerLocalInsta
         if (!Files.exists(Paths.get(bootstrapJar))) {
             throw new Exception(ERROR_BOOTSTRAP_JAR_NOT_FOUND);
         }
+        if (bootstrapJar.contains(" ")) {
+            bootstrapJar = "\"" + bootstrapJar + "\"";
+        }
         String classPath = "";
         String javaOpts;
         String payaraArgs;
@@ -206,11 +209,16 @@ public class LocalInstanceManager extends InstanceManager<PayaraServerLocalInsta
             if (splitIndex != -1 && !opt.startsWith("-agentpath:")) {
                 name = opt.substring(0, splitIndex);
                 value = StringUtils.quote(opt.substring(splitIndex + 1));
+            } else if(opt.startsWith("-Xbootclasspath")) {
+                splitIndex = opt.indexOf(':');
+                name = opt.substring(0, splitIndex);
+                value = StringUtils.quote(opt.substring(splitIndex + 1));
+                opt = name + ':' + value;
             } else {
                 name = opt;
             }
 
-            if (name.startsWith("--add-")) {
+            if (opt.startsWith("--add-") || opt.startsWith("-Xbootclasspath")) {
                 moduleOptions.add(opt);
             } else {
                 if (!keyValueArgs.containsKey(name)) {
@@ -247,6 +255,7 @@ public class LocalInstanceManager extends InstanceManager<PayaraServerLocalInsta
         return String.join(" ", payaraArgsList).trim();
     }
 
+    @Override
     public boolean isServerAlreadyRunning() {
         Command command = new Command(ASADMIN_PATH, LOCATIONS_COMMAND, null);
         Response serverRunning;
