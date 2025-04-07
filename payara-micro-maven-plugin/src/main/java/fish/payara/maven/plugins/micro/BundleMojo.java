@@ -52,7 +52,7 @@ import java.util.List;
  * Bundle mojo incorporates payara-micro with the produced artifact by following steps given as follows:
  * <ul>
  *  <li>Fetch payara-micro from repository and open it to a folder. The default version is <i>6.2024.3</i>. Specific
- *  version can be provided with @{code payaraVersion} parameter</li>
+ *  version can be provided with @{code payaraMicroVersion} parameter</li>
  *  <li>Fetch user specified jars from repository</li>
  *  <li>Copy any existing {@code domain.xml}, {@code keystore.jks}, {@code login.conf } and {@code login.properties} files from resources folder into /MICRO-INF/domain folder</li>
  *  <li>Copy any existing {@code pre-boot-commands.txt}, {@code post-boot-commands.txt} and {@code post-deploy-commands.txt} files from resources folder into /MICRO-INF folder</li>
@@ -79,9 +79,13 @@ import java.util.List;
 @Mojo(name = "bundle", defaultPhase = LifecyclePhase.INSTALL)
 public class BundleMojo extends BasePayaraMojo {
 
+    @Parameter(property = "payara.micro.version", defaultValue = "${env.PAYARA_MICRO_VERSION}")
+    private String payaraMicroVersion;
+
     /**
      * By default this mojo fetches payara-micro with version 6.2024.3. It can be overridden with this parameter.
      */
+    @Deprecated
     @Parameter(property = "payaraVersion", defaultValue = "6.2024.3")
     private String payaraVersion;
 
@@ -141,7 +145,9 @@ public class BundleMojo extends BasePayaraMojo {
             getLog().info("Bundle mojo execution is skipped");
             return;
         }
-
+        if (payaraVersion != null) {
+            payaraMicroVersion = payaraVersion;
+        }
         MojoExecutor.ExecutionEnvironment environment = getEnvironment();
         BaseProcessor processor = constructProcessorChain();
         processor.handle(environment);
@@ -150,7 +156,7 @@ public class BundleMojo extends BasePayaraMojo {
     private BaseProcessor constructProcessorChain() {
         MicroUnpackProcessor microUnpackProcessor = new MicroUnpackProcessor();
 
-        microUnpackProcessor.set(payaraVersion)
+        microUnpackProcessor.set(payaraMicroVersion)
             .next(new CustomJarCopyProcessor()).set(customJars)
             .next(new CustomFileCopyProcessor())
             .next(new BootCommandFileCopyProcessor())

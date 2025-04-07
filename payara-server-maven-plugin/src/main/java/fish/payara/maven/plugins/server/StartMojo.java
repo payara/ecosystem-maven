@@ -197,6 +197,9 @@ public class StartMojo extends ServerMojo implements StartTask {
         if (debug == null || debug.isEmpty()) {
             debug = "false";
         }
+        if(payaraServerVersion == null) {
+            payaraServerVersion = "6.2025.3";
+        }
         if (httpConnectionTimeout == null) {
             httpConnectionTimeout = 3000;
         }
@@ -395,7 +398,9 @@ public class StartMojo extends ServerMojo implements StartTask {
             return payaraServerPath;
         }
 
-        if (artifactItem.getGroupId() != null) {
+        if (artifactItem != null 
+                && artifactItem.getGroupId() != null
+                && artifactItem.getArtifactId() != null) {
             DefaultArtifact artifact = new DefaultArtifact(artifactItem.getGroupId(),
                     artifactItem.getArtifactId(),
                     artifactItem.getVersion(),
@@ -443,7 +448,7 @@ public class StartMojo extends ServerMojo implements StartTask {
             return extractedDir.getAbsolutePath();
         }
 
-        throw new MojoExecutionException("Could not determine Payara Server path. Please set it by defining either \"useUberJar\", \"payaraServerAbsolutePath\" or \"artifactItem\" configuration options.");
+        throw new MojoExecutionException("Could not determine Payara Server path. Please set it by defining either \"payaraServerAbsolutePath\" or \"artifactItem\" configuration options.");
     }
 
     private String findLocalPathOfArtifact(DefaultArtifact artifact) {
