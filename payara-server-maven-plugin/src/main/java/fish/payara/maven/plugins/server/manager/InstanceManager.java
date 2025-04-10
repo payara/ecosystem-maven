@@ -70,6 +70,7 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.List;
 import java.util.Properties;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -242,6 +243,13 @@ public class InstanceManager<X extends PayaraServerInstance> {
         }
         return false;
     }
+    
+    public List<String> getAsAdminEndpoints(String name) {
+        return List.of(
+                ASADMIN_PATH + LOCATIONS_COMMAND,
+                ASADMIN_PATH+ GET_COMMAND+ "?pattern=applications.application." + name + ".context-root"
+                );
+    }
 
     public URI deployApplication(String name, String appPath, String instanceName, String contextRoot, boolean exploded, boolean hotDeploy) {
         Command command = new Command(ASADMIN_PATH, DEPLOY_COMMAND, name);
@@ -255,9 +263,7 @@ public class InstanceManager<X extends PayaraServerInstance> {
         try {
             deploy = invokeServer(payaraServer, command);
             if (deploy != null && deploy.isExitCodeSuccess()) {
-                command = new Command(ASADMIN_PATH, GET_COMMAND, "applications.application." + name + ".context-root");
-                command.setQuery(query(command));
-                Response response = invokeServer(payaraServer, command);
+                Response  response = getApplicationInfo(name);
                 if (response != null && response.isExitCodeSuccess()) {
                     URI app = new URI(payaraServer.getProtocol(), null,
                             payaraServer.getHost(),
@@ -275,6 +281,12 @@ public class InstanceManager<X extends PayaraServerInstance> {
             log.error("Error deploying the application: " + ex.getMessage());
         }
         return null;
+    }
+    
+    public Response getApplicationInfo(String name) throws Exception {
+        Command command = new Command(ASADMIN_PATH, GET_COMMAND, "applications.application." + name + ".context-root");
+        command.setQuery(query(command));
+        return invokeServer(payaraServer, command);
     }
 
     public String getContextRoot(JSONObject body) {
@@ -603,4 +615,18 @@ private InputStream getInputStream(Command command) {
         return sb.toString();
     }
 
+    public Response runEndpoint(String endpoint) {
+        Command command = new Command("", endpoint, null);
+        Response serverRunning = null;
+        try {
+            serverRunning = invokeServer(payaraServer, command);
+            if (serverRunning != null
+                    && serverRunning.isExitCodeSuccess()) {
+                return serverRunning;
+            }
+        } catch (Exception ex) {
+            // skip
+        }
+        return serverRunning;
+    }
 }

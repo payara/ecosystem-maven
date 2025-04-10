@@ -38,6 +38,8 @@
  */
 package fish.payara.maven.plugins.server;
 
+import fish.payara.tools.ai.MarkdownToCmdHighlighter;
+import fish.payara.tools.ai.PayaraAIAgent;
 import fish.payara.maven.plugins.server.manager.PayaraServerRemoteInstance;
 import fish.payara.maven.plugins.server.manager.RemoteInstanceManager;
 import fish.payara.maven.plugins.server.manager.PayaraServerLocalInstance;
@@ -56,21 +58,24 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
-import org.apache.maven.toolchain.Toolchain;
 import org.twdata.maven.mojoexecutor.MojoExecutor;
 
 import java.io.*;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static fish.payara.maven.plugins.server.Configuration.*;
 import fish.payara.maven.plugins.server.manager.PayaraServerInstance;
+import fish.payara.maven.plugins.server.response.JsonResponse;
+import fish.payara.maven.plugins.server.response.Response;
+import fish.payara.tools.ai.JMXFetchSpecificMBean;
 import java.awt.Desktop;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Scanner;
+import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
@@ -158,6 +163,9 @@ public class StartMojo extends ServerMojo implements StartTask {
     @Parameter(property = "payara.debug.port", defaultValue = "${env.PAYARA_DEBUG_PORT}")
     protected String debugPort;
     
+    @Parameter(property = "payara.ai.agent", defaultValue = "${env.PAYARA_AI_AGENT}")
+    protected Boolean aiAgent;
+    
     /**
      * Additional command-line options for Payara server.
      */
@@ -191,7 +199,9 @@ public class StartMojo extends ServerMojo implements StartTask {
     private InstanceManager serverManager;
     private String appPath, projectName;
     private PayaraServerInstance instance;
-    
+    private PayaraAIAgent payaraAIAgent;
+    private boolean monitoringEnabled;
+
     StartMojo() {
         threadGroup = new ThreadGroup(SERVER_THREAD_NAME);
         if (debug == null || debug.isEmpty()) {
@@ -222,6 +232,9 @@ public class StartMojo extends ServerMojo implements StartTask {
         if (keepState == null) {
             keepState = false;
         }
+        if (aiAgent == null) {
+            aiAgent = false;
+        }
         if (autoDeploy && autoDeployHandler == null) {
             autoDeployHandler = new ServerAutoDeployHandler(this, webappDirectory);
             Thread devModeThread = new Thread(autoDeployHandler);
@@ -229,6 +242,15 @@ public class StartMojo extends ServerMojo implements StartTask {
             devModeThread.start();
         } else {
             autoDeployHandler = null;
+        }
+        if (aiAgent) {
+            CompletableFuture.runAsync(() -> {
+                try {
+                    payaraAIAgent = new PayaraAIAgent();
+                } catch (Exception ex) {
+                    getLog().error(ex);
+                }
+            });
         }
 
         if (skip) {
@@ -408,11 +430,17 @@ public class StartMojo extends ServerMojo implements StartTask {
                     artifactItem.getType(),
                     artifactItem.getClassifier(),
                     new DefaultArtifactHandler("zip"));
-            String targetDir = getBaseDir() + File.separator + "payara-server-" + payaraServerVersion;
+            
+            File tmpDir = new File(System.getProperty("java.io.tmpdir"));
+            File targetDir = new File(tmpDir, "payara-server-" + payaraServerVersion);
+            if (!targetDir.exists()) {
+                targetDir.mkdirs();
+            }
             // Check if the target directory already exists
             File extractedDir = new File(targetDir + File.separator + "payara" + artifactItem.getVersion().charAt(0));
             if (!extractedDir.exists()) {
                 try {
+                    getLog().info("Extracting Payara Server to " + targetDir);
                     extractZipFile(findLocalPathOfArtifact(artifact), targetDir);
                 } catch (IOException e) {
                     throw new MojoExecutionException("Failed to extract Payara Server zip file", e);
@@ -434,11 +462,16 @@ public class StartMojo extends ServerMojo implements StartTask {
                     "zip",
                     null,
                     new DefaultArtifactHandler("zip"));
-            String targetDir = getBaseDir() + File.separator + "payara-server-" + payaraServerVersion;
+            File tmpDir = new File(System.getProperty("java.io.tmpdir"));
+            File targetDir = new File(tmpDir, "payara-server-" + payaraServerVersion);
+            if (!targetDir.exists()) {
+                targetDir.mkdirs();
+            }
             // Check if the target directory already exists
             File extractedDir = new File(targetDir + File.separator + "payara" + payaraServerVersion.charAt(0));
             if (!extractedDir.exists()) {
                 try {
+                    getLog().info("Extracting the Payara Server to " + targetDir);
                     extractZipFile(findLocalPathOfArtifact(artifact), targetDir);
                 } catch (IOException e) {
                     throw new MojoExecutionException("Failed to extract Payara Server zip file", e);
@@ -448,7 +481,7 @@ public class StartMojo extends ServerMojo implements StartTask {
             return extractedDir.getAbsolutePath();
         }
 
-        throw new MojoExecutionException("Could not determine Payara Server path. Please set it by defining either \"payaraServerAbsolutePath\" or \"artifactItem\" configuration options.");
+        throw new MojoExecutionException("Could not determine Payara Server path. Please set it by defining either \"payaraServerPath\" or \"artifactItem\" configuration options.");
     }
 
     private String findLocalPathOfArtifact(DefaultArtifact artifact) {
@@ -456,22 +489,19 @@ public class StartMojo extends ServerMojo implements StartTask {
         return payaraServerArtifact.getFile().getAbsolutePath();
     }
 
-    private void extractZipFile(String zipFilePath, String destDir) throws IOException {
-        File dir = new File(destDir);
-        if (!dir.exists()) {
-            dir.mkdirs(); // Create destination directory if it doesn't exist
+    private void extractZipFile(String zipFilePath, File destDir) throws IOException {
+        if (!destDir.exists()) {
+            destDir.mkdirs(); // Create destination directory if it doesn't exist
         }
-
         try (ZipInputStream zipIn = new ZipInputStream(new FileInputStream(zipFilePath))) {
             ZipEntry entry;
             while ((entry = zipIn.getNextEntry()) != null) {
-                String filePath = destDir + File.separator + entry.getName();
+                File dirEntry = new File(destDir, entry.getName());
                 if (!entry.isDirectory()) {
                     // If the entry is a file, extract it
-                    extractFile(zipIn, filePath);
+                    extractFile(zipIn, dirEntry);
                 } else {
                     // If the entry is a directory, create it
-                    File dirEntry = new File(filePath);
                     dirEntry.mkdirs();
                 }
                 zipIn.closeEntry();
@@ -479,7 +509,7 @@ public class StartMojo extends ServerMojo implements StartTask {
         }
     }
 
-    private void extractFile(ZipInputStream zipIn, String filePath) throws IOException {
+    private void extractFile(ZipInputStream zipIn, File filePath) throws IOException {
         try (FileOutputStream fos = new FileOutputStream(filePath)) {
             byte[] buffer = new byte[1024];
             int len;
@@ -556,6 +586,45 @@ public class StartMojo extends ServerMojo implements StartTask {
                             getLog().info("watchAsadminCommand exit");
                             killServerProcess().start();
                             break;
+                        } else if (!userQuery.trim().isEmpty()) {
+                            if(payaraAIAgent == null) {
+                                getLog().error("Payara AI Agent not initialized.");
+                            }
+                            String response = payaraAIAgent.query(userQuery, projectName).trim();
+                            if (payaraAIAgent.isAsAdminCommand(response)) {
+                                getLog().info(MarkdownToCmdHighlighter.convertMdToAnsi(response));
+                                if (payaraAIAgent.isReadonlyCommand(response)) {
+                                    if (serverManager instanceof LocalInstanceManager) {
+                                        String cmdresponse = ((LocalInstanceManager) serverManager).runAsadminCommand(payaraAIAgent.getAsAdminCommand(response));
+                                        String finalRes = payaraAIAgent.processAsadmin(userQuery, response + " \n" + cmdresponse);
+                                        getLog().info(MarkdownToCmdHighlighter.convertMdToAnsi(finalRes));
+                                    }
+                                }
+                            } else if (payaraAIAgent.isRestEndpoint(response)) {
+                                enableMonitoring();
+                                StringBuilder sb = new StringBuilder();
+                                for (String endpoint : payaraAIAgent.getRestEndpoint(response)) {
+                                    sb.append(endpoint).append('\n');
+                                    Response res = serverManager.runEndpoint(endpoint);
+                                    if (res != null) {
+                                        String endpointResponse = ((JsonResponse) res).getJsonBody().getJSONObject("extraProperties").toString();
+                                        sb.append(endpointResponse).append("\n=================\n");
+                                    }
+                                }
+                                String finalRes = payaraAIAgent.processMonitoringData(userQuery, sb.toString());
+                                getLog().info(MarkdownToCmdHighlighter.convertMdToAnsi(finalRes));
+                            }else if (payaraAIAgent.isJmxMbean(response)) {
+                                StringBuilder sb = new StringBuilder();
+                                for (String mbean : payaraAIAgent.getJmxMbean(response)) {
+                                    sb.append(mbean).append('\n');
+                                    String res = JMXFetchSpecificMBean.execute(mbean);
+                                    sb.append(res).append("\n=================\n");
+                                }
+                                String finalRes = payaraAIAgent.processJmxMbeansData(userQuery, sb.toString());
+                                getLog().info(MarkdownToCmdHighlighter.convertMdToAnsi(finalRes));
+                            } else {
+                                getLog().info(response);
+                            }
                         }
                     } catch (Exception ex) {
                         Logger.getLogger(StartMojo.class.getName()).log(Level.SEVERE, null, ex);
@@ -566,6 +635,20 @@ public class StartMojo extends ServerMojo implements StartTask {
 
         thread.setDaemon(false);
         thread.start();
+    }
+
+    private void enableMonitoring() throws Exception {
+        if (!monitoringEnabled) {
+            List<String> enableMonitoring = new ArrayList<>(List.of(
+                    "set-monitoring-level --level=HIGH:HIGH:HIGH:HIGH:HIGH:HIGH:HIGH:HIGH:HIGH:HIGH:HIGH:HIGH:HIGH:HIGH:HIGH:HIGH --module=jvm:transactionService:connectorService:jmsService:security:webContainer:jersey:webServicesContainer:jpa:jdbcConnectionPool:threadPool:ejbContainer:orb:connectorConnectionPool:deployment:httpService --target=server-config",
+                    "set-monitoring-service-configuration --mbeanEnabled=true --monitoringEnabled=true --dtraceEnabled=false --target=server-config"
+            ));
+            for (String command : enableMonitoring) {
+                String response = ((LocalInstanceManager) serverManager).runAsadminCommand(command);
+                getLog().info(response);
+            }
+            monitoringEnabled = true;
+        }
     }
 
     private Thread streamRemoteServerLog() {
