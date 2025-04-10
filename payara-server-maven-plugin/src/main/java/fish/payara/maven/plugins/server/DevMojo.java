@@ -64,6 +64,9 @@ public class DevMojo extends StartMojo {
         if (trimLog == null) {
             trimLog = true;
         }
+        if (aiAgent == null) {
+            aiAgent = true;
+        }
         super.execute();
     }
 }

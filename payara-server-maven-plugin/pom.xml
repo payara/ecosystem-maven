@@ -215,6 +215,11 @@
             <artifactId>jakarta.xml.bind-api</artifactId>
             <version>4.0.2</version>
         </dependency>
+        <dependency>
+            <groupId>fish.payara.tools</groupId>
+            <artifactId>payara-ai-agent</artifactId>
+            <version>1.0-Alpha1-SNAPSHOT</version>
+        </dependency>
     </dependencies>
 
     <dependencyManagement>
