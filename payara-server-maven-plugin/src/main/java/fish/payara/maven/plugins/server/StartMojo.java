@@ -165,7 +165,7 @@ public class StartMojo extends ServerMojo implements StartTask {
     
     @Parameter(property = "payara.ai.agent", defaultValue = "${env.PAYARA_AI_AGENT}")
     protected Boolean aiAgent;
-    
+
     /**
      * Additional command-line options for Payara server.
      */
@@ -604,6 +604,7 @@ public class StartMojo extends ServerMojo implements StartTask {
                                 enableMonitoring();
                                 StringBuilder sb = new StringBuilder();
                                 for (String endpoint : payaraAIAgent.getRestEndpoint(response)) {
+                                    endpoint = endpoint.replace("${appname}", projectName);
                                     sb.append(endpoint).append('\n');
                                     Response res = serverManager.runEndpoint(endpoint);
                                     if (res != null) {
