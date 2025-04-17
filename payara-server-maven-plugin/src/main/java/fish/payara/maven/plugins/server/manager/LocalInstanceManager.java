@@ -77,7 +77,7 @@ public class LocalInstanceManager extends InstanceManager<PayaraServerLocalInsta
     }
 
     public ProcessBuilder startServer(String debug, String debugPort, List<Option> javaCommandLineOptions, List<Option> commandLineOptions) throws Exception {
-        JvmConfigReader jvmConfigReader = new JvmConfigReader(payaraServer.getDomainXmlPath(), DAS_NAME);
+        JvmConfigReader jvmConfigReader = new JvmConfigReader(payaraServer.getDomainXml(), DAS_NAME);
         String javaHome = payaraServer.getJDKHome();
         if (javaHome == null) {
             throw new Exception(ERROR_JAVA_HOME_NOT_FOUND);

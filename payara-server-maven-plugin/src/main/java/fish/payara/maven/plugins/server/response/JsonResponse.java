@@ -40,7 +40,6 @@ package fish.payara.maven.plugins.server.response;
 
 import java.util.List;
 import java.util.Map;
-import org.json.JSONArray;
 import org.json.JSONObject;
 
 /**
