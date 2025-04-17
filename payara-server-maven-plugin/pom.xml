@@ -46,8 +46,8 @@
     <description>Payara Server Maven Plugin that incorporates Payara Server with the produced artifact</description>
     <url>https://github.com/payara/ecosystem-maven/tree/master/payara-server-maven-plugin</url>
     <properties>
-        <java.compiler.source.version>1.8</java.compiler.source.version>
-        <java.compiler.target.version>1.8</java.compiler.target.version>
+        <java.compiler.source.version>17</java.compiler.source.version>
+        <java.compiler.target.version>17</java.compiler.target.version>
         <maven-api.version>3.9.5</maven-api.version>
         <payara.version>6.2024.7</payara.version>
     </properties>
@@ -148,7 +148,7 @@
         <dependency>
             <groupId>fish.payara.maven.plugins</groupId>
             <artifactId>payara-maven-plugins-common</artifactId>
-            <version>1.0-Alpha5-SNAPSHOT</version>
+            <version>1.0.0-Alpha5</version>
         </dependency>
         <dependency>
             <groupId>org.apache.maven.plugin-tools</groupId>

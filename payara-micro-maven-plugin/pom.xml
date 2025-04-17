@@ -228,7 +228,7 @@
         <dependency>
             <groupId>fish.payara.maven.plugins</groupId>
             <artifactId>payara-maven-plugins-common</artifactId>
-            <version>1.0-Alpha5-SNAPSHOT</version>
+            <version>1.0.0-Alpha5</version>
         </dependency>
     </dependencies>
 
