@@ -88,7 +88,7 @@ pipeline {
         }
         stage('Build payara-server-maven-plugin') {
             environment {
-                JAVA_HOME = tool("zulu-11")
+                JAVA_HOME = tool("zulu-17")
                 PATH = "${env.JAVA_HOME}/bin:${env.PATH}"
                 MAVEN_OPTS = '-Xmx2G -Djavax.net.ssl.trustStore=${JAVA_HOME}/jre/lib/security/cacerts'
                 payaraBuildNumber = "${BUILD_NUMBER}"
