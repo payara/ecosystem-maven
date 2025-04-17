@@ -555,6 +555,9 @@ private InputStream getInputStream(Command command) {
     }
 
     private String constructCommandUrl(PayaraServerInstance server, Command command) throws IllegalStateException {
+        if(command.getCommand().startsWith("http")) {
+            return command.getCommand();
+        }
         URI uri;
         try {
             uri = new URI(server.getProtocol(), null, server.getHost(), server.getAdminPort(),

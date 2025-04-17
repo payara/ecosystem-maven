@@ -41,6 +41,14 @@ package fish.payara.maven.plugins.server.manager;
 import fish.payara.maven.plugins.server.parser.JDKVersion;
 import fish.payara.maven.plugins.server.parser.PortReader;
 import static fish.payara.maven.plugins.server.Configuration.DAS_NAME;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.CharsetDecoder;
+import java.nio.charset.CodingErrorAction;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 
 /**
@@ -94,12 +102,40 @@ public class PayaraServerLocalInstance extends PayaraServerInstance {
         return Paths.get(getDomainsFolder(), getDomainName()).toString();
     }
 
-    public String getDomainXmlPath() {
+    public String getDomainXml() {
         return Paths.get(getDomainPath(), "config", "domain.xml").toString();
     }
 
     public String getServerLog() {
         return Paths.get(getDomainPath(), "logs", "server.log").toString();
+    }
+
+    public String readServerLog() throws IOException {
+        return readServerLog(5000);
+    }
+
+    public String readServerLog(int maxLength) throws IOException {
+        String logContent = readFileWithReplacement(getServerLog());
+        return logContent.length() > maxLength ? logContent.substring(0, maxLength) : logContent;
+    }
+
+    public String readDomainXml() throws IOException {
+        return readFileWithReplacement(getDomainXml());
+    }
+
+    /**
+     * Helper to read any file as UTF-8, replacing malformed or unmappable input.
+     */
+    private String readFileWithReplacement(String filePath) throws IOException {
+        Path path = Paths.get(filePath);
+        byte[] raw = Files.readAllBytes(path);
+
+        CharsetDecoder decoder = StandardCharsets.UTF_8.newDecoder()
+            .onMalformedInput(CodingErrorAction.REPLACE)
+            .onUnmappableCharacter(CodingErrorAction.REPLACE);
+
+        CharBuffer decoded = decoder.decode(ByteBuffer.wrap(raw));
+        return decoded.toString();
     }
 
     public String getJDKHome() {
@@ -157,7 +193,7 @@ public class PayaraServerLocalInstance extends PayaraServerInstance {
     }
 
     private PortReader createPortReader() {
-        return new PortReader(getDomainXmlPath(), DAS_NAME);
+        return new PortReader(getDomainXml(), DAS_NAME);
     }
 //
 //    public void checkAliveStatusUsingJPS(Runnable callback) throws IOException {

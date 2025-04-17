@@ -72,6 +72,8 @@ import fish.payara.tools.ai.JMXFetchSpecificMBean;
 import java.awt.Desktop;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Scanner;
@@ -82,6 +84,8 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.project.MavenProject;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.openqa.selenium.WebDriver;
 
 /**
@@ -602,19 +606,8 @@ public class StartMojo extends ServerMojo implements StartTask {
                                 }
                             } else if (payaraAIAgent.isRestEndpoint(response)) {
                                 enableMonitoring();
-                                StringBuilder sb = new StringBuilder();
-                                for (String endpoint : payaraAIAgent.getRestEndpoint(response)) {
-                                    endpoint = endpoint.replace("${appname}", projectName);
-                                    sb.append(endpoint).append('\n');
-                                    Response res = serverManager.runEndpoint(endpoint);
-                                    if (res != null) {
-                                        String endpointResponse = ((JsonResponse) res).getJsonBody().getJSONObject("extraProperties").toString();
-                                        sb.append(endpointResponse).append("\n=================\n");
-                                    }
-                                }
-                                String finalRes = payaraAIAgent.processMonitoringData(userQuery, sb.toString());
-                                getLog().info(MarkdownToCmdHighlighter.convertMdToAnsi(finalRes));
-                            }else if (payaraAIAgent.isJmxMbean(response)) {
+                                callEndpoint(userQuery, response);
+                            } else if (payaraAIAgent.isJmxMbean(response)) {
                                 StringBuilder sb = new StringBuilder();
                                 for (String mbean : payaraAIAgent.getJmxMbean(response)) {
                                     sb.append(mbean).append('\n');
@@ -622,6 +615,13 @@ public class StartMojo extends ServerMojo implements StartTask {
                                     sb.append(res).append("\n=================\n");
                                 }
                                 String finalRes = payaraAIAgent.processJmxMbeansData(userQuery, sb.toString());
+                                getLog().info(MarkdownToCmdHighlighter.convertMdToAnsi(finalRes));
+                            } else if (payaraAIAgent.isServerLog(response)
+                                    && instance instanceof PayaraServerLocalInstance) {
+                                String finalRes = payaraAIAgent.processServerLogData(userQuery, ((PayaraServerLocalInstance)instance).readServerLog());
+                                getLog().info(MarkdownToCmdHighlighter.convertMdToAnsi(finalRes));
+                            } else if (payaraAIAgent.isDomainXml(response)) {
+                                String finalRes = payaraAIAgent.processServerLogData(userQuery, ((PayaraServerLocalInstance)instance).readDomainXml());
                                 getLog().info(MarkdownToCmdHighlighter.convertMdToAnsi(finalRes));
                             } else {
                                 getLog().info(response);
@@ -638,6 +638,52 @@ public class StartMojo extends ServerMojo implements StartTask {
         thread.start();
     }
 
+    private void callEndpoint(String userQuery, String response) throws IOException {
+        StringBuilder sb = new StringBuilder();
+        for (String endpoint : payaraAIAgent.getRestEndpoint(response)) {
+            endpoint = endpoint.replace("${appname}", projectName);
+            sb.append(endpoint).append('\n');
+            Response res = serverManager.runEndpoint(endpoint);
+            if (res != null) {
+                String endpointResponse = ((JsonResponse) res).getJsonBody().getJSONObject("extraProperties").toString();
+                sb.append(endpointResponse).append("\n=================\n");
+            }
+        }
+        String finalRes = payaraAIAgent.processMonitoringData(userQuery, sb.toString());
+        callChildEndpoint(userQuery, finalRes);
+    }
+    
+    private void callChildEndpoint(String userQuery, String response) throws IOException {
+        try {
+            if (response.startsWith("```json")) {
+                response = response.substring(7, response.length() - 3);
+            } else if (response.startsWith("```")) {
+                response = response.substring(3, response.length() - 3);
+            }
+            StringBuilder sb = new StringBuilder();
+            JSONObject jsonObject = new JSONObject(response);
+            if (jsonObject.has("response")) {
+                getLog().info(MarkdownToCmdHighlighter.convertMdToAnsi(jsonObject.getString("response")));
+            }
+            if (jsonObject.has("childResource")
+                    && jsonObject.getJSONArray("childResource").length() > 0) {
+                for (int i = 0; i < jsonObject.getJSONArray("childResource").length(); i++) {
+                    String endpoint = jsonObject.getJSONArray("childResource").getString(i);
+                    endpoint = endpoint.replace("${appname}", projectName);
+                    sb.append(endpoint).append('\n');
+                    Response res = serverManager.runEndpoint(endpoint);
+                    if (res != null) {
+                        String endpointResponse = ((JsonResponse) res).getJsonBody().getJSONObject("extraProperties").toString();
+                        sb.append(endpointResponse).append("\n=================\n");
+                    }
+                }
+                String finalRes = payaraAIAgent.processMonitoringData(userQuery, sb.toString());
+                callChildEndpoint(userQuery, finalRes);
+            }
+        } catch (JSONException e) {
+            getLog().info(MarkdownToCmdHighlighter.convertMdToAnsi(response));
+        }
+    }
     private void enableMonitoring() throws Exception {
         if (!monitoringEnabled) {
             List<String> enableMonitoring = new ArrayList<>(List.of(
