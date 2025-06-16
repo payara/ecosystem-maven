@@ -139,10 +139,9 @@ public class LocalInstanceManager extends InstanceManager<PayaraServerLocalInsta
                     debugOpt = debugOpt.replaceAll("address=\\d+", "address=" + debugPort);
                 }
                 optList.add(debugOpt);
-            } else if (!Boolean.FALSE.toString().equals(debug)) {
+            } else {
                 optList.add(debug);
             }
-            optList.add(debugOpt);
         }
         javaOpts = appendOptions(optList, varMap);
         javaOpts += appendVarMap(varMap);
@@ -153,6 +152,7 @@ public class LocalInstanceManager extends InstanceManager<PayaraServerLocalInsta
         }
         String allArgs = String.join(" ", javaVmExe, javaOpts, javaConfigOptions, "-jar", bootstrapJar, "--classpath", classPath, payaraArgs, payaraConfigOptions);
         List<String> args = JavaUtils.parseParameters(allArgs);
+        log.info("Starting Payara Server with arguments: " + String.join(" ", args));
         ProcessBuilder processBuilder = new ProcessBuilder(args);
         processBuilder.directory(new File(payaraServer.getPath()));
         return processBuilder;

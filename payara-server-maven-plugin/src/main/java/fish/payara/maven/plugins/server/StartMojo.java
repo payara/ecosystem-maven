@@ -69,11 +69,10 @@ import fish.payara.maven.plugins.server.manager.PayaraServerInstance;
 import fish.payara.maven.plugins.server.response.JsonResponse;
 import fish.payara.maven.plugins.server.response.Response;
 import fish.payara.tools.ai.JMXFetchSpecificMBean;
+import fish.payara.tools.ai.lang.PreferencesManager;
 import java.awt.Desktop;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Scanner;
@@ -175,6 +174,9 @@ public class StartMojo extends ServerMojo implements StartTask {
      */
     @Parameter
     private List<Option> commandLineOptions;
+    
+    @Parameter(property = "payara.commandLineOptions", defaultValue = "${env.PAYARA_COMMANDLINE_OPTIONS}")
+    private List<String> commandLineOptionsString;
 
     /**
      * Additional Java command-line options for the JVM.
@@ -182,6 +184,9 @@ public class StartMojo extends ServerMojo implements StartTask {
     @Parameter
     private List<Option> javaCommandLineOptions;
     
+    @Parameter(property = "payara.javaCommandLineOptions", defaultValue = "${env.PAYARA_JAVA_COMMANDLINE_OPTIONS}")
+    private List<String> javaCommandLineOptionsString;
+
     /**
      * Socket connection timeout (in miliseconds).
      */
@@ -247,7 +252,9 @@ public class StartMojo extends ServerMojo implements StartTask {
         } else {
             autoDeployHandler = null;
         }
-        if (aiAgent) {
+        
+        PreferencesManager pm = PreferencesManager.getInstance();
+        if (aiAgent && (pm.getApiKey() != null || pm.getProviderLocation() != null)) {
             CompletableFuture.runAsync(() -> {
                 try {
                     payaraAIAgent = new PayaraAIAgent();
@@ -260,6 +267,44 @@ public class StartMojo extends ServerMojo implements StartTask {
         if (skip) {
             getLog().info("Start mojo execution is skipped");
             return;
+        }
+        
+        if (commandLineOptionsString != null && !commandLineOptionsString.isEmpty()) {
+            if (commandLineOptions == null) {
+                commandLineOptions = new ArrayList<>();
+            }
+            for (String optStr : commandLineOptionsString) {
+                // Assume each string is name=value or just name
+                Option option = new Option();
+                if (optStr.contains("=")) {
+                    String[] parts = optStr.split("=", 2);
+                    option.setKey(parts[0]);
+                    option.setValue(parts[1]);
+                } else {
+                    option.setKey(optStr);
+                    option.setValue(null);
+                }
+                commandLineOptions.add(option);
+            }
+        }
+
+        if (javaCommandLineOptionsString != null && !javaCommandLineOptionsString.isEmpty()) {
+            if (javaCommandLineOptions == null) {
+                javaCommandLineOptions = new ArrayList<>();
+            }
+            for (String optStr : javaCommandLineOptionsString) {
+                // Assume each string is name=value or just name
+                Option option = new Option();
+                if (optStr.contains("=")) {
+                    String[] parts = optStr.split("=", 2);
+                    option.setKey(parts[0]);
+                    option.setValue(parts[1]);
+                } else {
+                    option.setKey(optStr);
+                    option.setValue(null);
+                }
+                javaCommandLineOptions.add(option);
+            }
         }
 
         serverProcessorThread = new Thread(threadGroup, () -> {
@@ -435,7 +480,10 @@ public class StartMojo extends ServerMojo implements StartTask {
                     artifactItem.getClassifier(),
                     new DefaultArtifactHandler("zip"));
             
-            File tmpDir = new File(System.getProperty("java.io.tmpdir"));
+            File tmpDir = new File(System.getProperty("user.home"), ".payara-tmp");
+            if (!tmpDir.exists()) {
+                tmpDir.mkdirs();
+            }
             File targetDir = new File(tmpDir, "payara-server-" + payaraServerVersion);
             if (!targetDir.exists()) {
                 targetDir.mkdirs();
