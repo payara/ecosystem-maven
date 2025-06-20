@@ -148,7 +148,7 @@ public abstract class ServerMojo extends BasePayaraMojo {
     /**
      * Name of the Payara server instance.
      */
-    @Parameter(property = "payara.instance.name", defaultValue = "${env.PAYARA_INSTANCE}")
+    @Parameter(property = "payara.instance.name", defaultValue = "${env.PAYARA_INSTANCE_NAME}")
     protected String instanceName;
     
     public ServerMojo() {

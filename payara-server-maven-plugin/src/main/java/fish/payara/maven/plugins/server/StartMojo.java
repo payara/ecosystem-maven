@@ -217,7 +217,7 @@ public class StartMojo extends ServerMojo implements StartTask {
             debug = "false";
         }
         if(payaraServerVersion == null) {
-            payaraServerVersion = "6.2025.3";
+            payaraServerVersion = "6.2025.6";
         }
         if (httpConnectionTimeout == null) {
             httpConnectionTimeout = 3000;
