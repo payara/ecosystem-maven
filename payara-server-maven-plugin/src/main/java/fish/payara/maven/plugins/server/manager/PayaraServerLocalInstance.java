@@ -195,56 +195,7 @@ public class PayaraServerLocalInstance extends PayaraServerInstance {
     private PortReader createPortReader() {
         return new PortReader(getDomainXml(), DAS_NAME);
     }
-//
-//    public void checkAliveStatusUsingJPS(Runnable callback) throws IOException {
-//        String javaHome = getJDKHome();
-//        if (javaHome == null) {
-//            throw new IllegalStateException("Java home path not found.");
-//        }
-//
-//        String javaProcessExe = JavaUtils.javaProcessExecutableFullPath(javaHome);
-//        if (!Files.exists(Paths.get(javaProcessExe))) {
-//            throw new IllegalStateException("Java Process " + javaProcessExe + " executable for " + getName() + " was not found.");
-//        }
-//
-//        Process process = new ProcessBuilder(javaProcessExe, "-m", "-l", "-v").start();
-//        List<String> lines = Files.readAllLines(process.getInputStream().toPath());
-//        for (String line : lines) {
-//            String[] result = line.split(" ");
-//            if (result.length >= 6 && result[1].equals(ServerUtils.PF_MAIN_CLASS)
-//                    && result[3].equals(getDomainName()) && result[5].equals(getDomainPath())) {
-//                callback.run();
-//                break;
-//            }
-//        }
-//    }
 
-//    public void showLog() throws IOException {
-//        Files.readAllLines(Paths.get(getServerLog())).forEach(line -> getOutputChannel().appendLine(line));
-//    }
-//    public void connectOutput() throws IOException {
-//        if (logStream == null && Files.exists(Paths.get(getServerLog()))) {
-//            List<String> command = new ArrayList<>();
-//            if (JavaUtils.IS_WIN) {
-//                command.add("powershell.exe");
-//                command.add("Get-Content");
-//                command.add("-Tail");
-//                command.add("20");
-//                command.add("-Wait");
-//                command.add("-literalpath");
-//                command.add(getServerLog());
-//            } else {
-//                command.add("tail");
-//                command.add("-f");
-//                command.add("-n");
-//                command.add("20");
-//                command.add(getServerLog());
-//            }
-//
-//            logStream = new ProcessBuilder(command).start();
-//            logStream.getOutputStream().transferTo(getOutputChannel().getOutputStream());
-//        }
-//    }
     public void disconnectOutput() {
         if (logStream != null) {
             logStream.destroy();
