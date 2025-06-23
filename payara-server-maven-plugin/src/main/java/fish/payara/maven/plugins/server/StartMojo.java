@@ -68,6 +68,7 @@ import static fish.payara.maven.plugins.server.Configuration.*;
 import fish.payara.maven.plugins.server.manager.PayaraServerInstance;
 import fish.payara.maven.plugins.server.response.JsonResponse;
 import fish.payara.maven.plugins.server.response.Response;
+import fish.payara.maven.plugins.server.utils.TempDirectoryResolver;
 import fish.payara.tools.ai.JMXFetchSpecificMBean;
 import fish.payara.tools.ai.lang.PreferencesManager;
 import java.awt.Desktop;
@@ -480,14 +481,7 @@ public class StartMojo extends ServerMojo implements StartTask {
                     artifactItem.getClassifier(),
                     new DefaultArtifactHandler("zip"));
             
-            File tmpDir = new File(System.getProperty("user.home"), ".payara-tmp");
-            if (!tmpDir.exists()) {
-                tmpDir.mkdirs();
-            }
-            File targetDir = new File(tmpDir, "payara-server-" + payaraServerVersion);
-            if (!targetDir.exists()) {
-                targetDir.mkdirs();
-            }
+            File targetDir = TempDirectoryResolver.resolvePayaraTempDir(payaraServerVersion);
             // Check if the target directory already exists
             File extractedDir = new File(targetDir + File.separator + "payara" + artifactItem.getVersion().charAt(0));
             if (!extractedDir.exists()) {
