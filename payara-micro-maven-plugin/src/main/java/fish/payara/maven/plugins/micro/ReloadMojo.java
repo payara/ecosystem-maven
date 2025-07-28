@@ -85,6 +85,10 @@ public class ReloadMojo extends BasePayaraMojo {
         this.mavenProject = mavenProject;
         this.setLog(log);
     }
+
+    public ReloadMojo() {
+        // no-arg constructor required by Maven
+    }
     
     @Override
     public void execute() throws MojoExecutionException {
