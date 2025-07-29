@@ -411,8 +411,9 @@ public class InstanceManager<X extends PayaraServerInstance> {
         if(respCode == HttpURLConnection.HTTP_MOVED_TEMP) {
             String location = hconn.getHeaderField("Location");
             if (location.startsWith("https://") && hconn.getURL().toString().startsWith("http://")) {
-                return new PlainResponse("Authentication failed: Please set the admin username and password. The server redirected to a secure login page, indicating credentials are required.",
-                        respCode, hconn.getHeaderFields());
+                URL secureUrl = new URL(location);
+                URLConnection newConn = secureUrl.openConnection();
+                return handleHTTPConnection(instance, command, newConn, secureUrl);
             }
         }
 
