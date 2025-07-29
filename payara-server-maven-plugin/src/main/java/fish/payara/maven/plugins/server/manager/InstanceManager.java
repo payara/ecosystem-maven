@@ -263,7 +263,7 @@ public class InstanceManager<X extends PayaraServerInstance> {
         try {
             deploy = invokeServer(payaraServer, command);
             if (deploy != null && deploy.isExitCodeSuccess()) {
-                Response  response = getApplicationInfo(name);
+                Response response = getApplicationInfo(name);
                 if (response != null && response.isExitCodeSuccess()) {
                     URI app = new URI(payaraServer.getProtocol(), null,
                             payaraServer.getHost(),
@@ -274,8 +274,14 @@ public class InstanceManager<X extends PayaraServerInstance> {
                 } else {
                     log.info(name + " application deployed successfully.");
                 }
+            } else if (deploy != null) {
+                if (deploy.getCode() == HttpURLConnection.HTTP_MOVED_TEMP) {
+                    log.error("Failed to deploy application. " + deploy.toString());
+                } else {
+                    log.error("Failed to deploy application. " + deploy.getHeaderFields());
+                }
             } else {
-                log.error("Failed to deploy application. " + deploy.getHeaderFields());
+                log.error("Failed to deploy application. ");
             }
         } catch (Exception ex) {
             log.error("Error deploying the application: " + ex.getMessage());
@@ -407,6 +413,14 @@ public class InstanceManager<X extends PayaraServerInstance> {
                 response.append('\n').append(inputLine);
             }
         }
+        if(respCode == HttpURLConnection.HTTP_MOVED_TEMP) {
+            String location = hconn.getHeaderField("Location");
+            if (location.startsWith("https://") && hconn.getURL().toString().startsWith("http://")) {
+                return new PlainResponse("Authentication failed: Please set the admin username and password. The server redirected to a secure login page, indicating credentials are required.",
+                        respCode, hconn.getHeaderFields());
+            }
+        }
+
         if (command.getContentType().equals(CONTENT_TYPE_PLAIN_TEXT)) {
             return new PlainResponse(response.toString(), respCode, hconn.getHeaderFields());
         }

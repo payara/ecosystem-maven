@@ -56,6 +56,18 @@ import java.nio.file.Paths;
  * @author Gaurav Gupta
  */
 public class PayaraServerLocalInstance extends PayaraServerInstance {
+    
+    
+    public static final String GLASSFISH_DIR = "glassfish";
+    public static final String MODULES_DIR = "modules";
+    public static final String DOMAINS_DIR = "domains";
+    public static final String CONFIG_DIR = "config";
+    public static final String LOGS_DIR = "logs";
+    public static final String SERVER_LOG = "server.log";
+    public static final String DOMAIN_XML = "domain.xml";
+    public static final String HTTPS = "https";
+    public static final String HTTP = "http";
+    public static final String LOCALHOST = "localhost";
 
     private PortReader portReader;
     private Process logStream;
@@ -87,15 +99,15 @@ public class PayaraServerLocalInstance extends PayaraServerInstance {
     }
 
     public String getServerHome() {
-        return Paths.get(getServerRoot(), "glassfish").toString();
+        return Paths.get(getServerRoot(), GLASSFISH_DIR).toString();
     }
 
     public String getServerModules() {
-        return Paths.get(getServerHome(), "modules").toString();
+        return Paths.get(getServerHome(), MODULES_DIR).toString();
     }
 
     public String getDomainsFolder() {
-        return Paths.get(getServerHome(), "domains").toString();
+        return Paths.get(getServerHome(), DOMAINS_DIR).toString();
     }
 
     public String getDomainPath() {
@@ -103,11 +115,11 @@ public class PayaraServerLocalInstance extends PayaraServerInstance {
     }
 
     public String getDomainXml() {
-        return Paths.get(getDomainPath(), "config", "domain.xml").toString();
+        return Paths.get(getDomainPath(), CONFIG_DIR, DOMAIN_XML).toString();
     }
 
     public String getServerLog() {
-        return Paths.get(getDomainPath(), "logs", "server.log").toString();
+        return Paths.get(getDomainPath(), LOGS_DIR, SERVER_LOG).toString();
     }
 
     public String readServerLog() throws IOException {
@@ -127,8 +139,7 @@ public class PayaraServerLocalInstance extends PayaraServerInstance {
      * Helper to read any file as UTF-8, replacing malformed or unmappable input.
      */
     private String readFileWithReplacement(String filePath) throws IOException {
-        Path path = Paths.get(filePath);
-        byte[] raw = Files.readAllBytes(path);
+        byte[] raw = Files.readAllBytes(Paths.get(filePath));
 
         CharsetDecoder decoder = StandardCharsets.UTF_8.newDecoder()
             .onMalformedInput(CodingErrorAction.REPLACE)
@@ -151,12 +162,19 @@ public class PayaraServerLocalInstance extends PayaraServerInstance {
 
     @Override
     public String getProtocol() {
-        return protocol == null ? "http" : protocol;
+        if(protocol == null) {
+            if (adminUser == null) {
+                return HTTP;
+            } else {
+                return HTTPS;
+            }
+        } 
+        return protocol;
     }
 
     @Override
     public String getHost() {
-        return host == null ? "localhost" : host;
+        return host == null ? LOCALHOST : host;
     }
 
     @Override
