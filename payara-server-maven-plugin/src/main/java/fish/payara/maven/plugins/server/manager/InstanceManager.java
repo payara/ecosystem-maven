@@ -45,6 +45,11 @@ import fish.payara.maven.plugins.server.response.Response;
 import static fish.payara.maven.plugins.server.manager.LocalInstanceManager.HTTP_RETRY_DELAY;
 import static fish.payara.maven.plugins.server.manager.LocalInstanceManager.PARAM_ASSIGN_VALUE;
 import static fish.payara.maven.plugins.server.manager.LocalInstanceManager.PARAM_SEPARATOR;
+import static fish.payara.maven.plugins.server.manager.PayaraServerLocalInstance.HTTP;
+import static fish.payara.maven.plugins.server.manager.PayaraServerLocalInstance.HTTPS;
+import static fish.payara.maven.plugins.server.manager.PayaraServerLocalInstance.HTTPS_PREFIX;
+import static fish.payara.maven.plugins.server.manager.PayaraServerLocalInstance.HTTP_PREFIX;
+import static fish.payara.maven.plugins.server.manager.PayaraServerLocalInstance.LOCATION_HEADER;
 import fish.payara.maven.plugins.server.utils.ServerUtils;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
@@ -262,7 +267,7 @@ public class InstanceManager<X extends PayaraServerInstance> {
                 if (response != null && response.isExitCodeSuccess()) {
                     URI app = new URI(payaraServer.getProtocol(), null,
                             payaraServer.getHost(),
-                            payaraServer.getProtocol().equals("http") ? payaraServer.getHttpPort() : payaraServer.getHttpPort(),
+                            payaraServer.getProtocol().equals(HTTP) ? payaraServer.getHttpPort() : payaraServer.getHttpsPort(),
                             getContextRoot(((JsonResponse) response).getJsonBody()), null, null);
                     log.info(name + " application deployed successfully : " + app.toString());
                     return app;
@@ -409,10 +414,11 @@ public class InstanceManager<X extends PayaraServerInstance> {
             }
         }
         if(respCode == HttpURLConnection.HTTP_MOVED_TEMP) {
-            String location = hconn.getHeaderField("Location");
-            if (location.startsWith("https://") && hconn.getURL().toString().startsWith("http://")) {
+            String location = hconn.getHeaderField(LOCATION_HEADER);
+            if (location.startsWith(HTTPS_PREFIX) && hconn.getURL().toString().startsWith(HTTP_PREFIX)) {
                 URL secureUrl = new URL(location);
                 URLConnection newConn = secureUrl.openConnection();
+                instance.setProtocol(HTTPS);
                 return handleHTTPConnection(instance, command, newConn, secureUrl);
             }
         }
@@ -565,7 +571,7 @@ private InputStream getInputStream(Command command) {
     }
 
     private String constructCommandUrl(PayaraServerInstance server, Command command) throws IllegalStateException {
-        if(command.getCommand().startsWith("http")) {
+        if(command.getCommand().startsWith(HTTP)) {
             return command.getCommand();
         }
         URI uri;

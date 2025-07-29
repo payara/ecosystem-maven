@@ -48,7 +48,6 @@ import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 
 /**
@@ -67,6 +66,9 @@ public class PayaraServerLocalInstance extends PayaraServerInstance {
     public static final String DOMAIN_XML = "domain.xml";
     public static final String HTTPS = "https";
     public static final String HTTP = "http";
+    public static final String HTTPS_PREFIX = "https://";
+    public static final String HTTP_PREFIX = "http://";
+    public static final String LOCATION_HEADER = "Location";
     public static final String LOCALHOST = "localhost";
 
     private PortReader portReader;

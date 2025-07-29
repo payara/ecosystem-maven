@@ -66,6 +66,7 @@ import java.util.concurrent.TimeUnit;
 
 import static fish.payara.maven.plugins.server.Configuration.*;
 import fish.payara.maven.plugins.server.manager.PayaraServerInstance;
+import static fish.payara.maven.plugins.server.manager.PayaraServerLocalInstance.HTTP;
 import fish.payara.maven.plugins.server.response.JsonResponse;
 import fish.payara.maven.plugins.server.response.Response;
 import fish.payara.maven.plugins.server.utils.TempDirectoryResolver;
@@ -852,7 +853,7 @@ public class StartMojo extends ServerMojo implements StartTask {
             driver = WebDriverFactory.createWebDriver(browser, getLog());
             String url = PropertiesUtils.getProperty(applicationURL, applicationURL);
             if ((url == null || url.isEmpty())) {
-                url = instance.getProtocol() + "://" + instance.getHost() + ":" + (instance.getProtocol().equals("http") ? instance.getHttpPort() : instance.getHttpPort());
+                url = instance.getProtocol() + "://" + instance.getHost() + ":" + (instance.getProtocol().equals(HTTP) ? instance.getHttpPort() : instance.getHttpsPort());
                 if (contextRoot != null) {
                     url = url + "/" + contextRoot;
                 }
