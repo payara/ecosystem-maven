@@ -218,14 +218,9 @@ public class InstanceManager<X extends PayaraServerInstance> {
     }
 
     public boolean pingServer() throws Exception {
-        URI uri = new URI(payaraServer.getProtocol(), null, payaraServer.getHost(), payaraServer.getAdminPort(),
-                MANAGEMENT_PATH + VERSION_COMMAND, null, null);
-        HttpURLConnection connection = (HttpURLConnection) uri.toURL().openConnection();
-        connection.setRequestMethod(HTTP_GET_METHOD);
-        connection.setConnectTimeout(payaraServer.getHttpConnectionTimeout());
-        connection.setReadTimeout(payaraServer.getHttpReadTimeout());
-        int responseCode = connection.getResponseCode();
-        return (responseCode == HttpURLConnection.HTTP_OK);
+        Command command = new Command(MANAGEMENT_PATH, VERSION_COMMAND, null);
+        Response response = invokeServer(payaraServer, command);
+        return response != null && response.isExitCodeSuccess();
     }
 
     public boolean isServerAlreadyRunning() {

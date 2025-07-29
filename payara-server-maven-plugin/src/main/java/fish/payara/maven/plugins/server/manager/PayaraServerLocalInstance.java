@@ -162,13 +162,9 @@ public class PayaraServerLocalInstance extends PayaraServerInstance {
 
     @Override
     public String getProtocol() {
-        if(protocol == null) {
-            if (adminUser == null) {
-                return HTTP;
-            } else {
-                return HTTPS;
-            }
-        } 
+        if (protocol == null) {
+            return HTTP;
+        }
         return protocol;
     }
 
