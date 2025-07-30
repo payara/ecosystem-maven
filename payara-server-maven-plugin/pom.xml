@@ -40,7 +40,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>fish.payara.maven.plugins</groupId>
     <artifactId>payara-server-maven-plugin</artifactId>
-    <version>1.0.0-Alpha3</version>
+    <version>1.0.0-Alpha4-SNAPSHOT</version>
     <packaging>maven-plugin</packaging>
     <name>Payara Server Maven Plugin</name>
     <description>Payara Server Maven Plugin that incorporates Payara Server with the produced artifact</description>
