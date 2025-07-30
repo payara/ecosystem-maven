@@ -109,7 +109,7 @@ public class InstanceManager<X extends PayaraServerInstance> {
     public static final String CONTENT_TYPE_HTML_TEXT = "text/html";
     private static final String CONTENT_TYPE_HEADER = "Content-Type";
 
-    private static final int MAX_RETRIES = 60;
+    private static final int MAX_RETRIES = 100;
     /**
      * Delay before administration command execution will be retried.
      */
