@@ -45,6 +45,11 @@ import fish.payara.maven.plugins.server.response.Response;
 import static fish.payara.maven.plugins.server.manager.LocalInstanceManager.HTTP_RETRY_DELAY;
 import static fish.payara.maven.plugins.server.manager.LocalInstanceManager.PARAM_ASSIGN_VALUE;
 import static fish.payara.maven.plugins.server.manager.LocalInstanceManager.PARAM_SEPARATOR;
+import static fish.payara.maven.plugins.server.manager.PayaraServerLocalInstance.HTTP;
+import static fish.payara.maven.plugins.server.manager.PayaraServerLocalInstance.HTTPS;
+import static fish.payara.maven.plugins.server.manager.PayaraServerLocalInstance.HTTPS_PREFIX;
+import static fish.payara.maven.plugins.server.manager.PayaraServerLocalInstance.HTTP_PREFIX;
+import static fish.payara.maven.plugins.server.manager.PayaraServerLocalInstance.LOCATION_HEADER;
 import fish.payara.maven.plugins.server.utils.ServerUtils;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
@@ -104,7 +109,7 @@ public class InstanceManager<X extends PayaraServerInstance> {
     public static final String CONTENT_TYPE_HTML_TEXT = "text/html";
     private static final String CONTENT_TYPE_HEADER = "Content-Type";
 
-    private static final int MAX_RETRIES = 60;
+    private static final int MAX_RETRIES = 100;
     /**
      * Delay before administration command execution will be retried.
      */
@@ -218,14 +223,9 @@ public class InstanceManager<X extends PayaraServerInstance> {
     }
 
     public boolean pingServer() throws Exception {
-        URI uri = new URI(payaraServer.getProtocol(), null, payaraServer.getHost(), payaraServer.getAdminPort(),
-                MANAGEMENT_PATH + VERSION_COMMAND, null, null);
-        HttpURLConnection connection = (HttpURLConnection) uri.toURL().openConnection();
-        connection.setRequestMethod(HTTP_GET_METHOD);
-        connection.setConnectTimeout(payaraServer.getHttpConnectionTimeout());
-        connection.setReadTimeout(payaraServer.getHttpReadTimeout());
-        int responseCode = connection.getResponseCode();
-        return (responseCode == HttpURLConnection.HTTP_OK);
+        Command command = new Command(MANAGEMENT_PATH, VERSION_COMMAND, null);
+        Response response = invokeServer(payaraServer, command);
+        return response != null && response.isExitCodeSuccess();
     }
 
     public boolean isServerAlreadyRunning() {
@@ -263,19 +263,25 @@ public class InstanceManager<X extends PayaraServerInstance> {
         try {
             deploy = invokeServer(payaraServer, command);
             if (deploy != null && deploy.isExitCodeSuccess()) {
-                Response  response = getApplicationInfo(name);
+                Response response = getApplicationInfo(name);
                 if (response != null && response.isExitCodeSuccess()) {
                     URI app = new URI(payaraServer.getProtocol(), null,
                             payaraServer.getHost(),
-                            payaraServer.getProtocol().equals("http") ? payaraServer.getHttpPort() : payaraServer.getHttpPort(),
+                            payaraServer.getProtocol().equals(HTTP) ? payaraServer.getHttpPort() : payaraServer.getHttpsPort(),
                             getContextRoot(((JsonResponse) response).getJsonBody()), null, null);
                     log.info(name + " application deployed successfully : " + app.toString());
                     return app;
                 } else {
                     log.info(name + " application deployed successfully.");
                 }
+            } else if (deploy != null) {
+                if (deploy.getCode() == HttpURLConnection.HTTP_MOVED_TEMP) {
+                    log.error("Failed to deploy application. " + deploy.toString());
+                } else {
+                    log.error("Failed to deploy application. " + deploy.getHeaderFields());
+                }
             } else {
-                log.error("Failed to deploy application. " + deploy.getHeaderFields());
+                log.error("Failed to deploy application. ");
             }
         } catch (Exception ex) {
             log.error("Error deploying the application: " + ex.getMessage());
@@ -407,6 +413,16 @@ public class InstanceManager<X extends PayaraServerInstance> {
                 response.append('\n').append(inputLine);
             }
         }
+        if(respCode == HttpURLConnection.HTTP_MOVED_TEMP) {
+            String location = hconn.getHeaderField(LOCATION_HEADER);
+            if (location.startsWith(HTTPS_PREFIX) && hconn.getURL().toString().startsWith(HTTP_PREFIX)) {
+                URL secureUrl = new URL(location);
+                URLConnection newConn = secureUrl.openConnection();
+                instance.setProtocol(HTTPS);
+                return handleHTTPConnection(instance, command, newConn, secureUrl);
+            }
+        }
+
         if (command.getContentType().equals(CONTENT_TYPE_PLAIN_TEXT)) {
             return new PlainResponse(response.toString(), respCode, hconn.getHeaderFields());
         }
@@ -555,7 +571,7 @@ private InputStream getInputStream(Command command) {
     }
 
     private String constructCommandUrl(PayaraServerInstance server, Command command) throws IllegalStateException {
-        if(command.getCommand().startsWith("http")) {
+        if(command.getCommand().startsWith(HTTP)) {
             return command.getCommand();
         }
         URI uri;
