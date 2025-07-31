@@ -38,6 +38,7 @@
  */
 package fish.payara.maven.plugins.micro;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.BuildPluginManager;
@@ -67,13 +68,25 @@ abstract class BasePayaraMojo extends AbstractMojo {
     @Component
     private ToolchainManager toolchainManager;
 
-    @Parameter(property = "skip", defaultValue = "false")
+    @Parameter(property = "payara.skip", defaultValue = "${env.PAYARA_SKIP}")
     protected boolean skip;
 
-    @Parameter(property = "uberJarClassifier", defaultValue = Configuration.MICROBUNDLE_EXTENSION)
+    @Parameter(property = "payara.uber.jar.classifier", defaultValue = "${env.PAYARA_UBER_JAR_CLASSIFIER}")
     protected String uberJarClassifier;
 
     private ExecutionEnvironment environment;
+    
+    protected BasePayaraMojo() {
+        if (System.getProperty("uberJarClassifier") != null) {
+            uberJarClassifier = System.getProperty("uberJarClassifier");
+        }
+        if (StringUtils.isNotEmpty(uberJarClassifier)) {
+            uberJarClassifier = Configuration.MICROBUNDLE_EXTENSION;
+        }
+        if (System.getProperty("skip") != null) {
+            skip = Boolean.parseBoolean(System.getProperty("skip"));
+        }
+    }
 
     ExecutionEnvironment getEnvironment() {
         if (environment == null) {

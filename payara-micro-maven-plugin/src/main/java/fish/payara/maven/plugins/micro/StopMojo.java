@@ -64,19 +64,39 @@ public class StopMojo extends BasePayaraMojo {
 
     private static final String ERROR_MESSAGE = "Error occurred while terminating payara-micro";
 
-    @Parameter(property = "artifactItem")
+    @Parameter
     private ArtifactItem artifactItem;
 
-    @Parameter(property = "processId")
+    @Parameter(property = "payara.process.id", defaultValue = "${env.PAYARA_PROCESS_ID}")
     private String processId;
 
-    @Parameter(property = "useUberJar", defaultValue = "false")
+    @Parameter(property = "payara.use.uber.jar", defaultValue = "${env.PAYARA_USE_UBER_JAR}")
     private boolean useUberJar;
 
     private Toolchain toolchain;
 
-    @Parameter(property = "maxStopTimeoutMillis", defaultValue = "5000")
+    @Parameter(property = "payara.max.stop.timeout.millis", defaultValue = "5000")
     private int maxStopTimeoutMillis;
+    
+    public StopMojo() {
+        if (System.getProperty("processId") != null) {
+            processId = System.getProperty("processId");
+        }
+        if (System.getProperty("useUberJar") != null) {
+            useUberJar = Boolean.parseBoolean(System.getProperty("useUberJar"));
+        }
+        String envTimeout = System.getenv("PAYARA_MAX_STOP_TIMEOUT_MILLIS");
+        if (System.getProperty("maxStopTimeoutMillis") != null) {
+            maxStopTimeoutMillis = Integer.parseInt(System.getProperty("maxStopTimeoutMillis"));
+        } else if (envTimeout != null && !envTimeout.isEmpty()) {
+            try {
+                maxStopTimeoutMillis = Integer.parseInt(envTimeout);
+            } catch (NumberFormatException e) {
+                getLog().warn("Invalid PAYARA_MAX_STOP_TIMEOUT_MILLIS value. Falling back to default: 5000", e);
+                maxStopTimeoutMillis = 5000;
+            }
+        }
+    }
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
@@ -98,7 +118,9 @@ public class StopMojo extends BasePayaraMojo {
         }
 
         String executorName;
-        if (artifactItem.getGroupId() != null) {
+        if (artifactItem != null 
+                && artifactItem.getGroupId() != null
+                && artifactItem.getArtifactId() != null) {
             executorName = artifactItem.getArtifactId();
         } else if (useUberJar) {
             executorName = evaluateExecutorName(true);
