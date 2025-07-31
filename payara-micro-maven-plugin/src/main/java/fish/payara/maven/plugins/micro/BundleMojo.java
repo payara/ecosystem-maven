@@ -47,6 +47,8 @@ import org.apache.maven.plugins.dependency.fromConfiguration.ArtifactItem;
 import org.twdata.maven.mojoexecutor.MojoExecutor;
 
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Bundle mojo incorporates payara-micro with the produced artifact by following steps given as follows:
@@ -83,10 +85,10 @@ public class BundleMojo extends BasePayaraMojo {
     private String payaraMicroVersion;
 
     /**
-     * By default this mojo fetches payara-micro with version 6.2024.3. It can be overridden with this parameter.
+     * By default this mojo fetches payara-micro
      */
     @Deprecated
-    @Parameter(property = "payaraVersion", defaultValue = "6.2024.3")
+    @Parameter(property = "payaraVersion")
     private String payaraVersion;
 
     /**
@@ -102,51 +104,117 @@ public class BundleMojo extends BasePayaraMojo {
     private List<ArtifactItem> deployArtifacts;
 
     /**
+     * Replaces the @{code Start-Class} definition that resides in MANIFEST.MF file with the provided class.
+     */
+    @Parameter(property = "payara.start.class", defaultValue = "${env.PAYARA_START_CLASS}")
+    private String startClass;
+
+    /**
      * If the extension of the produced artifact is <b>war</b>, it will be copied automatically to MICRO-INF/deploy folder.
      * This behaviour can be disabled by setting @{code autoDeployArtifact} to false.
      */
-    @Parameter(property = "autoDeployArtifact", defaultValue =  "true")
+    @Parameter(property = "payara.auto.deploy.artifact", defaultValue =  "true")
     private boolean autoDeployArtifact;
-
-    /**
-     * Replaces the @{code Start-Class} definition that resides in MANIFEST.MF file with the provided class.
-     */
-    @Parameter(property = "startClass")
-    private String startClass;
     
     /**
      * Sets context root of the deployed artifact to / which means there's no context root. Default true. 
      * If set to false, context root is derived from artifact name or finalName. Value of autoDeployContextRoot overrides this.
      */
-    @Parameter(property = "autoDeployEmptyContextRoot", defaultValue = "true")
+    @Parameter(property = "payara.auto.deploy.empty.context.root", defaultValue = "true")
     private boolean autoDeployEmptyContextRoot;
 
     /**
      * Sets context root of the deployed artifact if autoDeployArtifact is true
      */
-    @Parameter(property = "autoDeployContextRoot", defaultValue = "")
+    @Parameter(property = "payara.auto.deploy.context.root", defaultValue = "")
     private String autoDeployContextRoot;
 
     /**
      * Appends all system properties defined into the @{code payara-boot.properties} file
      */
-    @Parameter(property = "appendSystemProperties", defaultValue = "true")
+    @Parameter(property = "payara.append.system.properties", defaultValue = "true")
     private boolean appendSystemProperties;
 
     /**
      * Specify default command line options for bundled JAR
      */
-    @Parameter(property = "systemProperties")
+    @Parameter
     private List<Property> systemProperties;
+    
+    public BundleMojo() {
+        if (System.getProperty("startClass") != null) {
+            startClass = System.getProperty("startClass");
+        }
+
+        String autoDeployArtifactEnv = System.getenv("PAYARA_AUTO_DEPLOY_ARTIFACT");
+        if (System.getProperty("autoDeployArtifact") != null) {
+            autoDeployArtifact = Boolean.parseBoolean(System.getProperty("autoDeployArtifact"));
+        } else if (autoDeployArtifactEnv != null && !autoDeployArtifactEnv.isEmpty()) {
+            try {
+                autoDeployArtifact = Boolean.parseBoolean(autoDeployArtifactEnv);
+            } catch (NumberFormatException e) {
+                getLog().warn("Invalid PAYARA_AUTO_DEPLOY_ARTIFACT value. Falling back to default: true", e);
+                autoDeployArtifact = true;
+            }
+        }
+        
+        String autoDeployEmptyContextRootEnv = System.getenv("PAYARA_AUTO_DEPLOY_EMPTY_CONTEXT_ROOT");
+        if (System.getProperty("autoDeployEmptyContextRoot") != null) {
+            autoDeployEmptyContextRoot = Boolean.parseBoolean(System.getProperty("autoDeployEmptyContextRoot"));
+        } else if (autoDeployEmptyContextRootEnv != null && !autoDeployEmptyContextRootEnv.isEmpty()) {
+            try {
+                autoDeployEmptyContextRoot = Boolean.parseBoolean(autoDeployEmptyContextRootEnv);
+            } catch (NumberFormatException e) {
+                getLog().warn("Invalid PAYARA_AUTO_DEPLOY_EMPTY_CONTEXT_ROOT value. Falling back to default: true", e);
+                autoDeployEmptyContextRoot = true;
+            }
+        }
+        
+        String autoDeployContextRootEnv = System.getenv("PAYARA_AUTO_DEPLOY_CONTEXT_ROOT");
+        if (System.getProperty("autoDeployContextRoot") != null) {
+            autoDeployContextRoot = System.getProperty("autoDeployContextRoot");
+        }else if (autoDeployContextRootEnv != null && !autoDeployContextRootEnv.isEmpty()) {
+            try {
+                autoDeployContextRoot = autoDeployContextRootEnv;
+            } catch (NumberFormatException e) {
+                getLog().warn("Invalid PAYARA_AUTO_DEPLOY_CONTEXT_ROOT value. Falling back to empty value.", e);
+                autoDeployContextRoot = "";
+            }
+        }
+        
+        String appendSystemPropertiesEnv = System.getenv("PAYARA_APPEND_SYSTEM_PROPERTIES");
+        if (System.getProperty("appendSystemProperties") != null) {
+            appendSystemProperties = Boolean.parseBoolean(System.getProperty("appendSystemProperties"));
+        } else if (appendSystemPropertiesEnv != null && !appendSystemPropertiesEnv.isEmpty()) {
+            try {
+                appendSystemProperties = Boolean.parseBoolean(appendSystemPropertiesEnv);
+            } catch (NumberFormatException e) {
+                getLog().warn("Invalid PAYARA_APPEND_SYSTEM_PROPERTIES value. Falling back to default: true", e);
+                appendSystemProperties = true;
+            }
+        }
+        
+        
+        if (payaraVersion != null) {
+            getLog().warn("Parameter 'payaraVersion' is deprecated and has been replaced by 'payaraMicroVersion' to stay in sync with the Payara Server Maven Plugin.");
+            payaraMicroVersion = payaraVersion;
+        }
+        
+        if (payaraMicroVersion == null && mavenProject != null) {
+            PayaraMicroVersionSelector payaraMicroVersionSelector = new PayaraMicroVersionSelector(mavenProject, getLog());
+            try {
+                payaraMicroVersion = payaraMicroVersionSelector.fetchPayaraVersion();
+            } catch (MojoExecutionException ex) {
+                Logger.getLogger(BundleMojo.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+    }
 
     @Override
     public void execute() throws MojoExecutionException {
         if (skip) {
             getLog().info("Bundle mojo execution is skipped");
             return;
-        }
-        if (payaraVersion != null) {
-            payaraMicroVersion = payaraVersion;
         }
         MojoExecutor.ExecutionEnvironment environment = getEnvironment();
         BaseProcessor processor = constructProcessorChain();

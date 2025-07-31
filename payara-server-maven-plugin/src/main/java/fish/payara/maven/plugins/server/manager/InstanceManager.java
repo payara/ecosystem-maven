@@ -422,7 +422,9 @@ public class InstanceManager<X extends PayaraServerInstance> {
                 return handleHTTPConnection(instance, command, newConn, secureUrl);
             }
         }
-
+        if(respCode == HttpURLConnection.HTTP_UNAUTHORIZED) {
+            return new PlainResponse("Unauthorized Access: " + response.toString(), respCode, hconn.getHeaderFields());
+        }
         if (command.getContentType().equals(CONTENT_TYPE_PLAIN_TEXT)) {
             return new PlainResponse(response.toString(), respCode, hconn.getHeaderFields());
         }
