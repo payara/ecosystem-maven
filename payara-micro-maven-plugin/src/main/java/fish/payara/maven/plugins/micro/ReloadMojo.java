@@ -63,22 +63,22 @@ public class ReloadMojo extends BasePayaraMojo {
 
     private static final String RELOAD_FILE = ".reload";
     
-    @Parameter(property = "hotDeploy")
+    @Parameter(property = "payara.hot.deploy", defaultValue = "${env.PAYARA_HOT_DEPLOY}")
     private boolean hotDeploy;
 
-    @Parameter(property = "sourcesChanged")
+    @Parameter(property = "payara.sources.changed", defaultValue = "${env.PAYARA_SOURCES_CHANGED}")
     private String sourcesChanged;
 
-    @Parameter(property = "metadataChanged")
+    @Parameter(property = "payara.metadata.changed", defaultValue = "${env.PAYARA_METADATA_CHANGED}")
     private boolean metadataChanged;
     
-    @Parameter(property = "keepState", defaultValue = "false")
+    @Parameter(property = "payara.keep.state", defaultValue = "${env.PAYARA_KEEP_STATE}")
     protected boolean keepState;
     
-    @Parameter(property = "devMode", defaultValue = "false")
+    @Parameter(property = "payara.dev.mode", defaultValue = "${env.PAYARA_DEV_MODE}")
     protected boolean devMode;
     
-    @Parameter(property = "contextRoot")
+    @Parameter(property = "payara.context.root", defaultValue = "${env.PAYARA_CONTEXT_PATH}")
     protected String contextRoot;
 
     public ReloadMojo(MavenProject mavenProject, Log log) {
@@ -88,6 +88,25 @@ public class ReloadMojo extends BasePayaraMojo {
 
     public ReloadMojo() {
         // no-arg constructor required by Maven
+        
+        if (System.getProperty("hotDeploy") != null) {
+            hotDeploy = Boolean.parseBoolean(System.getProperty("hotDeploy"));
+        }
+        if (System.getProperty("sourcesChanged") != null) {
+            sourcesChanged = System.getProperty("sourcesChanged");
+        }
+        if (System.getProperty("metadataChanged") != null) {
+            metadataChanged = Boolean.parseBoolean(System.getProperty("metadataChanged"));
+        }
+        if (System.getProperty("keepState") != null) {
+            keepState = Boolean.parseBoolean(System.getProperty("keepState"));
+        }
+        if (System.getProperty("devMode") != null) {
+            devMode = Boolean.parseBoolean(System.getProperty("devMode"));
+        }
+        if (System.getProperty("contextRoot") != null) {
+            contextRoot = System.getProperty("contextRoot");
+        }
     }
     
     @Override

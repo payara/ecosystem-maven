@@ -195,12 +195,15 @@ public class StartMojo extends BasePayaraMojo implements StartTask {
         
         // Backward compatibility for params
         if (javaPath != null) {
+            getLog().warn("Parameter 'javaPath' is deprecated and has been replaced by 'javaHome'.");
             javaHome = javaPath;
         }
         if (payaraVersion != null) {
+            getLog().warn("Parameter 'payaraVersion' is deprecated and has been replaced by 'payaraMicroVersion' to stay in sync with the Payara Server Maven Plugin.");
             payaraMicroVersion = payaraVersion;
         }
         if (payaraMicroAbsolutePath != null) {
+            getLog().warn("Parameter 'payaraMicroAbsolutePath' is deprecated and has been replaced by 'payaraMicroPath'.");
             payaraMicroPath = payaraMicroAbsolutePath;
         }
         if (System.getProperty("daemon") != null) {
@@ -208,6 +211,9 @@ public class StartMojo extends BasePayaraMojo implements StartTask {
         }
         if (System.getProperty("immediateExit") != null) {
             immediateExit = Boolean.parseBoolean(System.getProperty("immediateExit"));
+        }
+        if (System.getProperty("useUberJar") != null) {
+            useUberJar = Boolean.parseBoolean(System.getProperty("useUberJar"));
         }
         if (System.getProperty("deployWar") != null) {
             deployWar = Boolean.parseBoolean(System.getProperty("deployWar"));
@@ -482,7 +488,9 @@ public class StartMojo extends BasePayaraMojo implements StartTask {
             return payaraMicroPath;
         }
 
-        if (artifactItem.getGroupId() != null) {
+        if (artifactItem != null 
+                && artifactItem.getGroupId() != null
+                && artifactItem.getArtifactId() != null) {
             DefaultArtifact artifact = new DefaultArtifact(artifactItem.getGroupId(),
                     artifactItem.getArtifactId(),
                     artifactItem.getVersion(),
