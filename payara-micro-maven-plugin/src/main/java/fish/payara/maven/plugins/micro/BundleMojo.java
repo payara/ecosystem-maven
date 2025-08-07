@@ -86,6 +86,9 @@ public class BundleMojo extends BasePayaraMojo {
 
     /**
      * By default this mojo fetches payara-micro
+     * @deprecated Use 'payaraMicroVersion' instead. This keeps naming in sync
+     * with the Payara Server Maven Plugin. This will be removed in a future
+     * release.
      */
     @Deprecated
     @Parameter(property = "payaraVersion")

@@ -98,14 +98,27 @@ public class StartMojo extends BasePayaraMojo implements StartTask {
     @Parameter(property = "payara.micro.path", defaultValue = "${env.PAYARA_MICRO_PATH}")
     private String payaraMicroPath;
 
+    /**
+     * @deprecated Use 'javaHome' instead. This will be removed in a future
+     * release.
+     */
     @Deprecated
     @Parameter(property = "javaPath")
     private String javaPath;
 
+    /**
+     * @deprecated Use 'payaraMicroVersion' instead. This keeps naming in sync
+     * with the Payara Server Maven Plugin. This will be removed in a future
+     * release.
+     */
     @Deprecated
     @Parameter(property = "payaraVersion")
     private String payaraVersion;
 
+    /**
+     * @deprecated Use 'payaraMicroPath' instead. This will be removed in a
+     * future release.
+     */
     @Deprecated
     @Parameter(property = "payaraMicroAbsolutePath")
     private String payaraMicroAbsolutePath;
@@ -165,6 +178,12 @@ public class StartMojo extends BasePayaraMojo implements StartTask {
     @Parameter(property = "netbeans.deploy.clientUrlPart")
     private String clientUrlPart;
 
+    /**
+     *
+     * @deprecated copySystemProperties is deprecated. System properties of the
+     * regarding maven execution will be passed to the payara-micro
+     * automatically.
+     */
     @Deprecated
     @Parameter(property = "copySystemProperties", defaultValue = "false")
     private boolean copySystemProperties;
