@@ -48,7 +48,7 @@
     <properties>
         <java.compiler.source.version>1.8</java.compiler.source.version>
         <java.compiler.target.version>1.8</java.compiler.target.version>
-        <maven-api.version>3.9.8</maven-api.version>
+        <maven-api.version>3.9.9</maven-api.version>
     </properties>
     <scm>
         <connection>scm:git:https://github.com/payara/ecosystem-maven/</connection>
@@ -101,12 +101,12 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>3.8.0</version>
+                <version>3.11.1</version>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-plugin-plugin</artifactId>
-                <version>3.13.0</version>
+                <version>3.15.1</version>
                 <configuration>
                     <goalPrefix/>
                     <skipErrorNoDescriptorsFound>true</skipErrorNoDescriptorsFound>
@@ -141,7 +141,7 @@
         <dependency>
             <groupId>org.apache.maven.plugin-tools</groupId>
             <artifactId>maven-plugin-annotations</artifactId>
-            <version>3.13.0</version>
+            <version>3.15.1</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -167,12 +167,12 @@
         <dependency>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-dependency-plugin</artifactId>
-            <version>3.7.1</version>
+            <version>3.8.1</version>
         </dependency>
         <dependency>
             <groupId>org.apache.maven.shared</groupId>
             <artifactId>maven-invoker</artifactId>
-            <version>3.2.0</version>
+            <version>3.3.0</version>
         </dependency>
         <dependency>
             <groupId>fish.payara.tools</groupId>
@@ -204,7 +204,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-gpg-plugin</artifactId>
-                        <version>3.2.4</version>
+                        <version>3.2.7</version>
                         <executions>
                             <execution>
                                 <id>sign-artifacts</id>

@@ -40,7 +40,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>fish.payara.maven.plugins</groupId>
     <artifactId>payara-micro-maven-plugin</artifactId>
-    <version>2.6-SNAPSHOT</version>
+    <version>2.6.0-SNAPSHOT</version>
     <packaging>maven-plugin</packaging>
     <name>Payara Micro Maven Plugin</name>
     <description>Payara Micro Maven Plugin that incorporates payara-micro with the produced artifact</description>
@@ -118,7 +118,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-plugin-plugin</artifactId>
-                <version>3.13.1</version>
+                <version>3.15.1</version>
                 <configuration>
                     <goalPrefix/>
                     <skipErrorNoDescriptorsFound>true</skipErrorNoDescriptorsFound>
@@ -153,12 +153,12 @@
         <dependency>
             <groupId>io.github.bonigarcia</groupId>
             <artifactId>webdrivermanager</artifactId>
-            <version>5.8.0</version>
+            <version>6.1.0</version>
         </dependency>
         <dependency>
             <groupId>org.apache.maven.plugin-tools</groupId>
             <artifactId>maven-plugin-annotations</artifactId>
-            <version>3.13.1</version>
+            <version>3.15.1</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -187,7 +187,7 @@
         <dependency>
             <groupId>org.jdom</groupId>
             <artifactId>jdom2</artifactId>
-            <version>2.0.6</version>
+            <version>2.0.6.1</version>
         </dependency>
 
 
@@ -223,7 +223,7 @@
         <dependency>
             <groupId>org.apache.maven.shared</groupId>
             <artifactId>maven-invoker</artifactId>
-            <version>3.2.0</version>
+            <version>3.3.0</version>
         </dependency>
         <dependency>
             <groupId>fish.payara.maven.plugins</groupId>
@@ -242,12 +242,12 @@
             <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
-                <version>33.1.0-jre</version>
+                <version>33.3.1-jre</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson</groupId>
                 <artifactId>jackson-bom</artifactId>
-                <version>2.17.1</version>
+                <version>2.18.1</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -262,7 +262,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-gpg-plugin</artifactId>
-                        <version>3.2.4</version>
+                        <version>3.2.7</version>
                         <executions>
                             <execution>
                                 <id>sign-artifacts</id>
