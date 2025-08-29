@@ -66,6 +66,27 @@ pipeline {
                     '''
                 }
             }
+        }        
+        stage('Test payara-cloud-maven-plugin') {
+            environment {
+                JAVA_HOME = tool("zulu-11")
+                PATH = "${env.JAVA_HOME}/bin:${env.PATH}"
+                payaraBuildNumber = "${BUILD_NUMBER}"
+            }
+            steps {
+                withCredentials([usernamePassword(credentialsId: "payara-cloud-dev-user", passwordVariable: 'password', usernameVariable: 'username')])  {
+                script {
+                    sh '''echo *#*#*#*#*#*#*#*#*#*#*#*#  Add credentials to test-credentials.properties  *#*#*#*#*#*#*#*#*#*#*#*#*#*#*'''
+                    sh '''echo "username=$username\npassword=$password" > payara-cloud-maven-plugin/src/test/resources/test-credentials.properties'''         
+                    sh '''
+                    cd payara-cloud-maven-plugin
+                    echo *#*#*#*#*#*#*#*#*#*#*#*#  Testing  *#*#*#*#*#*#*#*#*#*#*#*#*#*#*#
+                    mvn clean install -Pe2e,install-deps
+                    echo *#*#*#*#*#*#*#*#*#*#*#*#  Tested  *#*#*#*#*#*#*#*#*#*#*#*#*#*#*#
+                    '''
+                    }
+                }
+            }
         }
         stage('Build payara-micro-maven-archetype') {
             environment {
