@@ -257,15 +257,15 @@ public class StartMojo extends BasePayaraMojo implements StartTask {
     public void execute() throws MojoExecutionException {
         // Backward compatibility for params
         if (javaPath != null) {
-            getLog().warn("Parameter 'javaPath' is deprecated and has been replaced by 'javaHome'.");
+            getLog().warn("The parameter 'javaPath' is **deprecated**. Please use 'javaHome' instead. You can configure it via the <javaHome> tag, 'payara.java.home' system property, or the PAYARA_JAVA_HOME environment variable.");
             javaHome = javaPath;
         }
         if (payaraVersion != null) {
-            getLog().warn("Parameter 'payaraVersion' is deprecated and has been replaced by 'payaraMicroVersion' to stay in sync with the Payara Server Maven Plugin.");
+            getLog().warn("The parameter 'payaraVersion' is **deprecated**. Please use 'payaraMicroVersion' instead. You can configure it via the <payaraMicroVersion> tag, 'payara.micro.version' property, or the PAYARA_MICRO_VERSION environment variable.");
             payaraMicroVersion = payaraVersion;
         }
         if (payaraMicroAbsolutePath != null) {
-            getLog().warn("Parameter 'payaraMicroAbsolutePath' is deprecated and has been replaced by 'payaraMicroPath'.");
+            getLog().warn("The parameter 'payaraMicroAbsolutePath' is **deprecated**. Please use 'payaraMicroPath' instead. You can configure it via the <payaraMicroPath> tag, 'payara.micro.path' property, or the PAYARA_MICRO_PATH environment variable.");
             payaraMicroPath = payaraMicroAbsolutePath;
         }
         if (trimLog == null) {
