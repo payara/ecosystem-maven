@@ -26,7 +26,7 @@ Browser browser = playwright.chromium().launch(new BrowserType.LaunchOptions().s
 Page page = browser.newPage()
 page.navigate(urlConfirmationCode)
 
-page.waitForSelector("img[alt='Payara Cloud']")
+page.waitForSelector("img[alt='Payara Qube Managed']")
 
 println "[INFO] Playwright opens : $urlConfirmationCode"
 
