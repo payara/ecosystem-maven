@@ -35,7 +35,7 @@
  *  only if the new code is made subject to such option by the copyright
  *  holder.
  */
-package fish.payara.maven.plugins.cloud;
+package fish.payara.maven.plugins.qube;
 
 import fish.payara.maven.plugins.AutoDeployHandler;
 import fish.payara.maven.plugins.WebDriverFactory;
@@ -45,11 +45,11 @@ import java.io.File;
  *
  * @author Gaurav Gupta
  */
-public class CloudAutoDeployHandler extends AutoDeployHandler {
+public class QubeAutoDeployHandler extends AutoDeployHandler {
 
     private final DevMojo start;
 
-    public CloudAutoDeployHandler(DevMojo start, File webappDirectory) {
+    public QubeAutoDeployHandler(DevMojo start, File webappDirectory) {
         super(start, webappDirectory);
         this.start = start;
 

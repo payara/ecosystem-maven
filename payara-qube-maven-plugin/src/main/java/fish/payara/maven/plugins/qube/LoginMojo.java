@@ -35,34 +35,34 @@
  *  only if the new code is made subject to such option by the copyright
  *  holder.
  */
-package fish.payara.maven.plugins.cloud;
+package fish.payara.maven.plugins.qube;
 
+import fish.payara.tools.qube.LoginController;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
-import fish.payara.tools.cloud.ApplicationContext;
-import fish.payara.tools.cloud.StopApplication;
+import org.apache.maven.plugins.annotations.Parameter;
+import static fish.payara.maven.plugins.qube.Configuration.CLIENT_ID;
+import static fish.payara.maven.plugins.qube.Configuration.CLIENT_NAME;
+import fish.payara.tools.qube.ApplicationContext;
 
 /**
  * @author Gaurav Gupta
  */
-@Mojo(name = "stop")
-public class StopMojo extends BasePayaraMojo {
+@Mojo(name = "login")
+public class LoginMojo extends BasePayaraMojo {
 
     @Override
     public void execute() throws MojoExecutionException {
-        ApplicationContext context = getApplicationContextBuilder().build();
-        try {
-            if (skip) {
-                getLog().info("Stop mojo execution is skipped");
-                return;
-            }
-            StopApplication controller = new StopApplication(context);
-            if(controller.call().isPresent()) {
-                getLog().info("Application stopped successfully.");
-            }
-        }catch (Exception ex) {
-            context.getOutput().error(ex.toString(), ex);
+        if (skip) {
+            getLog().info("Login mojo execution is skipped");
+            return;
         }
+        ApplicationContext context = ApplicationContext.builder(CLIENT_ID, CLIENT_NAME)
+                .clientOutput(new QubeMavenOutput(getLog(), intractive))
+                .interactive(intractive)
+                .build();
+        LoginController controller = new LoginController(context);
+        controller.call();
     }
 
 }

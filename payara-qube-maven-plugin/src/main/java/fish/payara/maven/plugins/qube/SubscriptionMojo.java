@@ -35,22 +35,22 @@
  *  only if the new code is made subject to such option by the copyright
  *  holder.
  */
-package fish.payara.maven.plugins.cloud;
+package fish.payara.maven.plugins.qube;
 
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
-import fish.payara.tools.cloud.ApplicationContext;
-import fish.payara.tools.cloud.ListNamespaces;
+import fish.payara.tools.qube.ApplicationContext;
+import fish.payara.tools.qube.ListSubscriptions;
 import javax.ws.rs.core.Link;
 
 /**
  * @author Gaurav Gupta
  */
-@Mojo(name = "list-namespaces")
-public class NamespaceMojo extends BasePayaraMojo {
+@Mojo(name = "list-subscriptions")
+public class SubscriptionMojo extends BasePayaraMojo {
 
     protected ApplicationContext context;
-
+    
     @Override
     public void execute() throws MojoExecutionException {
         if (context == null) {
@@ -58,15 +58,15 @@ public class NamespaceMojo extends BasePayaraMojo {
         }
         try {
             if (skip) {
-                getLog().info("List Namespaces mojo execution is skipped");
+                getLog().info("List Subscriptions mojo execution is skipped");
                 return;
             }
-            ListNamespaces controller = new ListNamespaces(context);
-            context.getOutput().info("Namespaces:");
+            ListSubscriptions controller = new ListSubscriptions(context);
+            context.getOutput().info("Subscriptions:");
             for (Link link : controller.call()) {
                 context.getOutput().info(link.getTitle());
             }
-        } catch (Exception ex) {
+        }catch (Exception ex) {
             context.getOutput().error(ex.toString(), ex);
         }
     }

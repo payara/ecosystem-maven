@@ -35,30 +35,30 @@
  *  only if the new code is made subject to such option by the copyright
  *  holder.
  */
-package fish.payara.maven.plugins.cloud;
+package fish.payara.maven.plugins.qube;
 
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
-import fish.payara.tools.cloud.ApplicationContext;
-import fish.payara.tools.cloud.StartApplication;
+import fish.payara.tools.qube.ApplicationContext;
+import fish.payara.tools.qube.StopApplication;
 
 /**
  * @author Gaurav Gupta
  */
-@Mojo(name = "start")
-public class StartMojo extends BasePayaraMojo {
+@Mojo(name = "stop")
+public class StopMojo extends BasePayaraMojo {
 
     @Override
     public void execute() throws MojoExecutionException {
         ApplicationContext context = getApplicationContextBuilder().build();
         try {
             if (skip) {
-                getLog().info("Start mojo execution is skipped");
+                getLog().info("Stop mojo execution is skipped");
                 return;
             }
-            StartApplication controller = new StartApplication(context);
+            StopApplication controller = new StopApplication(context);
             if(controller.call().isPresent()) {
-                getLog().info("Application started successfully.");
+                getLog().info("Application stopped successfully.");
             }
         }catch (Exception ex) {
             context.getOutput().error(ex.toString(), ex);

@@ -35,11 +35,11 @@
  *  only if the new code is made subject to such option by the copyright
  *  holder.
  */
-package fish.payara.maven.plugins.cloud;
+package fish.payara.maven.plugins.qube;
 
-import static fish.payara.maven.plugins.cloud.Configuration.CLIENT_ID;
-import static fish.payara.maven.plugins.cloud.Configuration.CLIENT_NAME;
-import fish.payara.tools.cloud.ApplicationContext;
+import static fish.payara.maven.plugins.qube.Configuration.CLIENT_ID;
+import static fish.payara.maven.plugins.qube.Configuration.CLIENT_NAME;
+import fish.payara.tools.qube.ApplicationContext;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.BuildPluginManager;
@@ -87,7 +87,7 @@ abstract class BasePayaraMojo extends AbstractMojo {
     
     protected ApplicationContext.Builder getApplicationContextBuilder() {
         ApplicationContext.Builder builder = ApplicationContext.builder(CLIENT_ID, CLIENT_NAME)
-                .clientOutput(new CloudMavenOutput(getLog(), intractive))
+                .clientOutput(new QubeMavenOutput(getLog(), intractive))
                 .interactive(intractive)
                 .applicationName(applicationName.toLowerCase());
         namespaceName = getPropertyValue("namespaceName", namespaceName);

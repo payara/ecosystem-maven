@@ -39,12 +39,12 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>fish.payara.maven.plugins</groupId>
-    <artifactId>payara-cloud-maven-plugin</artifactId>
+    <artifactId>payara-qube-maven-plugin</artifactId>
     <version>1.0.0-Alpha5-SNAPSHOT</version>
     <packaging>maven-plugin</packaging>
-    <name>Payara Cloud Maven Plugin</name>
-    <description>Payara Cloud Maven Plugin that deploys Jakarta EE (formerly Java EE) and MicroProfile applications to Payara Cloud, an all-in-one platform as a service (PaaS) solution</description>
-    <url>https://github.com/payara/ecosystem-maven/tree/master/payara-cloud-maven-plugin</url>
+    <name>Payara Qube Maven Plugin</name>
+    <description>Payara Qube Maven Plugin that deploys Jakarta EE (formerly Java EE) and MicroProfile applications to Payara Qube, an all-in-one platform as a service (PaaS) solution</description>
+    <url>https://github.com/payara/ecosystem-maven/tree/master/payara-qube-maven-plugin</url>
     <properties>
         <java.compiler.source.version>1.8</java.compiler.source.version>
         <java.compiler.target.version>1.8</java.compiler.target.version>
@@ -171,13 +171,13 @@
         </dependency>
         <dependency>
             <groupId>fish.payara.tools</groupId>
-            <artifactId>payara-cloud</artifactId>
-            <version>1.0-Alpha4</version>
+            <artifactId>payara-qube</artifactId>
+            <version>1.0-Alpha5-SNAPSHOT</version>
         </dependency>
         <dependency>
-            <groupId>fish.payara.cloud</groupId>
-            <artifactId>cloud-api</artifactId>
-            <version>1.0.1</version>
+            <groupId>fish.payara.qube</groupId>
+            <artifactId>qube-api</artifactId>
+            <version>2.0.0</version>
         </dependency>
         <dependency>
             <groupId>jakarta.platform</groupId>

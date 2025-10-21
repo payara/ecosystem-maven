@@ -35,9 +35,9 @@
  *  only if the new code is made subject to such option by the copyright
  *  holder.
  */
-package fish.payara.maven.plugins.cloud;
+package fish.payara.maven.plugins.qube;
 
-import fish.payara.cloud.client.ApplicationResource;
+import fish.payara.qube.client.ApplicationResource;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
@@ -45,10 +45,10 @@ import fish.payara.maven.plugins.AutoDeployHandler;
 import fish.payara.maven.plugins.PropertiesUtils;
 import fish.payara.maven.plugins.StartTask;
 import fish.payara.maven.plugins.WebDriverFactory;
-import fish.payara.tools.cloud.ApplicationContext;
-import fish.payara.tools.cloud.DeployApplication;
-import fish.payara.tools.cloud.ListApplications;
-import fish.payara.tools.cloud.StopApplication;
+import fish.payara.tools.qube.ApplicationContext;
+import fish.payara.tools.qube.DeployApplication;
+import fish.payara.tools.qube.ListApplications;
+import fish.payara.tools.qube.StopApplication;
 import java.awt.Desktop;
 import java.io.File;
 import java.io.IOException;
@@ -63,7 +63,7 @@ import org.openqa.selenium.WebDriver;
 
 /**
  * DevMojo is a Maven Mojo for running the Payara application in development
- * mode. It allows for automatic deployment to Payara Cloud and live reloading
+ * mode. It allows for automatic deployment to Payara Qube and live reloading
  * of applications.
  *
  * @autor Gaurav Gupta
@@ -135,7 +135,7 @@ public class DevMojo extends BasePayaraMojo implements StartTask {
             liveReload = true;
         }
         if (autoDeploy && autoDeployHandler == null) {
-            autoDeployHandler = new CloudAutoDeployHandler(this, applicationPath);
+            autoDeployHandler = new QubeAutoDeployHandler(this, applicationPath);
             Thread devModeThread = new Thread(autoDeployHandler);
             devModeThread.setDaemon(true);
             devModeThread.start();

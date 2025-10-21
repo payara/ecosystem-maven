@@ -18,7 +18,7 @@ def testUsername = props.getProperty("username")
 def testPassword = props.getProperty("password")
 
 // Step 1c: Change CLIENT_ID in Configuration.java
-def pluginDir = new File("src/main/java/fish/payara/maven/plugins/cloud")
+def pluginDir = new File("src/main/java/fish/payara/maven/plugins/qube")
 def configFile = new File(pluginDir, "Configuration.java")
 def backupFile = new File(pluginDir, "Configuration.java.bak")
 
@@ -34,9 +34,9 @@ def pomFile = new File("pom.xml")
 def pomText = pomFile.text
 def versionMatcher = pomText =~ /<version>([^<]+)<\/version>/
 def pluginVersion = versionMatcher.find() ? versionMatcher.group(1) : "1.0.0-Alpha5-SNAPSHOT"
-println "Detected payara-cloud-maven-plugin version: $pluginVersion"
+println "Detected payara-qube-maven-plugin version: $pluginVersion"
 
-// Step 2: Compile payara-cloud-maven-plugin
+// Step 2: Compile payara-qube-maven-plugin
 def compileCmd = isWin ?
     ["cmd", "/c", "mvn", "clean", "install"] :
     ["mvn", "clean", "install"]
@@ -53,8 +53,8 @@ def copyDepsProc = copyDepsCmd.execute()
 copyDepsProc.consumeProcessOutput(System.out, System.err)
 if (copyDepsProc.waitFor() != 0) throw new RuntimeException("Failed to copy dependencies")
 
-// Step 3: Run mvn payara-cloud:login with -Dintractive=false to prevent opening the browser before playwright
-def loginCmd = isWin ? ["cmd", "/c", "mvn", "fish.payara.maven.plugins:payara-cloud-maven-plugin:${pluginVersion}:login", "-Dintractive=false"] : ["mvn", "fish.payara.maven.plugins:payara-cloud-maven-plugin:${pluginVersion}:login", "-Dintractive=false"]
+// Step 3: Run mvn payara-qube:login with -Dintractive=false to prevent opening the browser before playwright
+def loginCmd = isWin ? ["cmd", "/c", "mvn", "fish.payara.maven.plugins:payara-qube-maven-plugin:${pluginVersion}:login", "-Dintractive=false"] : ["mvn", "fish.payara.maven.plugins:payara-qube-maven-plugin:${pluginVersion}:login", "-Dintractive=false"]
 def loginProc = loginCmd.execute()
 def loginOutput = new StringBuffer()
 def loginError = new StringBuffer()
@@ -98,8 +98,8 @@ def loginExit = loginProc.waitFor()
 if (loginExit != 0) throw new RuntimeException("Login failed")
 
 // Step 5: Deploy clusterjsp.war
-def deployCmd = isWin ? ["cmd", "/c", "mvn", "fish.payara.maven.plugins:payara-cloud-maven-plugin:${pluginVersion}:deploy", "-DapplicationPath=src/test/resources/clusterjsp.war", "-DapplicationName=ClusterJspTest"] :
-    ["mvn", "fish.payara.maven.plugins:payara-cloud-maven-plugin:${pluginVersion}:deploy", "-DapplicationPath=src/test/resources/clusterjsp.war", "-DapplicationName=ClusterJspTest"]
+def deployCmd = isWin ? ["cmd", "/c", "mvn", "fish.payara.maven.plugins:payara-qube-maven-plugin:${pluginVersion}:deploy", "-DapplicationPath=src/test/resources/clusterjsp.war", "-DapplicationName=ClusterJspTest"] :
+    ["mvn", "fish.payara.maven.plugins:payara-qube-maven-plugin:${pluginVersion}:deploy", "-DapplicationPath=src/test/resources/clusterjsp.war", "-DapplicationName=ClusterJspTest"]
 def deployProc = deployCmd.execute()
 def deployOutput = new StringBuffer()
 def deployError = new StringBuffer()
@@ -123,13 +123,13 @@ playwrightClusterProc.consumeProcessOutput(System.out, System.err)
 if (playwrightClusterProc.waitFor() != 0) throw new RuntimeException("Playwright ClusterJsp failed")
 
 // Step 7: Stop the deployed application
-def stopCmd = isWin ? ["cmd", "/c", "mvn", "fish.payara.maven.plugins:payara-cloud-maven-plugin:${pluginVersion}:stop", "-DapplicationName=ClusterJspTest"] : ["mvn", "fish.payara.maven.plugins:payara-cloud-maven-plugin:${pluginVersion}:stop", "-DapplicationName=ClusterJspTest"]
+def stopCmd = isWin ? ["cmd", "/c", "mvn", "fish.payara.maven.plugins:payara-qube-maven-plugin:${pluginVersion}:stop", "-DapplicationName=ClusterJspTest"] : ["mvn", "fish.payara.maven.plugins:payara-qube-maven-plugin:${pluginVersion}:stop", "-DapplicationName=ClusterJspTest"]
 def stopProc = stopCmd.execute()
 stopProc.consumeProcessOutput(System.out, System.err)
 if (stopProc.waitFor() != 0) throw new RuntimeException("Stop failed")
 
 // Step 8: Undeploy clusterjsp.war
-def undeployCmd = isWin ? ["cmd", "/c", "mvn", "fish.payara.maven.plugins:payara-cloud-maven-plugin:${pluginVersion}:undeploy", "-DapplicationName=ClusterJspTest"] : ["mvn", "fish.payara.maven.plugins:payara-cloud-maven-plugin:${pluginVersion}:undeploy", "-DapplicationName=ClusterJspTest"]
+def undeployCmd = isWin ? ["cmd", "/c", "mvn", "fish.payara.maven.plugins:payara-qube-maven-plugin:${pluginVersion}:undeploy", "-DapplicationName=ClusterJspTest"] : ["mvn", "fish.payara.maven.plugins:payara-qube-maven-plugin:${pluginVersion}:undeploy", "-DapplicationName=ClusterJspTest"]
 def undeployProc = undeployCmd.execute()
 undeployProc.consumeProcessOutput(System.out, System.err)
 if (undeployProc.waitFor() != 0) throw new RuntimeException("Undeploy failed")
