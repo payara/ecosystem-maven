@@ -43,7 +43,7 @@
     <version>1.0.0-Alpha6-SNAPSHOT</version>
     <packaging>jar</packaging>
     <name>Payara Maven Plugins Common</name>
-    <description>The Payara Maven Plugins Common project provides shared utilities and components used across the Payara Micro and Payara Cloud Maven plugins.</description>
+    <description>The Payara Maven Plugins Common project provides shared utilities and components used across the Payara Micro and Payara Qube Maven plugins.</description>
     <url>https://github.com/payara/ecosystem-maven/tree/master/payara-maven-plugins-common</url>
     <properties>
         <java.compiler.source.version>1.8</java.compiler.source.version>
