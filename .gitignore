@@ -23,3 +23,6 @@ hs_err_pid*
 # Release plugin artefacts
 release.properties
 /payara-micro-maven-plugin/nbproject/
+
+# === Allow .war files inside test resources ===
+!payara-qube-maven-plugin/src/test/resources/**/*.war

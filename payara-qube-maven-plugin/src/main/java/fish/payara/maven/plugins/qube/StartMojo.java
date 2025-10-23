@@ -35,39 +35,31 @@
  *  only if the new code is made subject to such option by the copyright
  *  holder.
  */
-package fish.payara.maven.plugins.cloud;
+package fish.payara.maven.plugins.qube;
 
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
-import org.apache.maven.plugins.annotations.Parameter;
-import fish.payara.tools.cloud.ApplicationContext;
-import fish.payara.tools.cloud.DeployApplication;
-import java.io.File;
+import fish.payara.tools.qube.ApplicationContext;
+import fish.payara.tools.qube.StartApplication;
 
 /**
  * @author Gaurav Gupta
  */
-@Mojo(name = "deploy")
-public class DeployMojo extends BasePayaraMojo {
+@Mojo(name = "start")
+public class StartMojo extends BasePayaraMojo {
 
-
-    @Parameter(defaultValue = "${project.build.directory}/${project.build.finalName}.war", property = "applicationPath", required = true)
-    protected File applicationPath;
-    
-    protected ApplicationContext context;
-    
     @Override
     public void execute() throws MojoExecutionException {
-        if (context == null) {
-            context = getApplicationContextBuilder().build();
-        }
+        ApplicationContext context = getApplicationContextBuilder().build();
         try {
             if (skip) {
-                getLog().info("Deploy mojo execution is skipped");
+                getLog().info("Start mojo execution is skipped");
                 return;
             }
-            DeployApplication controller = new DeployApplication(context, applicationPath);
-            controller.call();
+            StartApplication controller = new StartApplication(context);
+            if(controller.call().isPresent()) {
+                getLog().info("Application started successfully.");
+            }
         }catch (Exception ex) {
             context.getOutput().error(ex.toString(), ex);
         }

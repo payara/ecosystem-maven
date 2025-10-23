@@ -35,31 +35,39 @@
  *  only if the new code is made subject to such option by the copyright
  *  holder.
  */
-package fish.payara.maven.plugins.cloud;
+package fish.payara.maven.plugins.qube;
 
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
-import fish.payara.tools.cloud.ApplicationContext;
-import fish.payara.tools.cloud.DeleteApplication;
+import org.apache.maven.plugins.annotations.Parameter;
+import fish.payara.tools.qube.ApplicationContext;
+import fish.payara.tools.qube.DeployApplication;
+import java.io.File;
 
 /**
  * @author Gaurav Gupta
  */
-@Mojo(name = "undeploy")
-public class UndeployMojo extends BasePayaraMojo {
+@Mojo(name = "deploy")
+public class DeployMojo extends BasePayaraMojo {
 
+
+    @Parameter(defaultValue = "${project.build.directory}/${project.build.finalName}.war", property = "applicationPath", required = true)
+    protected File applicationPath;
+    
+    protected ApplicationContext context;
+    
     @Override
     public void execute() throws MojoExecutionException {
-        ApplicationContext context = getApplicationContextBuilder().build();
+        if (context == null) {
+            context = getApplicationContextBuilder().build();
+        }
         try {
             if (skip) {
-                getLog().info("Undeploy mojo execution is skipped");
+                getLog().info("Deploy mojo execution is skipped");
                 return;
             }
-            DeleteApplication controller = new DeleteApplication(context);
-            if (controller.call() == 0) {
-                getLog().info("Application undeployed successfully.");
-            }
+            DeployApplication controller = new DeployApplication(context, applicationPath);
+            controller.call();
         }catch (Exception ex) {
             context.getOutput().error(ex.toString(), ex);
         }

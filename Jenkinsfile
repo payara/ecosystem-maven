@@ -48,7 +48,7 @@ pipeline {
                 }
             }
         }
-        stage('Build payara-cloud-maven-plugin') {
+        stage('Build payara-qube-maven-plugin') {
             environment {
                 JAVA_HOME = tool("zulu-11")
                 PATH = "${env.JAVA_HOME}/bin:${env.PATH}"
@@ -59,7 +59,7 @@ pipeline {
                 script {
                     sh '''
                     ls -lrt
-                    cd payara-cloud-maven-plugin
+                    cd payara-qube-maven-plugin
                     echo *#*#*#*#*#*#*#*#*#*#*#*#  Building SRC  *#*#*#*#*#*#*#*#*#*#*#*#*#*#*#
                     mvn clean install
                     echo *#*#*#*#*#*#*#*#*#*#*#*#    Built SRC   *#*#*#*#*#*#*#*#*#*#*#*#*#*#*#
@@ -67,7 +67,7 @@ pipeline {
                 }
             }
         }        
-        stage('Test payara-cloud-maven-plugin') {
+        stage('Test payara-qube-maven-plugin') {
             environment {
                 JAVA_HOME = tool("zulu-11")
                 PATH = "${env.JAVA_HOME}/bin:${env.PATH}"
@@ -76,10 +76,11 @@ pipeline {
             steps {
                 withCredentials([usernamePassword(credentialsId: "payara-cloud-dev-user", passwordVariable: 'password', usernameVariable: 'username')])  {
                 script {
+                    sh '''sudo apt-get update --allow-releaseinfo-change'''
                     sh '''echo *#*#*#*#*#*#*#*#*#*#*#*#  Add credentials to test-credentials.properties  *#*#*#*#*#*#*#*#*#*#*#*#*#*#*'''
-                    sh '''echo "username=$username\npassword=$password" > payara-cloud-maven-plugin/src/test/resources/test-credentials.properties'''         
+                    sh '''echo "username=$username\npassword=$password" > payara-qube-maven-plugin/src/test/resources/test-credentials.properties'''         
                     sh '''
-                    cd payara-cloud-maven-plugin
+                    cd payara-qube-maven-plugin
                     echo *#*#*#*#*#*#*#*#*#*#*#*#  Testing  *#*#*#*#*#*#*#*#*#*#*#*#*#*#*#
                     mvn clean install -Pe2e,install-deps
                     echo *#*#*#*#*#*#*#*#*#*#*#*#  Tested  *#*#*#*#*#*#*#*#*#*#*#*#*#*#*#

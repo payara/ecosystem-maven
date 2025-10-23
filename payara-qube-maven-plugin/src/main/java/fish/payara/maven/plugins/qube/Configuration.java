@@ -36,11 +36,11 @@
  * only if the new code is made subject to such option by the copyright
  * holder.
  */
-package fish.payara.maven.plugins.cloud;
+package fish.payara.maven.plugins.qube;
 
 public interface Configuration {
 
     String CLIENT_ID = "qeqSpqVZtHGbr0YU75Z9p87HMle0RA5a";
-    String CLIENT_NAME = "Payara Cloud Maven Plugin";
+    String CLIENT_NAME = "Payara Qube Maven Plugin";
 
 }

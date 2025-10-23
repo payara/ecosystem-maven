@@ -35,81 +35,40 @@
  *  only if the new code is made subject to such option by the copyright
  *  holder.
  */
-package fish.payara.maven.plugins.cloud;
+package fish.payara.maven.plugins.qube;
 
-import fish.payara.cloud.client.ClientOutput;
-import java.awt.Desktop;
-import java.io.IOException;
-import java.net.URI;
+import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugins.annotations.Mojo;
+import fish.payara.tools.qube.ApplicationContext;
+import fish.payara.tools.qube.ListNamespaces;
+import javax.ws.rs.core.Link;
 
 /**
- *
  * @author Gaurav Gupta
  */
-public class CloudMavenOutput implements ClientOutput {
+@Mojo(name = "list-namespaces")
+public class NamespaceMojo extends BasePayaraMojo {
 
-    private final org.apache.maven.plugin.logging.Log LOG;
-
-    private final boolean intractive;
-
-    public CloudMavenOutput(org.apache.maven.plugin.logging.Log log, boolean intractive) {
-        this.LOG = log;
-        this.intractive = intractive;
-    }
-    
-    @Override
-    public void warning(String message) {
-        LOG.warn(message);
-    }
+    protected ApplicationContext context;
 
     @Override
-    public void info(String message) {
-        LOG.info(message);
-    }
-
-    @Override
-    public void error(String message, Throwable cause) {
-        LOG.error(message, cause);
-    }
-
-    @Override
-    public void started(Object processId, Runnable cancellation) {
-        LOG.debug("Started: " + processId);
-    }
-
-    @Override
-    public void progress(Object processId, String message) {
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Progress: " + processId + " " + message);
-        } else {
-            LOG.info(message);
+    public void execute() throws MojoExecutionException {
+        if (context == null) {
+            context = getApplicationContextBuilder().build();
         }
-    }
-
-    @Override
-    public void finished(Object processId) {
-       LOG.debug("Finished: " + processId);
-    }
-
-    @Override
-    public void openUrl(URI uri) {
-        LOG.info("Opening URL: " + uri);
-        if (intractive) {
-            try {
-                if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
-                    Desktop.getDesktop().browse(uri);
-                } else {
-                    LOG.warn("Desktop browsing is not supported on this platform.");
-                }
-            } catch (IOException e) {
-                LOG.error("Failed to open URL: " + uri, e);
+        try {
+            if (skip) {
+                getLog().info("List Namespaces mojo execution is skipped");
+                return;
             }
+            ListNamespaces controller = new ListNamespaces(context);
+            context.getOutput().info("Namespaces:");
+            for (Link link : controller.call()) {
+                context.getOutput().info(link.getTitle());
+            }
+        } catch (Exception ex) {
+            context.getOutput().error(ex.toString(), ex);
         }
-    }
-
-    @Override
-    public void failure(String message, Throwable cause) {
-        LOG.error("Failure: " + message, cause);
     }
 
 }
