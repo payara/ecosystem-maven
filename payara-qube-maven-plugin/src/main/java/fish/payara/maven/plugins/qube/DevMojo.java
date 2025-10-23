@@ -66,7 +66,7 @@ import org.openqa.selenium.WebDriver;
  * mode. It allows for automatic deployment to Payara Qube and live reloading
  * of applications.
  *
- * @autor Gaurav Gupta
+ * @author Gaurav Gupta
  */
 @Mojo(name = "dev")
 public class DevMojo extends BasePayaraMojo implements StartTask {
