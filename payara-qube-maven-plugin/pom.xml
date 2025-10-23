@@ -40,7 +40,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>fish.payara.maven.plugins</groupId>
     <artifactId>payara-qube-maven-plugin</artifactId>
-    <version>2.0.0</version>
+    <version>2.1.0-SNAPSHOT</version>
     <packaging>maven-plugin</packaging>
     <name>Payara Qube Maven Plugin</name>
     <description>Payara Qube Maven Plugin that deploys Jakarta EE (formerly Java EE) and MicroProfile applications to Payara Qube, an all-in-one platform as a service (PaaS) solution</description>
@@ -188,7 +188,7 @@
         <dependency>
             <groupId>fish.payara.qube</groupId>
             <artifactId>qube-api</artifactId>
-            <version>2.0.0</version>
+            <version>2.1.0-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>jakarta.platform</groupId>
