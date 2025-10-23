@@ -45,6 +45,7 @@ import fish.payara.maven.plugins.AutoDeployHandler;
 import fish.payara.maven.plugins.PropertiesUtils;
 import fish.payara.maven.plugins.StartTask;
 import fish.payara.maven.plugins.WebDriverFactory;
+import fish.payara.qube.client.SelectionException;
 import fish.payara.tools.qube.ApplicationContext;
 import fish.payara.tools.qube.DeployApplication;
 import fish.payara.tools.qube.ListApplications;
@@ -204,6 +205,16 @@ public class DevMojo extends BasePayaraMojo implements StartTask {
             } else {
                 context.getOutput().warning("No application resource present.");
             }
+        } catch (SelectionException ex) {
+            String msg = ex.getMessage();
+            if (msg != null && msg.contains("https://api.payara.cloud/entity/namespace")) {
+                String userMsg = String.format(
+                        "Namespace '%s' is ambiguous or duplicated. Ensure the namespace name matches exactly (case-sensitive) in Payara Qube.",
+                        namespaceName
+                );
+                context.getOutput().error(userMsg, ex);
+            }
+            throw ex;
         } catch (Exception ex) {
             context.getOutput().error("Deployment failed due to an unexpected exception.", ex);
         }
