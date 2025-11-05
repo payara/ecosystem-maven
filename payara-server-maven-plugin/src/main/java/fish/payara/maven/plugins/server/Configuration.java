@@ -51,6 +51,8 @@ public interface Configuration {
 
     String SERVER_THREAD_NAME = "PayaraServerThread";
     String SERVER_READY_MESSAGE = "ready in";
+    
+    String ASADMIN = "asadmin";
 
     // Log parser
     String INSTANCE_CONFIGURATION = " \"Instance Configuration\": {";
