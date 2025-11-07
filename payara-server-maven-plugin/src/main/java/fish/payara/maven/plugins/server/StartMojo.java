@@ -619,10 +619,14 @@ public class StartMojo extends ServerMojo implements StartTask {
                         break;
                     }
                     try {
-                        if (userQuery.startsWith("asadmin")) {
+                        if (userQuery.startsWith(ASADMIN)) {
                             if (serverManager instanceof LocalInstanceManager) {
-                                String repsonse = ((LocalInstanceManager) serverManager).runAsadminCommand(userQuery.substring(8));
-                                getLog().info(repsonse);
+                                if (userQuery.length() > ASADMIN.length() + 1) {
+                                    String repsonse = ((LocalInstanceManager) serverManager).runAsadminCommand(userQuery.substring(ASADMIN.length() + 1));
+                                    getLog().info(repsonse);
+                                } else {
+                                    getLog().warn("Invalid asadmin command input: " + userQuery);
+                                }
                             }
                         } else if (userQuery.equals("deploy")) {
                             deployApplication();
