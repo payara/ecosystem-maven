@@ -16,6 +16,7 @@ hs_err_pid*
 # VS Code / Eclipse artefacts
 .settings/
 .vscode/
+.idea/
 .classpath
 .factorypath
 .project
