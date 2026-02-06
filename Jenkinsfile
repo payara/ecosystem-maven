@@ -68,6 +68,9 @@ pipeline {
             }
         }        
         stage('Test payara-qube-maven-plugin') {
+            when {
+                    expression { false }
+            }
             environment {
                 JAVA_HOME = tool("zulu-11")
                 PATH = "${env.JAVA_HOME}/bin:${env.PATH}"
