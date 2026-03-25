@@ -80,7 +80,7 @@ abstract class BasePayaraMojo extends AbstractMojo {
         if (System.getProperty("uberJarClassifier") != null) {
             uberJarClassifier = System.getProperty("uberJarClassifier");
         }
-        if (StringUtils.isNotEmpty(uberJarClassifier)) {
+        if (StringUtils.isEmpty(uberJarClassifier)) {
             uberJarClassifier = Configuration.MICROBUNDLE_EXTENSION;
         }
         if (System.getProperty("skip") != null) {
