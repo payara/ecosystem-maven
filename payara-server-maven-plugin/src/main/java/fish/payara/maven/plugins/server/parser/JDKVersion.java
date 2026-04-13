@@ -43,8 +43,12 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.Optional;
+import java.util.regex.Pattern;
 
 public class JDKVersion {
+
+    private static final Pattern CRAC_OPTION_PATTERN = Pattern.compile("^-XX:[+-]?CRaC.*");
 
     private int major;
     private Integer minor;
@@ -270,20 +274,30 @@ public class JDKVersion {
         return "";
     }
 
-    public static boolean isCorrectJDK(JDKVersion jdkVersion, String vendor, JDKVersion minVersion, JDKVersion maxVersion) {
+    public static boolean isCorrectJDK(JDKVersion jdkVersion, JvmOption jvmOption, String javaHome) {
         boolean correctJDK = true;
-        if (vendor != null) {
+        if (jvmOption.getVendor() != null) {
             String jdkVendor = jdkVersion.getVendor();
-            if (jdkVendor != null && !jdkVendor.contains(vendor)) {
+            if (jdkVendor != null && !jdkVendor.contains(jvmOption.getVendor())) {
                 correctJDK = false;
             }
         }
-        if (correctJDK && minVersion != null) {
-            correctJDK = jdkVersion.ge(minVersion);
+        if (correctJDK && jvmOption.getMinVersion() != null) {
+            correctJDK = jdkVersion.ge(jvmOption.getMinVersion());
         }
-        if (correctJDK && maxVersion != null) {
-            correctJDK = jdkVersion.le(maxVersion);
+        if (correctJDK && jvmOption.getMaxVersion() != null) {
+            correctJDK = jdkVersion.le(jvmOption.getMaxVersion());
+        }
+        if (correctJDK && jvmOption.getOption() != null && CRAC_OPTION_PATTERN.matcher(jvmOption.getOption()).matches()) {
+            correctJDK = isCRaCSupported(javaHome);
         }
         return correctJDK;
+    }
+
+    private static boolean isCRaCSupported(String javaHome) {
+        return Optional.ofNullable(javaHome)
+                .map(home -> new File(home, "lib/criu"))
+                .map(File::exists)
+                .orElse(false);
     }
 }

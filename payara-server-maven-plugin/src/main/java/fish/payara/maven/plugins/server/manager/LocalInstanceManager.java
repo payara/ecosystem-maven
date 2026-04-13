@@ -115,7 +115,7 @@ public class LocalInstanceManager extends InstanceManager<PayaraServerLocalInsta
         
         List<String> optList = new ArrayList<>();
         for (JvmOption jvmOption : jvmConfigReader.getJvmOptions()) {
-            if (JDKVersion.isCorrectJDK(javaVersion, jvmOption.getVendor(), jvmOption.getMinVersion(), jvmOption.getMaxVersion())) {
+            if (JDKVersion.isCorrectJDK(javaVersion, jvmOption, javaHome)) {
                 optList.add(jvmOption.getOption());
             }
         }
