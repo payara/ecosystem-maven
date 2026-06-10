@@ -40,7 +40,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>fish.payara.maven.plugins</groupId>
     <artifactId>payara-server-maven-plugin</artifactId>
-    <version>1.1.0</version>
+    <version>1.2.0-SNAPSHOT</version>
     <packaging>maven-plugin</packaging>
     <name>Payara Server Maven Plugin</name>
     <description>Payara Server Maven Plugin that incorporates Payara Server with the produced artifact</description>
@@ -218,7 +218,12 @@
         <dependency>
             <groupId>fish.payara.tools</groupId>
             <artifactId>payara-ai-agent</artifactId>
-            <version>1.0.0-Alpha2</version>
+            <version>1.0.0-Alpha3</version>
+        </dependency>
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-embeddings-all-minilm-l6-v2</artifactId>
+            <version>1.14.1-beta24</version>
         </dependency>
     </dependencies>
 

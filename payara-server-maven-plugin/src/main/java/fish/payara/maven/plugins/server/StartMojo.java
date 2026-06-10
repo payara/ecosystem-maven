@@ -67,10 +67,7 @@ import java.util.concurrent.TimeUnit;
 import static fish.payara.maven.plugins.server.Configuration.*;
 import fish.payara.maven.plugins.server.manager.PayaraServerInstance;
 import static fish.payara.maven.plugins.server.manager.PayaraServerLocalInstance.HTTP;
-import fish.payara.maven.plugins.server.response.JsonResponse;
-import fish.payara.maven.plugins.server.response.Response;
 import fish.payara.maven.plugins.server.utils.TempDirectoryResolver;
-import fish.payara.tools.ai.JMXFetchSpecificMBean;
 import fish.payara.tools.ai.lang.PreferencesManager;
 import java.awt.Desktop;
 import java.net.URI;
@@ -85,8 +82,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.project.MavenProject;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.openqa.selenium.WebDriver;
 
 /**
@@ -211,7 +206,6 @@ public class StartMojo extends ServerMojo implements StartTask {
     private String appPath, projectName;
     private PayaraServerInstance instance;
     private PayaraAIAgent payaraAIAgent;
-    private boolean monitoringEnabled;
 
     StartMojo() {
         threadGroup = new ThreadGroup(SERVER_THREAD_NAME);
@@ -255,15 +249,20 @@ public class StartMojo extends ServerMojo implements StartTask {
             autoDeployHandler = null;
         }
         
-        PreferencesManager pm = PreferencesManager.getInstance();
-        if (aiAgent && (pm.getApiKey() != null || pm.getProviderLocation() != null)) {
-            CompletableFuture.runAsync(() -> {
-                try {
-                    payaraAIAgent = new PayaraAIAgent();
-                } catch (Exception ex) {
-                    getLog().error(ex);
-                }
-            });
+        if (aiAgent) {
+            if (domainName != null && !domainName.isBlank()) {
+                System.setProperty("payara.ai.domain.name", domainName);
+            }
+            if (payaraServerVersion != null && !payaraServerVersion.isBlank()) {
+                System.setProperty("payara.ai.payara.version", payaraServerVersion);
+            }
+            String host = (hostName != null && !hostName.isBlank()) ? hostName : "localhost";
+            if (adminPort != null && !adminPort.isBlank()) {
+                System.setProperty("payara.ai.admin.url", "http://" + host + ":" + adminPort);
+            }
+            if (httpPort != null && !httpPort.isBlank()) {
+                System.setProperty("payara.ai.http.url", "http://" + host + ":" + httpPort);
+            }
         }
 
         if (skip) {
@@ -346,6 +345,17 @@ public class StartMojo extends ServerMojo implements StartTask {
             } else {
                 try {
                     final String path = decideOnWhichServerToUse();
+                    if (aiAgent) {
+                        String dn = (domainName != null && !domainName.isBlank()) ? domainName : "domain1";
+                        boolean isWin = System.getProperty("os.name", "").toLowerCase().contains("win");
+                        System.setProperty("payara.ai.home", path);
+                        System.setProperty("payara.ai.domain.xml.path",
+                                java.nio.file.Path.of(path, "glassfish", "domains", dn, "config", "domain.xml").toString());
+                        System.setProperty("payara.ai.server.log.path",
+                                java.nio.file.Path.of(path, "glassfish", "domains", dn, "logs", "server.log").toString());
+                        System.setProperty("payara.ai.asadmin.path",
+                                java.nio.file.Path.of(path, "bin", isWin ? "asadmin.bat" : "asadmin").toString());
+                    }
                     instance = new PayaraServerLocalInstance(javaHome, path, domainName);
                     instance.setAdminUser(adminUser);
                     instance.setAdminPassword(getAdminPassword());
@@ -388,6 +398,16 @@ public class StartMojo extends ServerMojo implements StartTask {
                     projectName = mavenProject.getName().replaceAll("\\s+", "");
                     deployApplication();
                     openApp();
+                    PreferencesManager pm = PreferencesManager.getInstance();
+                    if (aiAgent && (pm.getApiKey() != null || pm.getProviderLocation() != null)) {
+                        CompletableFuture.runAsync(() -> {
+                            try {
+                                payaraAIAgent = new PayaraAIAgent();
+                            } catch (Exception ex) {
+                                getLog().error(ex);
+                            }
+                        });
+                    }
                     watchAsadminCommand();
                     int exitCode = serverProcess.waitFor();
                     if (exitCode != 0) { // && !autoDeploy
@@ -608,6 +628,8 @@ public class StartMojo extends ServerMojo implements StartTask {
                 }));
 
                 while (!Thread.currentThread().isInterrupted() && !"exit".equals(userQuery)) {
+                    System.out.print("\n\033[44;97m payara \033[0m ");
+                    System.out.flush();
                     try {
                         if (scanner.hasNextLine()) {
                             userQuery = scanner.nextLine();
@@ -638,40 +660,11 @@ public class StartMojo extends ServerMojo implements StartTask {
                             killServerProcess().start();
                             break;
                         } else if (!userQuery.trim().isEmpty()) {
-                            if(payaraAIAgent == null) {
+                            if (payaraAIAgent == null) {
                                 getLog().error("Payara AI Agent not initialized.");
-                            }
-                            String response = payaraAIAgent.query(userQuery, projectName).trim();
-                            if (payaraAIAgent.isAsAdminCommand(response)) {
-                                getLog().info(MarkdownToCmdHighlighter.convertMdToAnsi(response));
-                                if (payaraAIAgent.isReadonlyCommand(response)) {
-                                    if (serverManager instanceof LocalInstanceManager) {
-                                        String cmdresponse = ((LocalInstanceManager) serverManager).runAsadminCommand(payaraAIAgent.getAsAdminCommand(response));
-                                        String finalRes = payaraAIAgent.processAsadmin(userQuery, response + " \n" + cmdresponse);
-                                        getLog().info(MarkdownToCmdHighlighter.convertMdToAnsi(finalRes));
-                                    }
-                                }
-                            } else if (payaraAIAgent.isRestEndpoint(response)) {
-                                enableMonitoring();
-                                callEndpoint(userQuery, response);
-                            } else if (payaraAIAgent.isJmxMbean(response)) {
-                                StringBuilder sb = new StringBuilder();
-                                for (String mbean : payaraAIAgent.getJmxMbean(response)) {
-                                    sb.append(mbean).append('\n');
-                                    String res = JMXFetchSpecificMBean.execute(mbean);
-                                    sb.append(res).append("\n=================\n");
-                                }
-                                String finalRes = payaraAIAgent.processJmxMbeansData(userQuery, sb.toString());
-                                getLog().info(MarkdownToCmdHighlighter.convertMdToAnsi(finalRes));
-                            } else if (payaraAIAgent.isServerLog(response)
-                                    && instance instanceof PayaraServerLocalInstance) {
-                                String finalRes = payaraAIAgent.processServerLogData(userQuery, ((PayaraServerLocalInstance)instance).readServerLog());
-                                getLog().info(MarkdownToCmdHighlighter.convertMdToAnsi(finalRes));
-                            } else if (payaraAIAgent.isDomainXml(response)) {
-                                String finalRes = payaraAIAgent.processServerLogData(userQuery, ((PayaraServerLocalInstance)instance).readDomainXml());
-                                getLog().info(MarkdownToCmdHighlighter.convertMdToAnsi(finalRes));
                             } else {
-                                getLog().info(response);
+                                String response = payaraAIAgent.chat(userQuery, projectName);
+                                System.out.println(MarkdownToCmdHighlighter.convertMdToAnsi(response));
                             }
                         }
                     } catch (Exception ex) {
@@ -683,66 +676,6 @@ public class StartMojo extends ServerMojo implements StartTask {
 
         thread.setDaemon(false);
         thread.start();
-    }
-
-    private void callEndpoint(String userQuery, String response) throws IOException {
-        StringBuilder sb = new StringBuilder();
-        for (String endpoint : payaraAIAgent.getRestEndpoint(response)) {
-            endpoint = endpoint.replace("${appname}", projectName);
-            sb.append(endpoint).append('\n');
-            Response res = serverManager.runEndpoint(endpoint);
-            if (res != null) {
-                String endpointResponse = ((JsonResponse) res).getJsonBody().getJSONObject("extraProperties").toString();
-                sb.append(endpointResponse).append("\n=================\n");
-            }
-        }
-        String finalRes = payaraAIAgent.processMonitoringData(userQuery, sb.toString());
-        callChildEndpoint(userQuery, finalRes);
-    }
-    
-    private void callChildEndpoint(String userQuery, String response) throws IOException {
-        try {
-            if (response.startsWith("```json")) {
-                response = response.substring(7, response.length() - 3);
-            } else if (response.startsWith("```")) {
-                response = response.substring(3, response.length() - 3);
-            }
-            StringBuilder sb = new StringBuilder();
-            JSONObject jsonObject = new JSONObject(response);
-            if (jsonObject.has("response")) {
-                getLog().info(MarkdownToCmdHighlighter.convertMdToAnsi(jsonObject.getString("response")));
-            }
-            if (jsonObject.has("childResource")
-                    && jsonObject.getJSONArray("childResource").length() > 0) {
-                for (int i = 0; i < jsonObject.getJSONArray("childResource").length(); i++) {
-                    String endpoint = jsonObject.getJSONArray("childResource").getString(i);
-                    endpoint = endpoint.replace("${appname}", projectName);
-                    sb.append(endpoint).append('\n');
-                    Response res = serverManager.runEndpoint(endpoint);
-                    if (res != null) {
-                        String endpointResponse = ((JsonResponse) res).getJsonBody().getJSONObject("extraProperties").toString();
-                        sb.append(endpointResponse).append("\n=================\n");
-                    }
-                }
-                String finalRes = payaraAIAgent.processMonitoringData(userQuery, sb.toString());
-                callChildEndpoint(userQuery, finalRes);
-            }
-        } catch (JSONException e) {
-            getLog().info(MarkdownToCmdHighlighter.convertMdToAnsi(response));
-        }
-    }
-    private void enableMonitoring() throws Exception {
-        if (!monitoringEnabled) {
-            List<String> enableMonitoring = new ArrayList<>(List.of(
-                    "set-monitoring-level --level=HIGH:HIGH:HIGH:HIGH:HIGH:HIGH:HIGH:HIGH:HIGH:HIGH:HIGH:HIGH:HIGH:HIGH:HIGH:HIGH --module=jvm:transactionService:connectorService:jmsService:security:webContainer:jersey:webServicesContainer:jpa:jdbcConnectionPool:threadPool:ejbContainer:orb:connectorConnectionPool:deployment:httpService --target=server-config",
-                    "set-monitoring-service-configuration --mbeanEnabled=true --monitoringEnabled=true --dtraceEnabled=false --target=server-config"
-            ));
-            for (String command : enableMonitoring) {
-                String response = ((LocalInstanceManager) serverManager).runAsadminCommand(command);
-                getLog().info(response);
-            }
-            monitoringEnabled = true;
-        }
     }
 
     private Thread streamRemoteServerLog() {
