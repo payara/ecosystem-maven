@@ -68,4 +68,8 @@ public interface Configuration {
     String APP_DEPLOYMENT_FAILED = "Exception while loading the app";
     String APP_DEPLOYMENT_FAILED_MESSAGE = "Failed reloading";
 
+    // Markers that bracket AI responses in stdout so IDE tooling can parse them.
+    String AI_RESPONSE_START = "%%PAYARA-AI-START%%";
+    String AI_RESPONSE_END   = "%%PAYARA-AI-END%%";
+
 }

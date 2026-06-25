@@ -130,6 +130,12 @@
                             <goal>descriptor</goal>
                         </goals>
                     </execution>
+                    <execution>
+                        <id>help-mojo</id>
+                        <goals>
+                            <goal>helpmojo</goal>
+                        </goals>
+                    </execution>
                 </executions>
             </plugin>
             <plugin>
@@ -218,7 +224,15 @@
         <dependency>
             <groupId>fish.payara.tools</groupId>
             <artifactId>payara-ai-agent</artifactId>
-            <version>1.0.0-Alpha3</version>
+            <version>1.0.0-Alpha4-SNAPSHOT</version>
+        </dependency>
+        <!-- Explicit langchain4j dep ensures the plugin classrealm has langchain4j
+             classes as a top-level URL so Plexus can resolve them without going
+             through the shaded payara-ai-agent jar. -->
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j</artifactId>
+            <version>1.14.1</version>
         </dependency>
         <dependency>
             <groupId>dev.langchain4j</groupId>

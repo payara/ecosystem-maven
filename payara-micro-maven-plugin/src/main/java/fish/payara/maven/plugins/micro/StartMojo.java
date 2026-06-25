@@ -467,7 +467,10 @@ public class StartMojo extends BasePayaraMojo implements StartTask {
             }
             if (driver != null) {
                 try {
-                    PropertiesUtils.saveProperties(payaraMicroURL, driver.getCurrentUrl());
+                    String currentUrl = driver.getCurrentUrl();
+                    if (currentUrl != null && !currentUrl.startsWith("data:")) {
+                        PropertiesUtils.saveProperties(payaraMicroURL, currentUrl);
+                    }
                 } catch (Throwable t) {
                     getLog().debug(t);
                 } finally {
