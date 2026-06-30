@@ -415,7 +415,7 @@ public class StartMojo extends BasePayaraMojo implements StartTask {
                 }
 
                 int exitCode = microProcess.waitFor();
-                if (exitCode != 0 && !autoDeploy) {
+                if (exitCode != 0) { // && !autoDeploy
                     throw new MojoFailureException(ERROR_MESSAGE);
                 }
             } catch (InterruptedException ignored) {
