@@ -224,7 +224,7 @@
         <dependency>
             <groupId>fish.payara.tools</groupId>
             <artifactId>payara-ai-agent</artifactId>
-            <version>1.0.0-Alpha4-SNAPSHOT</version>
+            <version>1.0.0-Alpha4</version>
         </dependency>
         <!-- Explicit langchain4j dep ensures the plugin classrealm has langchain4j
              classes as a top-level URL so Plexus can resolve them without going
