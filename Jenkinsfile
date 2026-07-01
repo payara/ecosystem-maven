@@ -79,13 +79,12 @@ pipeline {
             steps {
                 withCredentials([usernamePassword(credentialsId: "payara-cloud-dev-user", passwordVariable: 'password', usernameVariable: 'username')])  {
                 script {
-                    sh '''sudo apt-get update --allow-releaseinfo-change'''
                     sh '''echo *#*#*#*#*#*#*#*#*#*#*#*#  Add credentials to test-credentials.properties  *#*#*#*#*#*#*#*#*#*#*#*#*#*#*'''
                     sh '''echo "username=$username\npassword=$password" > payara-qube-maven-plugin/src/test/resources/test-credentials.properties'''         
                     sh '''
                     cd payara-qube-maven-plugin
                     echo *#*#*#*#*#*#*#*#*#*#*#*#  Testing  *#*#*#*#*#*#*#*#*#*#*#*#*#*#*#
-                    mvn clean install -Pe2e,install-deps
+                    mvn clean install -Pe2e
                     echo *#*#*#*#*#*#*#*#*#*#*#*#  Tested  *#*#*#*#*#*#*#*#*#*#*#*#*#*#*#
                     '''
                     }
