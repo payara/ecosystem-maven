@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2025 Payara Foundation and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025-2026 Payara Foundation and/or its affiliates. All rights reserved.
  *
  * The contents of this file are subject to the terms of either the GNU
  * General Public License Version 2 only ("GPL") or the Common Development
@@ -94,6 +94,8 @@ public class StartMojo extends ServerMojo implements StartTask {
 
     private static final String ERROR_MESSAGE = "Errors occurred while executing payara-server.";
     private static final String REMOTE_INSTANCE_NOT_RUNNING_MESSAGE = "The remote Payara server instance is not running.";
+    private static final String INPUT_PROMPT = "\033[44;97m payara \033[0m ";
+    private volatile boolean waitingForInput = false;
 
     /**
      * Runs Payara server as a daemon (background process).
@@ -167,6 +169,15 @@ public class StartMojo extends ServerMojo implements StartTask {
     protected Boolean aiAgent;
 
     /**
+     * When true, AI responses are wrapped with {@value Configuration#AI_RESPONSE_START} /
+     * {@value Configuration#AI_RESPONSE_END} markers in stdout so that IDE tooling
+     * (e.g. the Payara VS Code extension) can extract them from the process output stream.
+     * Set automatically by the VS Code extension; leave unset for plain terminal use.
+     */
+    @Parameter(property = "payara.ai.chat.markers", defaultValue = "${env.PAYARA_AI_CHAT_MARKERS}")
+    protected Boolean aiChatMarkers;
+
+    /**
      * Additional command-line options for Payara server.
      */
     @Parameter
@@ -206,6 +217,7 @@ public class StartMojo extends ServerMojo implements StartTask {
     private String appPath, projectName;
     private PayaraServerInstance instance;
     private PayaraAIAgent payaraAIAgent;
+    private CompletableFuture<Void> agentInitFuture;
 
     StartMojo() {
         threadGroup = new ThreadGroup(SERVER_THREAD_NAME);
@@ -262,6 +274,21 @@ public class StartMojo extends ServerMojo implements StartTask {
             }
             if (httpPort != null && !httpPort.isBlank()) {
                 System.setProperty("payara.ai.http.url", "http://" + host + ":" + httpPort);
+            }
+            if (mavenProject != null && mavenProject.getBasedir() != null) {
+                System.setProperty("payara.ai.project.root", mavenProject.getBasedir().getAbsolutePath());
+                if (mavenProject.getGroupId() != null) {
+                    System.setProperty("payara.ai.project.groupId", mavenProject.getGroupId());
+                }
+                if (mavenProject.getArtifactId() != null) {
+                    System.setProperty("payara.ai.project.artifactId", mavenProject.getArtifactId());
+                }
+                if (mavenProject.getBuild() != null && mavenProject.getBuild().getSourceDirectory() != null) {
+                    System.setProperty("payara.ai.project.sourceDir", mavenProject.getBuild().getSourceDirectory());
+                }
+                if (mavenProject.getName() != null && !mavenProject.getName().isBlank()) {
+                    System.setProperty("payara.ai.project.displayName", mavenProject.getName());
+                }
             }
         }
 
@@ -400,7 +427,7 @@ public class StartMojo extends ServerMojo implements StartTask {
                     openApp();
                     PreferencesManager pm = PreferencesManager.getInstance();
                     if (aiAgent && (pm.getApiKey() != null || pm.getProviderLocation() != null)) {
-                        CompletableFuture.runAsync(() -> {
+                        agentInitFuture = CompletableFuture.runAsync(() -> {
                             try {
                                 payaraAIAgent = new PayaraAIAgent();
                             } catch (Exception ex) {
@@ -472,7 +499,10 @@ public class StartMojo extends ServerMojo implements StartTask {
             }
             if (driver != null) {
                 try {
-                    PropertiesUtils.saveProperties(applicationURL, driver.getCurrentUrl());
+                    String currentUrl = driver.getCurrentUrl();
+                    if (currentUrl != null && !currentUrl.startsWith("data:")) {
+                        PropertiesUtils.saveProperties(applicationURL, currentUrl);
+                    }
                 } catch (Throwable t) {
                     getLog().debug(t);
                 } finally {
@@ -628,16 +658,21 @@ public class StartMojo extends ServerMojo implements StartTask {
                 }));
 
                 while (!Thread.currentThread().isInterrupted() && !"exit".equals(userQuery)) {
-                    System.out.print("\n\033[44;97m payara \033[0m ");
-                    System.out.flush();
+                    synchronized (System.out) {
+                        System.out.print("\n" + INPUT_PROMPT);
+                        System.out.flush();
+                        waitingForInput = true;
+                    }
                     try {
                         if (scanner.hasNextLine()) {
-                            userQuery = scanner.nextLine();
+                            userQuery = applyBackspaces(scanner.nextLine());
+                            waitingForInput = false;
                         } else {
                             Thread.currentThread().interrupt();
                             break; // Exit if input stream closes
                         }
                     } catch (java.util.NoSuchElementException nsee) {
+                        waitingForInput = false;
                         break;
                     }
                     try {
@@ -655,16 +690,32 @@ public class StartMojo extends ServerMojo implements StartTask {
                         } else if (userQuery.equals("undeploy")) {
                             serverManager.undeployApplication(projectName, instanceName);
                         } else if (userQuery.equals("exit")) {
-                            Thread.currentThread().interrupt();
                             getLog().info("watchAsadminCommand exit");
                             killServerProcess().start();
+                            threadGroup.interrupt();
                             break;
                         } else if (!userQuery.trim().isEmpty()) {
+                            if (payaraAIAgent == null && agentInitFuture != null && !agentInitFuture.isDone()) {
+                                System.out.println("AI agent is still initializing, please wait...");
+                                try {
+                                    agentInitFuture.get(2, TimeUnit.MINUTES);
+                                } catch (java.util.concurrent.TimeoutException te) {
+                                    getLog().error("AI agent initialization timed out.");
+                                } catch (Exception ie) {
+                                    getLog().error("AI agent initialization failed: " + ie.getMessage());
+                                }
+                            }
                             if (payaraAIAgent == null) {
                                 getLog().error("Payara AI Agent not initialized.");
                             } else {
-                                String response = payaraAIAgent.chat(userQuery, projectName);
-                                System.out.println(MarkdownToCmdHighlighter.convertMdToAnsi(response));
+                                String response = payaraAIAgent.query(userQuery, projectName);
+                                if (Boolean.TRUE.equals(aiChatMarkers)) {
+                                    System.out.println(AI_RESPONSE_START);
+                                    System.out.println(MarkdownToCmdHighlighter.convertMdToAnsi(response));
+                                    System.out.println(AI_RESPONSE_END);
+                                } else {
+                                    System.out.println(MarkdownToCmdHighlighter.convertMdToAnsi(response));
+                                }
                             }
                         }
                     } catch (Exception ex) {
@@ -678,13 +729,40 @@ public class StartMojo extends ServerMojo implements StartTask {
         thread.start();
     }
 
+    private String applyBackspaces(String raw) {
+        StringBuilder sb = new StringBuilder();
+        for (char c : raw.toCharArray()) {
+            if (c == '\b' || c == '') {
+                if (sb.length() > 0) {
+                    sb.deleteCharAt(sb.length() - 1);
+                }
+            } else {
+                sb.append(c);
+            }
+        }
+        return sb.toString();
+    }
+
+    private void printLog(String line) {
+        synchronized (System.out) {
+            if (waitingForInput) {
+                System.out.print("\r\033[K");
+            }
+            System.out.println(line);
+            if (waitingForInput) {
+                System.out.print(INPUT_PROMPT);
+            }
+            System.out.flush();
+        }
+    }
+
     private Thread streamRemoteServerLog() {
         final Thread thread = new Thread(threadGroup, () -> {
             try {
                 while (true) {
                     String log = ((RemoteInstanceManager) serverManager).fetchLogs(instanceName);
                     if (log != null && !log.isEmpty()) {
-                        System.out.println(log);
+                        printLog(log);
                     }
                     Thread.sleep(2000);
                 }
@@ -706,7 +784,7 @@ public class StartMojo extends ServerMojo implements StartTask {
                     String line;
                     while (true) {
                         while ((line = raf.readLine()) != null) {
-                            System.out.println(line);
+                            printLog(line);
                         }
                         Thread.sleep(1000);
                     }
@@ -733,7 +811,11 @@ public class StartMojo extends ServerMojo implements StartTask {
                 br = new BufferedReader(new InputStreamReader(inputStream));
                 while ((line = br.readLine()) != null) {
                     sb.append(line);
-                    printStream.println(line);
+                    if (printStream == System.out) {
+                        printLog(line);
+                    } else {
+                        printStream.println(line);
+                    }
                     if (!immediateExit && sb.toString().contains(SERVER_READY_MESSAGE)) {
                         serverProcessorThread.interrupt();
                         br.close();
