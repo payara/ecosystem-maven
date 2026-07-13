@@ -168,9 +168,10 @@ public abstract class AutoDeployHandler implements Runnable {
                 }
             }));
             // Create a set of paths to ignore that are directories
-            Set<Path> ignoredDirectories = Set.of(
-                    buildPath, ideaPath, eclipsePath, vscodePath
-            );
+            Path testSourceDirectory = project.getBasedir().toPath().resolve(SRC_DIR).resolve(TEST_DIR);
+            Set<Path> ignoredDirectories = start.isIgnoreTestChanges()
+                    ? Set.of(buildPath, ideaPath, eclipsePath, vscodePath, testSourceDirectory)
+                    : Set.of(buildPath, ideaPath, eclipsePath, vscodePath);
 
             // Create a set of specific files to ignore
             Set<Path> ignoredFiles = Set.of(
