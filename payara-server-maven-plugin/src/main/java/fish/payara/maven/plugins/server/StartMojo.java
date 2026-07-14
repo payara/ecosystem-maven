@@ -116,6 +116,12 @@ public class StartMojo extends ServerMojo implements StartTask {
     protected Boolean autoDeploy;
 
     /**
+     * When true, changes in src/test are ignored and do not trigger a redeployment.
+     */
+    @Parameter(property = "payara.ignore.test.changes", defaultValue = "${env.PAYARA_IGNORE_TEST_CHANGES}")
+    protected boolean ignoreTestChanges = true;
+
+    /**
      * Keeps the current state of the Payara server on restart.
      */
     @Parameter(property = "payara.keep.state", defaultValue = "${env.PAYARA_KEEP_STATE}")
@@ -911,6 +917,11 @@ public class StartMojo extends ServerMojo implements StartTask {
     @Override
     public boolean isLocal() {
         return exploded;
+    }
+
+    @Override
+    public boolean isIgnoreTestChanges() {
+        return ignoreTestChanges;
     }
 
 }

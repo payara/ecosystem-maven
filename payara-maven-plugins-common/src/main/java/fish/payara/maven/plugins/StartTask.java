@@ -24,4 +24,6 @@ public interface StartTask {
      WebDriver getDriver();
      
      boolean isLocal();
+
+     boolean isIgnoreTestChanges();
 }

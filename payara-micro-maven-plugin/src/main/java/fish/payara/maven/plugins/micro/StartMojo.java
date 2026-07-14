@@ -144,6 +144,9 @@ public class StartMojo extends BasePayaraMojo implements StartTask {
     @Parameter(property = "payara.auto.deploy", defaultValue = "${env.PAYARA_AUTO_DEPLOY}")
     protected Boolean autoDeploy;
 
+    @Parameter(property = "payara.ignore.test.changes", defaultValue = "${env.PAYARA_IGNORE_TEST_CHANGES}")
+    protected boolean ignoreTestChanges = true;
+
     @Parameter(property = "payara.keep.state", defaultValue = "${env.PAYARA_KEEP_STATE}")
     protected Boolean keepState;
 
@@ -759,6 +762,11 @@ public class StartMojo extends BasePayaraMojo implements StartTask {
     @Override
     public boolean isLocal() {
         return exploded;
+    }
+
+    @Override
+    public boolean isIgnoreTestChanges() {
+        return ignoreTestChanges;
     }
 
 }
